@@ -2,54 +2,28 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>A-Frame with Face-API.js</title>
+    <title>A-Frame Button Example</title>
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
   </head>
   <body>
     <a-scene>
-      <a-box position="0 1.25 -5" rotation="0 45 45" color="#4CC3D9"></a-box>
-      <a-sphere position="0 1.25 -3" radius="1.25" color="#EF2D5E"></a-sphere>
-      <a-cylinder position="-1 0.75 -3" radius="0.5" height="1.5" color="#FFC65D"></a-cylinder>
-      <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
+      <a-entity camera look-controls position="0 1.6 0"></a-entity>
 
-      <a-entity camera look-controls></a-entity>
+      <!-- Button -->
+      <a-entity id="button" geometry="primitive: box; width: 1; height: 0.2; depth: 0.1" material="color: #0077cc" position="0 1 -3">
+        <a-text value="Click Me" align="center" position="0 0 0.05"></a-text>
+        <a-plane id="buttonCollider" visible="false" scale="1.2 0.5 1" position="0 0 0.06" material="color: transparent"></a-plane>
+      </a-entity>
     </a-scene>
 
-    <button id="startButton">Start Face Detection</button>
-
     <script>
-      document.getElementById('startButton').addEventListener('click', startFaceDetection);
-
-      async function startFaceDetection() {
-        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
-        await faceapi.nets.faceExpressionNet.loadFromUri('/models');
-
-        const videoEl = document.createElement('video');
-        document.body.append(videoEl);
-
-        const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-        videoEl.srcObject = stream;
-        videoEl.play();
-
-        const canvas = faceapi.createCanvasFromMedia(videoEl);
-        document.body.append(canvas);
-
-        const displaySize = { width: videoEl.width, height: videoEl.height };
-        faceapi.matchDimensions(canvas, displaySize);
-
-        setInterval(async () => {
-          const detections = await faceapi.detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions();
-          const resizedDetections = faceapi.resizeResults(detections, displaySize);
-          canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-          faceapi.draw.drawDetections(canvas, resizedDetections);
-          faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
-          faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
-        }, 100);
+      // Function to handle button click
+      function handleClick() {
+        alert('Button clicked!');
       }
+
+      // Add event listener to the button collider
+      document.getElementById('buttonCollider').addEventListener('click', handleClick);
     </script>
   </body>
 </html>
