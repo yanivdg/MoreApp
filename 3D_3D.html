@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene>
+      <a-box id="button" position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
+      <a-light id="light" type="point" intensity="1" position="0 2 -3"></a-light>
+      <a-sky color="#ECECEC"></a-sky>
+    </a-scene>
+
+    <script>
+      var light = document.querySelector('#light');
+      var button = document.querySelector('#button');
+      button.addEventListener('click', function () {
+        var intensity = light.getAttribute('light').intensity;
+        if (intensity > 0) {
+          light.setAttribute('light', 'intensity', 0);
+        } else {
+          light.setAttribute('light', 'intensity', 1);
+        }
+      });
+    </script>
+  </body>
+</html>
