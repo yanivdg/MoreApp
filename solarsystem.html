@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<a-scene>
+    <!-- Set the blue sky background -->
+      <!-- Space background -->
+      <a-sky src="./images/2k_stars.jpg"></a-sky>
+      <!-- Flowing space rocks (asteroids) -->
+      <a-entity position="3 2 -10" rotation="0 45 0">
+        <a-sphere color="gray" radius="0.2" animation="property: rotation; to: 0 360 0; loop: true; dur: 5000;"></a-sphere>
+      </a-entity>
+    <!-- Your Three.js script (solar system) goes here -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/yanivdg/PainLocator@5114368b33ac0cb63eef38a344b8419227a9c4f7/solar_system.js"></script>
+    <!-- Add a simple box -->
+    <a-box position="0 1 -5" color="yellow"></a-box>
+</a-scene>
+</html>

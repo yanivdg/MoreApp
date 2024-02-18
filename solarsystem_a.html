@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Solar System in A-Frame</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+</head>
+<body>
+    <a-scene>
+        <!-- Set the blue sky background -->
+        <a-sky color="#000000"></a-sky>
+
+        <!-- Create the sun -->
+        <a-sphere position="0 0 -30" radius="8" color="#ffcc00" src="./images/sun_texture.jpg" animation="property: rotation; to: 0 360 0; loop: true; dur: 10000;"></a-sphere>
+
+        <!-- Define the planets -->
+        <a-entity position="0 0 -30">
+            <!-- Mercury -->
+            <a-sphere position="0 0 -10" radius="0.35" color="#b3b3b3" src="./images/mercury_texture.jpg" animation="property: rotation; to: 0 360 0; loop: true; dur: 2000;"></a-sphere>
+            <!-- Venus -->
+            <a-sphere position="0 0 -18" radius="0.87" color="#ffaa80" src="./images/venus_texture.jpg" animation="property: rotation; to: 0 360 0; loop: true; dur: 3000;"></a-sphere>
+            <!-- Earth -->
+            <a-sphere position="0 0 -25" radius="1" color="#0099ff" src="./images/earth_texture.jpg" animation="property: rotation; to: 0 360 0; loop: true; dur: 4000;"></a-sphere>
+            <!-- Mars -->
+            <a-sphere position="0 0 -34" radius="0.9" color="#ff6347" src="./images/mars_texture.jpg" animation="property: rotation; to: 0 360 0; loop: true; dur: 5000;"></a-sphere>
+            <!-- Jupiter -->
+            <a-sphere position="0 0 -50" radius="4" color="#ffcc66" src="./images/jupiter_texture.jpg" animation="property: rotation; to: 0 360 0; loop: true; dur: 8000;"></a-sphere>
+            <!-- Saturn -->
+            <a-entity position="0 0 -80">
+            <!-- Saturn sphere (planet) -->
+            <a-sphere radius="3.5" color="#ffcc00" src="./images/saturn_texture.jpg" animation="property: rotation; to: 0 360 0; loop: true; dur: 10000;"></a-sphere>
+            <!-- Saturn's ring (using a torus) -->
+            <a-torus radius="5.5" radius-tubular="0.2" color="#ffcc00"  src="./images/saturn_ring.jpg" rotation="90 0 0"></a-torus>
+            </a-entity>
+            <!-- Uranus -->
+            <a-sphere position="0 0 -120" radius="2.5" color="#66ccff" src="./images/uranus_texture.jpg" animation="property: rotation; to: 0 360 0; loop: true; dur: 12000;"></a-sphere>
+            <!-- Neptune -->
+            <a-sphere position="0 0 -300" radius="2.5" color="#3366ff" src="./images/nep_text.jpg" animation="property: rotation; to: 0 360 0; loop: true; dur: 15000;"></a-sphere>
+        </a-entity>
+    </a-scene>
+</body>
+</html>
