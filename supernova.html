@@ -6,19 +6,16 @@
 </head>
 <body>
 <a-scene>
-  <a-sphere id="supernova" position="0 1.25 -5" radius="1" color="#FF0">
-    <a-animation attribute="scale"
-                 dur="2000"
-                 fill="forwards"
-                 to="10 10 10"
-                 repeat="indefinite"></a-animation>
-    <a-animation attribute="material.opacity"
-                 dur="2000"
-                 fill="forwards"
-                 to="0"
-                 repeat="indefinite"></a-animation>
-  </a-sphere>
-  <a-sky color="#000"></a-sky>
+  <a-assets>
+    <img id="particle" src="path_to_your_particle_image.png">
+  </a-assets>
+
+  <a-entity id="supernova">
+    <a-particle-system src="#particle" color="#FC0D1B, #FF7300" particle-count="2000" 
+      duration="1000" size="20" max-age="2" velocity-value="20 20 20" velocity-spread="30 30 30">
+    </a-particle-system>
+  </a-entity>
 </a-scene>
+
 </body>
 </html>
