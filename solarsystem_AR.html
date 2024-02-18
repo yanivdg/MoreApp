@@ -53,26 +53,15 @@
         </a-entity>
         <!-- Add more planets here -->
 
-        <!-- Camera -->
-        <a-entity camera look-controls position="0 1.6 0"></a-entity>
-
+        <!-- Supernova -->
         <!-- Light -->
         <a-light type="point" intensity="2" position="0 2 0" color="#ffffff"></a-light>
-
         <!-- Particle system for explosion -->
         <a-entity particle-system="preset: snow; particleCount: 5000; size: 0.05; opacity: 0.5; color: #ff0000"></a-entity>
-
         <!-- Model of exploding star -->
         <a-entity id="explodingStar" gltf-model="./models/exploding_star.glb" scale="0.2 0.2 0.2"></a-entity>
-
         <!-- Animation to simulate explosion -->
-        <a-animation attribute="scale"
-                     dur="3000"
-                     to="50 50 50"
-                     begin="click"
-                     easing="ease-out"
-                     fill="forwards">
-        </a-animation>
+        <a-animation attribute="scale" dur="3000" to="50 50 50" begin="click" easing="ease-out" fill="forwards"></a-animation>
     </a-scene>
 </body>
 </html>
