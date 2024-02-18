@@ -15,16 +15,19 @@
         <a-entity id="button" geometry="primitive: box; width: 1; height: 0.2; depth: 0.1" material="color: #0077cc" position="0 1 -3">
             <a-text value="Click Me" align="center" position="0 0 0.05"></a-text>
             <a-plane id="buttonCollider" visible="false" scale="1.2 0.5 1" position="0 0 0.06" material="color: rgba(0,0,0,0)"></a-plane>
-            <!-- Include the assets from external.html -->
-            <a-assets>
-                <a-asset-item id="external-model" src="./solarsystem.html"></a-asset-item>
-            </a-assets>
-            <!-- Use the referenced assets within the scene -->
-            <a-entity position="0 1.5 -2">
-                <a-plane src="#texture" width="10" height="10"></a-plane>
-            </a-entity>
+        </a-entity>
+        
+        <!-- Include the assets from external.html -->
+        <a-assets>
+            <a-asset-item id="external-model" src="./solarsystem.html"></a-asset-item>
+        </a-assets>
+
+        <!-- Use the referenced assets within the scene -->
+        <a-entity position="0 1.5 -2">
+            <a-plane src="#external-model" width="10" height="10"></a-plane>
+        </a-entity>
     </a-scene>
-    </a-entity>
+
     <script>
         // Function to handle button click
         function handleClick() {
