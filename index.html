@@ -1,39 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A-Frame Button Example</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://jeromeetienne.github.io/AR.js/aframe/build/aframe-ar.js"></script> <!-- Include AR.js with aframe -->
+    <script src="https://jeromeetienne.github.io/AR.js/aframe/build/aframe-ar.js"></script>
 </head>
-<body>
-    <a-scene embedded arjs='sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: false;'>
-        <!-- Camera -->
-        <a-entity camera look-controls position="0 1.6 0"></a-entity>
-
-        <!-- Button -->
-        <a-entity id="button" geometry="primitive: box; width: 1; height: 0.2; depth: 0.1" material="color: #0077cc" position="0 1 -3">
-            <a-text value="Click Me" align="center" position="0 0 0.05"></a-text>
-        </a-entity>
-        
-        <!-- Include the assets from external.html -->
-           <a-assets><img id="my-image" src="./images/sun_texture.jpg"></a-assets>
-
-        <!-- Use the referenced assets within the scene -->
-        <a-entity position="0 1.5 -2">
-            <a-plane src="#my-image" width="10" height="10"></a-plane>
-        </a-entity>
+<body style='margin : 0px; overflow: hidden;'>
+    <a-scene embedded arjs>
+        <a-marker preset="hiro">
+            <a-box position='0 0.5 0' material='color: yellow;'></a-box>
+        </a-marker>
+        <a-entity camera></a-entity>
     </a-scene>
-
-    <script>
-        // Function to handle button click
-        function handleClick() {
-            alert('Button clicked!');
-        }
-
-        // Add event listener to the button
-        document.getElementById('button').addEventListener('click', handleClick, { passive: true });
-    </script>
 </body>
 </html>
