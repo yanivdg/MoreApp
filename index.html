@@ -20,11 +20,13 @@
         
         <!-- Include the assets from external.html -->
         <a-assets>
+            <img id="my-image" src=" https://www.nasa.gov/wp-content/uploads/2023/03/607694main_Kepler22bArtwork_full-1.jpg?w=1041">
             <a-asset-item id="external-model" src="./solarsystem.html"></a-asset-item>
         </a-assets>
 
         <!-- Use the referenced assets within the scene -->
         <a-entity position="0 1.5 -2">
+            <a-plane src="#my-image" width="10" height="10"></a-plane>
             <a-plane src="#external-model" width="10" height="10"></a-plane>
         </a-entity>
     </a-scene>
