@@ -7,7 +7,8 @@
 <body>
     <a-scene>
         <a-sky src="./images/stars_texture.jpg"></a-sky>
-
+        <!-- Camera entity -->
+        <a-entity camera position="0 1.6 0" look-controls></a-entity>
         <!-- Create the sun (central point) -->
         <a-sphere position="0 0 0" radius="8" color="#ffcc00" src="./images/sun_texture.jpg" animation="property: rotation; to: 0 360 0; loop: true; dur: 25000;"></a-sphere>
 
