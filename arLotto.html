@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AR Lottery Result</title>
+  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      overflow: hidden;
+    }
+    .result {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      font-weight: bold;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <a-scene vr-mode="enabled">
+    <a-camera position="0 1.6 0"></a-camera>
+
+    <a-entity text="value: Lottery Result; color: white; align: center" position="0 2 0"></a-entity>
+
+    <a-entity position="-1 1 0">
+      <a-sphere radius="0.5" color="#FFC107" animation__win="property: rotation; from: 0 0 0; to: 0 360 0; dur: 3000; easing: ease-in-out; repeat: 0"></a-sphere>
+      <a-entity text="value: {{ winningNumber1 }}; color: black; align: center" position="0 0.1 0"></a-entity>
+    </a-entity>
+    <a-entity position="0 1 0">
+      <a-sphere radius="0.5" color="#FFC107" animation__win="property: rotation; from: 0 0 0; to: 0 360 0; dur: 3000; easing: ease-in-out; repeat: 0"></a-sphere>
+      <a-entity text="value: {{ winningNumber2 }}; color: black; align: center" position="0 0.1 0"></a-entity>
+    </a-entity>
+    <a-entity position="1 1 0">
+      <a-sphere radius="0.5" color="#FFC107" animation__win="property: rotation; from: 0 0 0; to: 0 360 0; dur: 3000; easing: ease-in-out; repeat: 0"></a-sphere>
+      <a-entity text="value: {{ winningNumber3 }}; color: black; align: center" position="0 0.1 0"></a-entity>
+    </a-entity>
+    <div class="result">
+      <p>Strong Number: {{ strongNumber }}</p>
+    </div>
+
+    <script>
+      // Generate lottery result (same logic as before)
+      function generateLotteryResult() {
+        // ... (your existing code to generate numbers)
+      }
+
+      // Call generateLotteryResult on scene load
+      AFrame.scenes[0].addEventListener('loaded', generateLotteryResult);
+
+      // Update text elements with generated numbers
+      var winningNumber1 = document.querySelector("[text='value: {{ winningNumber1 }}']").getAttribute("value");
+      var winningNumber2 = document.querySelector("[text='value: {{ winningNumber2 }}']").getAttribute("value");
+      var winningNumber3 = document.querySelector("[text='value: {{ winningNumber3 }}']").getAttribute("value");
+      var strongNumber = document.querySelector(".result p").textContent.split(": ")[1];
+
+      winningNumber1 = winningNumbers[0];
+      winningNumber2 = winningNumbers[1];
+      winningNumber3 = winningNumbers[2];
+
+      // Update text content
+      document.querySelector("[text='value: {{ winningNumber1 }}']").setAttribute("value", winningNumber1);
+      document.querySelector("[text='value: {{ winningNumber2 }}']").setAttribute("value", winningNumber2);
+      document.querySelector("[text='value: {{ winningNumber3 }}']").
