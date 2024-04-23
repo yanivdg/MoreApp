@@ -1,23 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AR Lottery Result</title>
+  <title>AR Lottery Results</title>
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       overflow: hidden;
+      background-color: #171717; /* Dark background */
     }
     .result {
       position: absolute;
       top: 10px;
       left: 10px;
       padding: 10px;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent dark background */
       color: white;
       font-weight: bold;
+      border-radius: 5px; /* Rounded corners */
       z-index: 1;
+    }
+    a-entity[text] {
+      font-size: 2em; /* Larger text for better readability */
     }
   </style>
 </head>
@@ -25,20 +30,21 @@
   <a-scene vr-mode="enabled">
     <a-camera position="0 1.6 0"></a-camera>
 
-    <a-entity text="value: Lottery Result; color: white; align: center" position="0 2 0"></a-entity>
+    <a-entity text="value: AR Lottery Results; color: white; align: center" position="0 2 0"></a-entity>
 
     <a-entity position="-1 1 0">
-      <a-sphere radius="0.5" color="#FFC107" animation__win="property: rotation; from: 0 0 0; to: 0 360 0; dur: 3000; easing: ease-in-out; repeat: 0"></a-sphere>
-      <a-entity text="value: {{ winningNumber1 }}; color: black; align: center" position="0 0.1 0"></a-entity>
+      <a-sphere radius="0.7" color="#FFEB3B" material="metallic: 0.5; roughness: 0.4" animation__win="property: rotation; from: 0 0 0; to: 0 360 0; dur: 3000; easing: ease-in-out; repeat: 0"></a-sphere>
+      <a-entity text="value: {{ winningNumber1 }}; color: black; align: center" position="0 0.2 0"></a-entity>
     </a-entity>
     <a-entity position="0 1 0">
-      <a-sphere radius="0.5" color="#FFC107" animation__win="property: rotation; from: 0 0 0; to: 0 360 0; dur: 3000; easing: ease-in-out; repeat: 0"></a-sphere>
-      <a-entity text="value: {{ winningNumber2 }}; color: black; align: center" position="0 0.1 0"></a-entity>
+      <a-sphere radius="0.7" color="#FFEB3B" material="metallic: 0.5; roughness: 0.4" animation__win="property: rotation; from: 0 0 0; to: 0 360 0; dur: 3000; easing: ease-in-out; repeat: 0"></a-sphere>
+      <a-entity text="value: {{ winningNumber2 }}; color: black; align: center" position="0 0.2 0"></a-entity>
     </a-entity>
     <a-entity position="1 1 0">
-      <a-sphere radius="0.5" color="#FFC107" animation__win="property: rotation; from: 0 0 0; to: 0 360 0; dur: 3000; easing: ease-in-out; repeat: 0"></a-sphere>
-      <a-entity text="value: {{ winningNumber3 }}; color: black; align: center" position="0 0.1 0"></a-entity>
+      <a-sphere radius="0.7" color="#FFEB3B" material="metallic: 0.5; roughness: 0.4" animation__win="property: rotation; from: 0 0 0; to: 0 360 0; dur: 3000; easing: ease-in-out; repeat: 0"></a-sphere>
+      <a-entity text="value: {{ winningNumber3 }}; color: black; align: center" position="0 0.2 0"></a-entity>
     </a-entity>
+
     <div class="result">
       <p>Strong Number: {{ strongNumber }}</p>
     </div>
@@ -70,31 +76,19 @@
                 winningNumbers.push(balls[index]);
                 balls.splice(index, 1);
             }
-
-            // Selecting a strong number
-            var strongIndex = getRandomNumber(0, strongNumbers.length - 1);
-            var strongNumber = strongNumbers[strongIndex];
-
-            // Displaying the result
-            result.textContent = winningNumbers.join(", ");
-            strongResult.textContent = "(" + strongNumber + ")";
         }
-
 
       // Call generateLotteryResult on scene load
       AFrame.scenes[0].addEventListener('loaded', generateLotteryResult);
 
-      // Update text elements with generated numbers
-      var winningNumber1 = document.querySelector("[text='value: {{ winningNumber1 }}']").getAttribute("value");
-      var winningNumber2 = document.querySelector("[text='value: {{ winningNumber2 }}']").getAttribute("value");
-      var winningNumber3 = document.querySelector("[text='value: {{ winningNumber3 }}']").getAttribute("value");
-      var strongNumber = document.querySelector(".result p").textContent.split(": ")[1];
+      // Update text elements with generated numbers (similar to previous code)
 
-      winningNumber1 = winningNumbers[0];
-      winningNumber2 = winningNumbers[1];
-      winningNumber3 = winningNumbers[2];
-
-      // Update text content
-      document.querySelector("[text='value: {{ winningNumber1 }}']").setAttribute("value", winningNumber1);
-      document.querySelector("[text='value: {{ winningNumber2 }}']").setAttribute("value", winningNumber2);
-      document.querySelector("[text='value: {{ winningNumber3 }}']").
+      // Update text content with generated numbers
+      document.querySelector("[text='value: {{ winningNumber1 }}']").setAttribute("value", winningNumbers[0]);
+      document.querySelector("[text='value: {{ winningNumber2 }}']").setAttribute("value", winningNumbers[1]);
+      document.querySelector("[text='value: {{ winningNumber3 }}']").setAttribute("value", winningNumbers[2]);
+      document.querySelector(".result p").textContent = "Strong Number: " + strongNumber;
+    </script>
+  </a-scene>
+</body>
+</html>
