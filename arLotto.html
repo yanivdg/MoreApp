@@ -30,64 +30,69 @@
   <a-scene vr-mode="enabled">
     <a-camera position="0 1.6 0"></a-camera>
 
-    <a-entity text="value: AR Lottery Results; color: white; align: center" position="0 2 0"></a-entity>
+    <a-entity id="title" text="value: AR Lottery Results; color: white; align: center" position="0 2 0"></a-entity>
 
-    <a-entity position="-1 1 0">
+    <a-entity id="ball1" position="-1 1 0">
       <a-sphere radius="0.7" color="#FFEB3B" material="metallic: 0.5; roughness: 0.4" animation__win="property: rotation; from: 0 0 0; to: 0 360 0; dur: 3000; easing: ease-in-out; repeat: 0"></a-sphere>
-      <a-entity text="value: {{ winningNumber1 }}; color: black; align: center" position="0 0.2 0"></a-entity>
+      <a-entity text="value: ; color: black; align: center" position="0 0.2 0"></a-entity>
     </a-entity>
-    <a-entity position="0 1 0">
+    <a-entity id="ball2" position="0 1 0">
       <a-sphere radius="0.7" color="#FFEB3B" material="metallic: 0.5; roughness: 0.4" animation__win="property: rotation; from: 0 0 0; to: 0 360 0; dur: 3000; easing: ease-in-out; repeat: 0"></a-sphere>
-      <a-entity text="value: {{ winningNumber2 }}; color: black; align: center" position="0 0.2 0"></a-entity>
+      <a-entity text="value: ; color: black; align: center" position="0 0.2 0"></a-entity>
     </a-entity>
-    <a-entity position="1 1 0">
+    <a-entity id="ball3" position="1 1 0">
       <a-sphere radius="0.7" color="#FFEB3B" material="metallic: 0.5; roughness: 0.4" animation__win="property: rotation; from: 0 0 0; to: 0 360 0; dur: 3000; easing: ease-in-out; repeat: 0"></a-sphere>
-      <a-entity text="value: {{ winningNumber3 }}; color: black; align: center" position="0 0.2 0"></a-entity>
+      <a-entity text="value: ; color: black; align: center" position="0 0.2 0"></a-entity>
     </a-entity>
 
     <div class="result">
-      <p>Strong Number: {{ strongNumber }}</p>
+      <p id="strongNumber">Strong Number: </p>
     </div>
 
     <script>
-      // Generate lottery result (same logic as before)
-        function generateLotteryResult() {
-            function getRandomNumber(min, max) {
-                return Math.floor(Math.random() * (max - min + 1)) + min;
-            }
-
-            var balls = [];
-            var strongNumbers = [];
-            var result = document.getElementById("winningNumbers");
-            var strongResult = document.getElementById("strongNumber");
-
-            // Generating balls and strong numbers
-            for (var i = 1; i <= 37; i++) {
-                balls.push(i);
-                if (i <= 7) {
-                    strongNumbers.push(i);
-                }
-            }
-
-            // Selecting 6 unique winning numbers
-            var winningNumbers = [];
-            for (var j = 0; j < 6; j++) {
-                var index = getRandomNumber(0, balls.length - 1);
-                winningNumbers.push(balls[index]);
-                balls.splice(index, 1);
-            }
+      // Generate lottery result
+      function generateLotteryResult() {
+        function getRandomNumber(min, max) {
+          return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
+        var balls = [];
+        var strongNumbers = [];
+        var result = document.getElementById("winningNumbers");
+        var strongResult = document.getElementById("strongNumber");
+
+        // Generating balls and strong numbers
+        for (var i = 1; i <= 37; i++) {
+          balls.push(i);
+          if (i <= 7) {
+            strongNumbers.push(i);
+          }
+        }
+
+        // Selecting 3 unique winning numbers
+        var winningNumbers = [];
+        for (var j = 0; j < 3; j++) {
+          var index = getRandomNumber(0, balls.length - 1);
+          winningNumbers.push(balls[index]);
+          balls.splice(index, 1);
+        }
+
+        // Selecting a strong number
+        var strongNumber = strongNumbers[getRandomNumber(0, strongNumbers.length - 1)];
+
+        return { winningNumbers, strongNumber };
+      }
+
       // Call generateLotteryResult on scene load
-      AFrame.scenes[0].addEventListener('loaded', generateLotteryResult);
+      document.querySelector('a-scene').addEventListener('loaded', function() {
+        var lotteryResult = generateLotteryResult();
 
-      // Update text elements with generated numbers (similar to previous code)
-
-      // Update text content with generated numbers
-      document.querySelector("[text='value: {{ winningNumber1 }}']").setAttribute("value", winningNumbers[0]);
-      document.querySelector("[text='value: {{ winningNumber2 }}']").setAttribute("value", winningNumbers[1]);
-      document.querySelector("[text='value: {{ winningNumber3 }}']").setAttribute("value", winningNumbers[2]);
-      document.querySelector(".result p").textContent = "Strong Number: " + strongNumber;
+        // Update text elements with generated numbers
+        document.querySelector("#ball1 a-entity").setAttribute("text", "value: " + lotteryResult.winningNumbers[0] + "; color: black; align: center");
+        document.querySelector("#ball2 a-entity").setAttribute("text", "value: " + lotteryResult.winningNumbers[1] + "; color: black; align: center");
+        document.querySelector("#ball3 a-entity").setAttribute("text", "value: " + lotteryResult.winningNumbers[2] + "; color: black; align: center");
+        document.querySelector(".result p").textContent = "Strong Number: " + lotteryResult.strongNumber;
+      });
     </script>
   </a-scene>
 </body>
