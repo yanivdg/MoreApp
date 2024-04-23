@@ -45,9 +45,41 @@
 
     <script>
       // Generate lottery result (same logic as before)
-      function generateLotteryResult() {
-        // ... (your existing code to generate numbers)
-      }
+        function generateLotteryResult() {
+            function getRandomNumber(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            var balls = [];
+            var strongNumbers = [];
+            var result = document.getElementById("winningNumbers");
+            var strongResult = document.getElementById("strongNumber");
+
+            // Generating balls and strong numbers
+            for (var i = 1; i <= 37; i++) {
+                balls.push(i);
+                if (i <= 7) {
+                    strongNumbers.push(i);
+                }
+            }
+
+            // Selecting 6 unique winning numbers
+            var winningNumbers = [];
+            for (var j = 0; j < 6; j++) {
+                var index = getRandomNumber(0, balls.length - 1);
+                winningNumbers.push(balls[index]);
+                balls.splice(index, 1);
+            }
+
+            // Selecting a strong number
+            var strongIndex = getRandomNumber(0, strongNumbers.length - 1);
+            var strongNumber = strongNumbers[strongIndex];
+
+            // Displaying the result
+            result.textContent = winningNumbers.join(", ");
+            strongResult.textContent = "(" + strongNumber + ")";
+        }
+
 
       // Call generateLotteryResult on scene load
       AFrame.scenes[0].addEventListener('loaded', generateLotteryResult);
