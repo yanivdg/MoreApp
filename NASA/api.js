@@ -36,33 +36,41 @@ const app = {
         });
     },
 
-    async refresh(type) {
-        const out = document.getElementById(`${type}-out`);
-        if (!out) return;
+async refresh(type) {
+    const out = document.getElementById(`${type}-out`);
+    if (!out) return;
 
-        // --- KEY LOGIC START ---
-        const userKey = document.getElementById('user-api-key').value.trim() || 'DEMO_KEY';
-        // Save the key so the user doesn't have to re-type it on refresh
-        localStorage.setItem('jpl_nasa_key', userKey);
-        
-        // Append the key to whatever endpoint we are calling
-        const baseUrl = this.endpoints[type];
-        if (!baseUrl) return;
-        const finalUrl = baseUrl.includes('?') ? `${baseUrl}&api_key=${userKey}` : `${baseUrl}?api_key=${userKey}`;
-        // --- KEY LOGIC END ---
+    const userKey = document.getElementById('user-api-key').value.trim() || 'DEMO_KEY';
+    localStorage.setItem('jpl_nasa_key', userKey);
+    
+    const baseUrl = this.endpoints[type];
+    if (!baseUrl) return;
+    
+    const finalUrl = baseUrl.includes('?') ? `${baseUrl}&api_key=${userKey}` : `${baseUrl}?api_key=${userKey}`;
 
-        out.innerHTML = `<div class="p-4 text-center text-info">📡 Pinging JPL with ${userKey === 'DEMO_KEY' ? 'Public Access' : 'Private Key'}...</div>`;
+    // --- FIX: WRAP THE URL IN A PROXY ---
+    // This tells the proxy to go get the data and give it back to your GitHub site
+    const proxiedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(finalUrl)}`;
+
+    out.innerHTML = `<div class="p-4 text-center text-info">📡 Routing through Proxy...</div>`;
+    
+    try {
+        const response = await fetch(proxiedUrl);
+        const proxyData = await response.json();
         
-        try {
-            const res = await fetch(finalUrl);
-            const data = await res.json();
-            this.render(type, data);
-            this.updateStatus(`${type.toUpperCase()} Synchronized`, "text-info");
-        } catch (err) {
-            out.innerHTML = `<div class="p-4 text-danger">⚠️ Connection Failed. Check your Key and Internet.</div>`;
-            this.updateStatus("Link Lost", "text-danger");
-        }
-    },
+        // allorigins wraps the actual data inside a 'contents' string
+        const data = JSON.parse(proxyData.contents);
+
+        this.render(type, data);
+        this.updateStatus(`${type.toUpperCase()} Synchronized`, "text-info");
+    } catch (err) {
+        console.error(err);
+        out.innerHTML = `<div class="p-4 text-danger">⚠️ CORS/Connection Error. Proxy might be throttled.</div>`;
+        this.updateStatus("Link Lost", "text-danger");
+    }
+},
+    
+    ,
 
     render(type, data) {
         const out = document.getElementById(`${type}-out`);
