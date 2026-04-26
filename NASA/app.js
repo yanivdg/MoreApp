@@ -11,8 +11,8 @@ const app = {
         sbdb: "https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=2015ab",
         sb_radar: "https://ssd-api.jpl.nasa.gov/sb_radar.api",
         sb_ident: "https://ssd-api.jpl.nasa.gov/sb_ident.api?sb-kind=a&mpc-code=568&obs-time=2026-04-26_00:00:00&vmag-lim=20&fov-ra-lim=10-10-00,10-20-00&fov-dec-lim=10-00-00,10-30-00",
-        horizons: "https://ssd-api.jpl.nasa.gov/horizons.api?format=json&COMMAND='499'&OBJ_DATA='YES'&MAKE_EPHEM='YES'&EPHEM_TYPE='OBSERVER'&CENTER='500@399'&START_TIME='2026-01-01'&STOP_TIME='2026-01-20'&STEP_SIZE='1%20d'&QUANTITIES='1,9,20,23,24,29'",
-        lookup: "https://ssd-api.jpl.nasa.gov/horizons_lookup.api?sstr=2004%20MN4"
+        horizons: "https://ssd.jpl.nasa.gov/api/horizons.api?format=text&COMMAND='499'&OBJ_DATA='YES'&MAKE_EPHEM='YES'&EPHEM_TYPE='OBSERVER'&CENTER='500@399'&START_TIME='2006-01-01'&STOP_TIME='2006-01-20'&STEP_SIZE='1%20d'&QUANTITIES='1,9,20,23,24,29'",
+        lookup: "https://ssd.jpl.nasa.gov/api/horizons_lookup.api?sstr=2004%20MN4"
     },
 
     init() {
