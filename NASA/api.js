@@ -40,32 +40,37 @@ async refresh(type) {
     const out = document.getElementById(`${type}-out`);
     if (!out) return;
 
-    const userKey = document.getElementById('user-api-key').value.trim() || 'DEMO_KEY';
-    localStorage.setItem('jpl_nasa_key', userKey);
+    // 1. Grab whatever is in the box
+    const userKey = document.getElementById('user-api-key').value.trim();
     
-    const baseUrl = this.endpoints[type];
-    if (!baseUrl) return;
+    // 2. Start with your base endpoint
+    let finalUrl = this.endpoints[type];
     
-    const finalUrl = baseUrl.includes('?') ? `${baseUrl}&api_key=${userKey}` : `${baseUrl}?api_key=${userKey}`;
+    // 3. ONLY add the key if there's actually a key to add
+    // This prevents the "&api_key=" error you were seeing
+    if (userKey && userKey.length > 0) {
+        const separator = finalUrl.includes('?') ? '&' : '?';
+        finalUrl += `${separator}api_key=${userKey}`;
+    }
 
-    // --- FIX: WRAP THE URL IN A PROXY ---
-    // This tells the proxy to go get the data and give it back to your GitHub site
+    // 4. Wrap in proxy for GitHub Pages compatibility
     const proxiedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(finalUrl)}`;
 
-    out.innerHTML = `<div class="p-4 text-center text-info">📡 Routing through Proxy...</div>`;
+    out.innerHTML = `<div class="p-4 text-center text-info">📡 Requesting Clean JPL Data...</div>`;
     
     try {
         const response = await fetch(proxiedUrl);
         const proxyData = await response.json();
         
-        // allorigins wraps the actual data inside a 'contents' string
+        // Parse the actual JPL content from the proxy wrapper
         const data = JSON.parse(proxyData.contents);
 
+        // Render the data
         this.render(type, data);
         this.updateStatus(`${type.toUpperCase()} Synchronized`, "text-info");
     } catch (err) {
-        console.error(err);
-        out.innerHTML = `<div class="p-4 text-danger">⚠️ CORS/Connection Error. Proxy might be throttled.</div>`;
+        console.error("Fetch Error:", err);
+        out.innerHTML = `<div class="p-4 text-danger">⚠️ Connection Error. Ensure the JPL endpoint is active.</div>`;
         this.updateStatus("Link Lost", "text-danger");
     }
 },
