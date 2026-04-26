@@ -1,158 +1,59 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JPL Space Control Dashboard</title>
+    <title>JPL Starship Navigator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/FlyControls.js"></script>
     
     <style>
-        :root {
-            --jpl-glow: #00ffcc;
-            --jpl-bg: #0a0a0c;
+        body { margin: 0; background: #000; color: #0f0; font-family: monospace; overflow: hidden; }
+        #view-container { position: relative; width: 100vw; height: 100vh; }
+        
+        /* Cockpit HUD */
+        #hud {
+            position: absolute; top: 20px; left: 20px; z-index: 100;
+            background: rgba(0, 40, 0, 0.7); border: 1px solid #0f0;
+            padding: 15px; pointer-events: none; width: 250px;
         }
-
-        body {
-            background-color: var(--jpl-bg);
-            color: #e0e0e0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        #nav-menu {
+            position: absolute; bottom: 20px; left: 20px; z-index: 100;
+            background: rgba(0, 20, 0, 0.9); border: 1px solid #0f0;
+            padding: 10px; width: 300px; max-height: 40vh; overflow-y: auto;
         }
-
-        /* 3D Viewport Styling */
-        #space-viewport {
-            background: radial-gradient(circle at center, #1a1a2e 0%, #000 100%);
-            cursor: move;
+        .nav-item { cursor: pointer; padding: 5px; border-bottom: 1px solid #030; font-size: 12px; }
+        .nav-item:hover { background: #0f0; color: #000; }
+        
+        canvas { display: block; }
+        .crosshair {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); color: #0f0;
+            font-size: 24px; pointer-events: none;
         }
-
-        /* Navigation Styling */
-        .sidebar {
-            height: 100vh;
-            border-right: 1px solid #333;
-            background: #000;
-        }
-
-        .nav-link {
-            color: #888;
-            border-radius: 0;
-            border-left: 3px solid transparent;
-            transition: all 0.3s;
-            cursor: pointer;
-            font-family: monospace;
-            text-transform: uppercase;
-        }
-
-        .nav-link:hover, .nav-link.active {
-            color: var(--jpl-glow);
-            background: rgba(0, 255, 204, 0.05);
-            border-left: 3px solid var(--jpl-glow);
-        }
-
-        /* Data Table Styling */
-        .table-jpl {
-            font-size: 0.85rem;
-            border-color: #333;
-        }
-
-        .table-jpl thead th {
-            color: var(--jpl-glow);
-            background: #111;
-            position: sticky;
-            top: 0;
-        }
-
-        .status-msg {
-            font-size: 0.75rem;
-            padding: 5px;
-            letter-spacing: 1px;
-            border-top: 1px solid #333;
-        }
-
-        pre { color: var(--jpl-glow) !important; }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #333; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--jpl-glow); }
     </style>
 </head>
 <body>
 
-<div class="container-fluid">
-    <div class="row">
-        <nav class="col-md-3 col-lg-2 sidebar d-md-block p-0">
-            <div class="p-3 text-center border-bottom border-secondary">
-                <h6 class="text-white m-0">🛰️ JPL CONTROL</h6>
-            </div>
-            <div class="nav flex-column mt-2">
-                <a class="nav-link active" data-section="cad">📡 Close Approaches</a>
-                <a class="nav-link" data-section="sbdb_query">📊 SBDB Query (IEOs)</a>
-                <a class="nav-link" data-section="fireball">☄️ Fireball Events</a>
-                <a class="nav-link" data-section="nhats">🚀 Human Targets</a>
-                <a class="nav-link" data-section="scout">🔭 Scout (Unconfirmed)</a>
-                <a class="nav-link" data-section="sentry">🛡️ Sentry (Impacts)</a>
-                <a class="nav-link" data-section="sb_radar">📡 Radar Obs</a>
-                <a class="nav-link" data-section="horizons">📈 Horizons Report</a>
-                <a class="nav-link" data-section="sbdb">🔎 Object Detail</a>
-            </div>
-            <div id="api-status" class="status-msg mt-auto fixed-bottom col-md-3 col-lg-2">
-                System Initializing...
-            </div>
-        </nav>
+<div id="view-container">
+    <div id="hud">
+        <strong>🚀 SHIP STATUS</strong><hr>
+        POS: <span id="hud-pos">0, 0, 0</span><br>
+        SPEED: <span id="hud-speed">0.0</span> AU/s<br>
+        TARGET: <span id="hud-target">None</span><br>
+        <small style="color: #8f8;">W/S: Thrusters | A/D: Roll<br>Arrows: Pitch/Yaw</small>
+    </div>
 
-        <main class="col-md-9 ms-sm-auto col-lg-10 p-0">
-            
-            <div id="space-viewport">
-                <div id="engine-label">SYSTEM: THREE.JS READY</div>
-            </div>
+    <div class="crosshair">+</div>
 
-            <div class="p-4 overflow-auto" style="height: calc(100vh - 500px);">
-                
-                <section id="section-cad" class="content-section">
-                    <h5 class="text-info mb-3">Close Approach Data (CAD)</h5>
-                    <div id="cad-out"></div>
-                </section>
-
-                <section id="section-sbdb_query" class="content-section d-none">
-                    <h5 class="text-info mb-3">Small-Body Database (Interior Earth Objects)</h5>
-                    <div id="sbdb_query-out"></div>
-                </section>
-
-                <section id="section-fireball" class="content-section d-none">
-                    <h5 class="text-info mb-3">Global Fireball Events</h5>
-                    <div id="fireball-out"></div>
-                </section>
-
-                <section id="section-nhats" class="content-section d-none">
-                    <h5 class="text-info mb-3">Human Spaceflight Accessible Targets</h5>
-                    <div id="nhats-out"></div>
-                </section>
-
-                <section id="section-scout" class="content-section d-none">
-                    <div id="scout-out"></div>
-                </section>
-
-                <section id="section-sentry" class="content-section d-none">
-                    <div id="sentry-out"></div>
-                </section>
-
-                <section id="section-sb_radar" class="content-section d-none">
-                    <div id="sb_radar-out"></div>
-                </section>
-
-                <section id="section-horizons" class="content-section d-none">
-                    <div id="horizons-out"></div>
-                </section>
-
-                <section id="section-sbdb" class="content-section d-none">
-                    <div id="sbdb-out"></div>
-                </section>
-
-            </div>
-        </main>
+    <div id="nav-menu">
+        <strong>📡 JPL OBJECTS LOCATED</strong>
+        <div id="object-list">Click "Sync" to load objects...</div>
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/gh/yanivdg/MoreApp@4ac819e79be4e47c69300b255bda62db89523c3a/NASA/app.js"></script>
 </body>
 </html>
+
