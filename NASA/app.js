@@ -38,32 +38,49 @@ const app = {
         });
     },
 
-    async refresh(type) {
-        const out = document.getElementById(`${type}-out`);
-        if (!out) return;
-        const userKey = document.getElementById('user-api-key').value.trim();
-        if (userKey) localStorage.setItem('jpl_nasa_key', userKey);
+async refresh(type) {
+    const out = document.getElementById(`${type}-out`);
+    if (!out) return;
+
+    const userKey = document.getElementById('user-api-key').value.trim();
+    if (userKey) localStorage.setItem('jpl_nasa_key', userKey);
+    
+    let finalUrl = this.endpoints[type];
+    if (userKey) {
+        const sep = finalUrl.includes('?') ? '&' : '?';
+        finalUrl += `${sep}api_key=${userKey}`;
+    }
+
+    // Switched to a more stable proxy
+    const proxiedUrl = `https://corsproxy.io/?${encodeURIComponent(finalUrl)}`;
+
+    out.innerHTML = `<div class="p-4 text-center text-info">📡 Routing through Proxy...</div>`;
+    
+    try {
+        const res = await fetch(proxiedUrl);
         
-        let finalUrl = this.endpoints[type];
-        if (userKey) {
-            const sep = finalUrl.includes('?') ? '&' : '?';
-            finalUrl += `${sep}api_key=${userKey}`;
+        if (!res.ok) {
+            throw new Error(`Proxy Error: ${res.status}`);
         }
 
-        const proxiedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(finalUrl)}`;
-        out.innerHTML = `<div class="p-4 text-center text-info">📡 Fetching ${type.toUpperCase()}...</div>`;
+        const data = await res.json();
         
-        try {
-            const res = await fetch(proxiedUrl);
-            const proxyData = await res.json();
-            const data = JSON.parse(proxyData.contents);
-            this.render(type, data);
-            this.updateStatus(`${type.toUpperCase()} Sync`, "text-info");
-        } catch (err) {
-            out.innerHTML = `<div class="p-4 text-danger">⚠️ Connection Failed.</div>`;
-            this.updateStatus("Offline", "text-danger");
-        }
-    },
+        // Handle cases where the proxy returns a different structure
+        const actualData = data.contents ? JSON.parse(data.contents) : data;
+
+        this.render(type, actualData);
+        this.updateStatus(`${type.toUpperCase()} Sync Successful`, "text-info");
+    } catch (err) {
+        console.error("Fetch Error:", err);
+        out.innerHTML = `
+            <div class="p-4 text-center">
+                <div class="text-danger mb-2">⚠️ Connection Timeout (Error 522)</div>
+                <small class="text-white-50">The proxy server is currently busy. Wait 10 seconds and try again.</small>
+                <button class="btn btn-sm btn-outline-info d-block mx-auto mt-3" onclick="app.refresh('${type}')">Retry Link</button>
+            </div>`;
+        this.updateStatus("Link Timeout", "text-danger");
+    }
+},
 
     render(type, data) {
         const out = document.getElementById(`${type}-out`);
