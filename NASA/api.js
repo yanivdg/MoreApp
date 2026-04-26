@@ -69,9 +69,6 @@ async refresh(type) {
         this.updateStatus("Link Lost", "text-danger");
     }
 },
-    
-    ,
-
     render(type, data) {
         const out = document.getElementById(`${type}-out`);
         let html = "";
