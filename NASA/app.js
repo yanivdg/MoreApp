@@ -1,104 +1,116 @@
-const app = {
-    endpoints: {
-        sbdb_query: "https://ssd-api.jpl.nasa.gov/sbdb_query.api?fields=full_name,a,e,i,om,w&sb-class=IEO",
-        fireball: "https://ssd-api.jpl.nasa.gov/fireball.api?limit=20"
-    },
-
+const StarSurfer = {
+    endpoint: "https://ssd-api.jpl.nasa.gov/sbdb_query.api?fields=full_name,a,e,i,om,w&sb-class=IEO",
+    proxy: "https://corsproxy.io/?",
+    
     engine: {
-        scene: null, camera: null, renderer: null, controls: null,
-        clock: new THREE.Clock(), objects: []
+        clock: new THREE.Clock(),
+        objects: []
     },
 
-    init() {
-        this.init3D();
-        this.syncSpaceData();
-    },
-
-    init3D() {
-        this.engine.scene = new THREE.Scene();
-        this.engine.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-        this.engine.renderer = new THREE.WebGLRenderer({ antialias: true });
-        this.engine.renderer.setSize(window.innerWidth, window.innerHeight);
-        document.getElementById('view-container').appendChild(this.engine.renderer.domElement);
-
-        // Sun & Ambient Light
-        const sun = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffdd00 }));
-        this.engine.scene.add(sun);
-        this.engine.scene.add(new THREE.PointLight(0xffffff, 2));
-
-        // Setup Starfield
-        const starGeo = new THREE.BufferGeometry();
-        const starCoords = [];
-        for(let i=0; i<10000; i++) starCoords.push((Math.random()-0.5)*1000, (Math.random()-0.5)*1000, (Math.random()-0.5)*1000);
-        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
-        this.engine.scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 0.5})));
-
-        // Spaceship Controls (Fly Mode)
-        this.engine.camera.position.set(0, 5, 20);
-        this.engine.controls = new THREE.FlyControls(this.engine.camera, this.engine.renderer.domElement);
-        this.engine.controls.movementSpeed = 10;
-        this.engine.controls.rollSpeed = 0.5;
-        this.engine.controls.autoForward = false;
-        this.engine.controls.dragToLook = false;
-
+    async init() {
+        this.setupScene();
+        this.createStars();
+        await this.loadNASAData();
         this.animate();
     },
 
-    async syncSpaceData() {
-        const url = `https://corsproxy.io/?${encodeURIComponent(this.endpoints.sbdb_query)}`;
-        try {
-            const res = await fetch(url);
-            const data = await res.json();
-            this.plotAsteroids(data);
-        } catch (e) { console.error("Sync Failed", e); }
-    },
+    setupScene() {
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(this.renderer.domElement);
 
-    plotAsteroids(data) {
-        const listContainer = document.getElementById('object-list');
-        listContainer.innerHTML = "";
+        // Lighting - Deep Space Dimness
+        const sunLight = new THREE.PointLight(0xffffff, 2, 2000);
+        this.scene.add(sunLight);
+        this.scene.add(new THREE.AmbientLight(0x222222));
+
+        // Ship Controls (Fly like a spaceship)
+        this.controls = new THREE.FlyControls(this.camera, this.renderer.domElement);
+        this.controls.movementSpeed = 50; 
+        this.controls.rollSpeed = 0.5;
+        this.controls.dragToLook = false;
         
-        data.data.forEach((row, index) => {
-            const a = parseFloat(row[1]); // Semi-major axis
-            const e = parseFloat(row[2]); // Eccentricity
-            
-            // Create Visual Asteroid
-            const geo = new THREE.IcosahedronGeometry(Math.random() * 0.2 + 0.1, 0);
-            const mat = new THREE.MeshLambertMaterial({ color: 0x888888 });
-            const mesh = new THREE.Mesh(geo, mat);
-            
-            // Basic placement in orbit (simplified)
-            const posX = a * 15 * (1 + e); 
-            mesh.position.set(posX, 0, 0);
-            
-            this.engine.scene.add(mesh);
-            this.engine.objects.push({ mesh, name: row[0] });
-
-            // Add to Nav Menu
-            const item = document.createElement('div');
-            item.className = 'nav-item';
-            item.innerText = `LOCKED: ${row[0]}`;
-            item.onclick = () => this.lockOn(mesh, row[0]);
-            listContainer.appendChild(item);
-        });
+        this.camera.position.set(0, 10, 100);
     },
 
-    lockOn(target, name) {
-        document.getElementById('hud-target').innerText = name;
-        this.engine.camera.lookAt(target.position);
+    createStars() {
+        const starGeo = new THREE.BufferGeometry();
+        const starCoords = [];
+        for(let i=0; i<15000; i++) {
+            starCoords.push((Math.random()-0.5)*3000, (Math.random()-0.5)*3000, (Math.random()-0.5)*3000);
+        }
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
+        const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 0.7}));
+        this.scene.add(stars);
+    },
+
+    async loadNASAData() {
+        const log = document.getElementById('data-log');
+        try {
+            const res = await fetch(this.proxy + encodeURIComponent(this.endpoint));
+            const json = await res.json();
+            
+            document.getElementById('s-val').innerText = "OBJECTS DETECTED";
+            log.innerHTML = `Connected. Mapping ${json.count} targets...`;
+
+            // Transform Table Rows into 3D Space Objects
+            json.data.forEach((row, i) => {
+                const name = row[0];
+                const a = parseFloat(row[1]); // semi-major axis
+                const e = parseFloat(row[2]); // eccentricity
+                
+                // Create a procedurally generated asteroid mesh
+                const geom = new THREE.IcosahedronGeometry(Math.random() * 2 + 1, 1);
+                const mat = new THREE.MeshStandardMaterial({ 
+                    color: 0x666666, 
+                    flatShading: true,
+                    roughness: 1
+                });
+                const asteroid = new THREE.Mesh(geom, mat);
+                
+                // Spread them out in the "Deep Space" surfing lane
+                // We use the orbital 'a' to determine distance from center
+                const distance = a * 200;
+                const angle = (i / json.data.length) * Math.PI * 2;
+                
+                asteroid.position.set(
+                    Math.cos(angle) * distance,
+                    (Math.random() - 0.5) * 50, // Slight vertical jitter
+                    Math.sin(angle) * distance
+                );
+                
+                asteroid.userData = { name: name };
+                this.scene.add(asteroid);
+                this.engine.objects.push(asteroid);
+
+                log.innerHTML += `<br>Spawned: ${name}`;
+            });
+        } catch (err) {
+            log.innerHTML = "📡 LINK ERROR: Use a different proxy or check connection.";
+        }
     },
 
     animate() {
         requestAnimationFrame(() => this.animate());
         const delta = this.engine.clock.getDelta();
-        this.engine.controls.update(delta);
+        
+        this.controls.update(delta);
 
         // Update HUD
-        const pos = this.engine.camera.position;
-        document.getElementById('hud-pos').innerText = 
-            `${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)}`;
-        
-        this.engine.renderer.render(this.engine.scene, this.engine.camera);
+        const pos = this.camera.position;
+        document.getElementById('v-val').innerText = (this.controls.movementSpeed).toFixed(1);
+        document.getElementById('c-val').innerText = `${Math.round(pos.x)}, ${Math.round(pos.y)}, ${Math.round(pos.z)}`;
+
+        // Rotate Asteroids for visual effect
+        this.engine.objects.forEach(obj => {
+            obj.rotation.x += 0.01;
+            obj.rotation.y += 0.01;
+        });
+
+        this.renderer.render(this.scene, this.camera);
     }
 };
 
-app.init();
+StarSurfer.init();
