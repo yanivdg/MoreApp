@@ -1,27 +1,27 @@
-name: Build Android APK
+name: Build NASA Space APK
 on: 
   push:
     branches:
-      - main  # Adjust this if your default branch is named differently
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # Updated to v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4  # Updated to v4
         with:
           node-version: 18
 
-      - name: Install Capacitor
+      - name: Install Dependencies
         run: |
+          cd NASA
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          
-      - name: Build Android Project
-        # This part enters your NASA folder to run the build
+
+      - name: Initialize Android Project
         run: |
           cd NASA
           npx cap add android
@@ -31,8 +31,8 @@ jobs:
         run: |
           cd NASA/android && ./gradlew assembleDebug
 
-      - name: Rename and Upload APK
-        uses: actions/upload-artifact@v3
+      - name: Upload nasa-space.apk
+        uses: actions/upload-artifact@v4  # FIXED: This was the error!
         with:
           name: nasa-space-apk
           path: NASA/android/app/build/outputs/apk/debug/app-debug.apk
