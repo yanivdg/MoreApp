@@ -1,0 +1,16 @@
+{
+  "short_name": "StarSurfer",
+  "name": "JPL Star-Surfer: NASA Scout",
+  "icons": [
+    {
+      "src": "https://www.nasa.gov/wp-content/themes/nasa/assets/images/nasa-logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./nasa-api.html",
+  "background_color": "#000000",
+  "display": "standalone",
+  "scope": "./",
+  "theme_color": "#00ffcc"
+}
