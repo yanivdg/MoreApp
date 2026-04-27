@@ -2,44 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>JPL Star-Surfer: Deep Space Navigation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JPL Star-Surfer Mobile</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/FlyControls.js"></script>
     <style>
-        body { margin: 0; background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; }
+        body { margin: 0; background: #000; color: #0f0; font-family: monospace; overflow: hidden; touch-action: none; }
         #hud {
-            position: absolute; top: 20px; left: 20px; z-index: 100;
-            background: rgba(0, 20, 0, 0.7); border: 1px solid #0f0;
-            padding: 15px; pointer-events: none;
+            position: absolute; top: 10px; left: 10px; z-index: 100;
+            background: rgba(0, 20, 0, 0.6); border: 1px solid #0f0; padding: 10px; font-size: 10px;
         }
-        #mission-control {
-            position: absolute; bottom: 20px; right: 20px; z-index: 100;
-            background: rgba(0, 10, 0, 0.8); border: 1px solid #0f0;
-            padding: 10px; width: 300px; max-height: 200px; overflow-y: auto; font-size: 10px;
+        /* Virtual Joysticks */
+        .joystick-zone {
+            position: absolute; bottom: 40px; width: 120px; height: 120px;
+            background: rgba(0, 255, 0, 0.1); border: 2px dashed #0f0; border-radius: 50%;
+            z-index: 200; display: flex; align-items: center; justify-content: center;
         }
-        .crosshair {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: #0f0; font-size: 30px; pointer-events: none; opacity: 0.5;
-        }
+        #left-joy { left: 30px; } /* Movement */
+        #right-joy { right: 30px; } /* Steering */
+        .knob { width: 40px; height: 40px; background: #0f0; border-radius: 50%; opacity: 0.5; }
+        
+        canvas { display: block; width: 100vw; height: 100vh; }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <strong>👨‍🚀 SURFER HUD</strong><hr>
-    VELOCITY: <span id="v-val">0.0</span> AU/h<br>
-    COORD: <span id="c-val">0, 0, 0</span><br>
-    STATUS: <span id="s-val" style="color: #0ff;">SEARCHING FOR IEOs...</span>
+    <strong>📡 MOBILE NAVO SCOUT</strong><br>
+    STATUS: <span id="s-val">PILOTING</span><br>
+    POS: <span id="c-val">0,0</span>
 </div>
 
-<div class="crosshair">+</div>
+<div id="left-joy" class="joystick-zone"><div class="knob" id="l-knob"></div></div>
+<div id="right-joy" class="joystick-zone"><div class="knob" id="r-knob"></div></div>
 
-<div id="mission-control">
-    <strong>📡 INCOMING JPL DATA STRINGS</strong><hr>
-    <div id="data-log">Initializing secure link to NASA...</div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/gh/yanivdg/MoreApp@16e2ff20e3af244ebb0d7e0ffba86a6478f329b1/NASA/app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
-
