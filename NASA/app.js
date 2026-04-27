@@ -1,116 +1,101 @@
-const StarSurfer = {
-    endpoint: "https://ssd-api.jpl.nasa.gov/sbdb_query.api?fields=full_name,a,e,i,om,w&sb-class=IEO",
-    proxy: "https://corsproxy.io/?",
-    
-    engine: {
-        clock: new THREE.Clock(),
-        objects: []
-    },
+const MobileSurfer = {
+    candidates: [
+        { id: "J1234+5678", ra: 188.61, dec: 56.51, catalog: "Chandra", energy: 80 },
+        { id: "J0534+2200", ra: 83.63, dec: 22.01, catalog: "XMM-Newton", energy: 60 }
+    ],
 
-    async init() {
+    input: { move: {x:0, y:0}, look: {x:0, y:0} },
+
+    init() {
         this.setupScene();
-        this.createStars();
-        await this.loadNASAData();
+        this.setupTouch();
+        this.spawnObjects();
         this.animate();
     },
 
     setupScene() {
         this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 10000);
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(this.renderer.domElement);
-
-        // Lighting - Deep Space Dimness
-        const sunLight = new THREE.PointLight(0xffffff, 2, 2000);
-        this.scene.add(sunLight);
-        this.scene.add(new THREE.AmbientLight(0x222222));
-
-        // Ship Controls (Fly like a spaceship)
-        this.controls = new THREE.FlyControls(this.camera, this.renderer.domElement);
-        this.controls.movementSpeed = 50; 
-        this.controls.rollSpeed = 0.5;
-        this.controls.dragToLook = false;
         
-        this.camera.position.set(0, 10, 100);
-    },
-
-    createStars() {
+        this.camera.position.z = 500;
+        
+        // Starfield for speed reference
         const starGeo = new THREE.BufferGeometry();
-        const starCoords = [];
-        for(let i=0; i<15000; i++) {
-            starCoords.push((Math.random()-0.5)*3000, (Math.random()-0.5)*3000, (Math.random()-0.5)*3000);
-        }
-        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
-        const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 0.7}));
-        this.scene.add(stars);
+        const stars = [];
+        for(let i=0; i<10000; i++) stars.push((Math.random()-0.5)*5000, (Math.random()-0.5)*5000, (Math.random()-0.5)*5000);
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(stars, 3));
+        this.scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0x4444ff, size: 1})));
     },
 
-    async loadNASAData() {
-        const log = document.getElementById('data-log');
-        try {
-            const res = await fetch(this.proxy + encodeURIComponent(this.endpoint));
-            const json = await res.json();
+    setupTouch() {
+        const handleJoy = (id, type) => {
+            const el = document.getElementById(id);
+            const knob = document.getElementById(id[0] + '-knob');
             
-            document.getElementById('s-val').innerText = "OBJECTS DETECTED";
-            log.innerHTML = `Connected. Mapping ${json.count} targets...`;
+            const onTouch = (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = el.getBoundingClientRect();
+                const centerX = rect.left + rect.width/2;
+                const centerY = rect.top + rect.height/2;
+                
+                // Calculate distance from center (-1 to 1)
+                const dx = (touch.clientX - centerX) / (rect.width/2);
+                const dy = (touch.clientY - centerY) / (rect.height/2);
+                
+                this.input[type] = { x: Math.max(-1, Math.min(1, dx)), y: Math.max(-1, Math.min(1, dy)) };
+                knob.style.transform = `translate(${this.input[type].x * 30}px, ${this.input[type].y * 30}px)`;
+            };
 
-            // Transform Table Rows into 3D Space Objects
-            json.data.forEach((row, i) => {
-                const name = row[0];
-                const a = parseFloat(row[1]); // semi-major axis
-                const e = parseFloat(row[2]); // eccentricity
-                
-                // Create a procedurally generated asteroid mesh
-                const geom = new THREE.IcosahedronGeometry(Math.random() * 2 + 1, 1);
-                const mat = new THREE.MeshStandardMaterial({ 
-                    color: 0x666666, 
-                    flatShading: true,
-                    roughness: 1
-                });
-                const asteroid = new THREE.Mesh(geom, mat);
-                
-                // Spread them out in the "Deep Space" surfing lane
-                // We use the orbital 'a' to determine distance from center
-                const distance = a * 200;
-                const angle = (i / json.data.length) * Math.PI * 2;
-                
-                asteroid.position.set(
-                    Math.cos(angle) * distance,
-                    (Math.random() - 0.5) * 50, // Slight vertical jitter
-                    Math.sin(angle) * distance
-                );
-                
-                asteroid.userData = { name: name };
-                this.scene.add(asteroid);
-                this.engine.objects.push(asteroid);
+            const onEnd = () => {
+                this.input[type] = {x:0, y:0};
+                knob.style.transform = `translate(0,0)`;
+            };
 
-                log.innerHTML += `<br>Spawned: ${name}`;
-            });
-        } catch (err) {
-            log.innerHTML = "📡 LINK ERROR: Use a different proxy or check connection.";
-        }
+            el.addEventListener('touchstart', onTouch);
+            el.addEventListener('touchmove', onTouch);
+            el.addEventListener('touchend', onEnd);
+        };
+
+        handleJoy('left-joy', 'move');
+        handleJoy('right-joy', 'look');
+    },
+
+    spawnObjects() {
+        this.objects = [];
+        this.candidates.forEach(c => {
+            const phi = (90 - c.dec) * (Math.PI / 180);
+            const theta = (c.ra) * (Math.PI / 180);
+            const dist = 1000 + Math.random()*1000;
+
+            const mesh = new THREE.Mesh(
+                new THREE.SphereGeometry(c.energy/5, 12, 12),
+                new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true })
+            );
+            mesh.position.set(dist * Math.sin(phi) * Math.cos(theta), dist * Math.cos(phi), dist * Math.sin(phi) * Math.sin(theta));
+            this.scene.add(mesh);
+            this.objects.push(mesh);
+        });
     },
 
     animate() {
         requestAnimationFrame(() => this.animate());
-        const delta = this.engine.clock.getDelta();
-        
-        this.controls.update(delta);
 
-        // Update HUD
-        const pos = this.camera.position;
-        document.getElementById('v-val').innerText = (this.controls.movementSpeed).toFixed(1);
-        document.getElementById('c-val').innerText = `${Math.round(pos.x)}, ${Math.round(pos.y)}, ${Math.round(pos.z)}`;
+        // 1. Handle Movement (Left Stick)
+        // Y moves forward/backward, X strafes
+        this.camera.translateZ(this.input.move.y * -5); 
+        this.camera.translateX(this.input.move.x * 5);
 
-        // Rotate Asteroids for visual effect
-        this.engine.objects.forEach(obj => {
-            obj.rotation.x += 0.01;
-            obj.rotation.y += 0.01;
-        });
+        // 2. Handle Rotation (Right Stick)
+        this.camera.rotation.y -= this.input.look.x * 0.03;
+        this.camera.rotation.x -= this.input.look.y * 0.03;
 
+        document.getElementById('c-val').innerText = `${Math.round(this.camera.position.x)},${Math.round(this.camera.position.z)}`;
         this.renderer.render(this.scene, this.camera);
     }
 };
 
-StarSurfer.init();
+MobileSurfer.init();
