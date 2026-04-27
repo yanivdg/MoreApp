@@ -1,0 +1,14 @@
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open('star-surfer').then((cache) => cache.addAll([
+      './nasa-api.html',
+      './app.js'
+    ]))
+  );
+});
+
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    fetch(e.request).catch(() => caches.match(e.request))
+  );
+});
