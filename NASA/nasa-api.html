@@ -3,38 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JPL Star-Surfer Mobile</title>
+    <title>JPL Star-Surfer Mobile Fixed</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
     <style>
         body { margin: 0; background: #000; color: #0f0; font-family: monospace; overflow: hidden; touch-action: none; }
         #hud {
             position: absolute; top: 10px; left: 10px; z-index: 100;
-            background: rgba(0, 20, 0, 0.6); border: 1px solid #0f0; padding: 10px; font-size: 10px;
+            background: rgba(0, 20, 0, 0.8); border: 1px solid #0f0; padding: 10px; font-size: 12px; pointer-events: none;
         }
-        /* Virtual Joysticks */
+        /* Joysticks */
         .joystick-zone {
-            position: absolute; bottom: 40px; width: 120px; height: 120px;
+            position: absolute; bottom: 50px; width: 100px; height: 100px;
             background: rgba(0, 255, 0, 0.1); border: 2px dashed #0f0; border-radius: 50%;
             z-index: 200; display: flex; align-items: center; justify-content: center;
         }
-        #left-joy { left: 30px; } /* Movement */
-        #right-joy { right: 30px; } /* Steering */
-        .knob { width: 40px; height: 40px; background: #0f0; border-radius: 50%; opacity: 0.5; }
-        
-        canvas { display: block; width: 100vw; height: 100vh; }
+        #left-joy { left: 30px; } 
+        #right-joy { right: 30px; }
+        .knob { width: 30px; height: 30px; background: #0f0; border-radius: 50%; opacity: 0.6; pointer-events: none; }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <strong>📡 MOBILE NAVO SCOUT</strong><br>
-    STATUS: <span id="s-val">PILOTING</span><br>
+    <strong>🚀 SYSTEM ONLINE</strong><br>
+    STATUS: <span id="s-val">ACTIVE</span><br>
     POS: <span id="c-val">0,0</span>
 </div>
 
 <div id="left-joy" class="joystick-zone"><div class="knob" id="l-knob"></div></div>
 <div id="right-joy" class="joystick-zone"><div class="knob" id="r-knob"></div></div>
 
-<script src="app.js"></script>
+<script>
+// ALL JS LOGIC INSIDE THE HTML FOR 100% RELIABILITY
+const MobileSurfer = {
+    input: { move: {x:0, y:0}, look: {x:0, y:0} },
+    objects: [],
+
+    init() {
+        try {
+            this.setupScene();
+            this.setupTouch();
+            this.spawnDeepSpace();
+            this.animate();
+            console.log("Space Engine Started");
+        } catch(e) {
+            document.getElementById('s-val').innerText = "ENGINE ERROR: " + e.message;
+        }
+    },
+
+    setupScene() {
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 20000);
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setClearColor(0x000000, 1);
+        document.body.appendChild(this.renderer.domElement);
+
+        this.camera.position.set(0, 0, 100);
+
+        // Add Ambient Light so you can actually see objects
+        const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+        this.scene.add(ambient);
+        const point = new THREE.PointLight(0x00ffcc, 2, 1000);
+        this.scene.add(point);
+    },
+
+    setupTouch() {
+        const handleJoy = (id, type) => {
+            const el = document.getElementById(id);
+            const knob = document.getElementById(id[0] + '-knob');
+            
+            const onTouch = (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = el.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const dx = (touch.clientX - centerX) / (rect.width / 2);
+                const dy = (touch.clientY - centerY) / (rect.height / 2);
+                
+                this.input[type] = { x: Math.max(-1, Math.min(1, dx)), y: Math.max(-1, Math.min(1, dy)) };
+                knob.style.transform = `translate(${this.input[type].x * 25}px, ${this.input[type].y * 25}px)`;
+            };
+
+            const onEnd = () => {
+                this.input[type] = {x:0, y:0};
+                knob.style.transform = `translate(0,0)`;
+            };
+
+            el.addEventListener('touchstart', onTouch, {passive: false});
+            el.addEventListener('touchmove', onTouch, {passive: false});
+            el.addEventListener('touchend', onEnd);
+        };
+
+        handleJoy('left-joy', 'move');
+        handleJoy('right-joy', 'look');
+    },
+
+    spawnDeepSpace() {
+        // 1. Create Starfield (Background)
+        const starGeo = new THREE.BufferGeometry();
+        const stars = [];
+        for(let i=0; i<15000; i++) {
+            stars.push((Math.random()-0.5)*10000, (Math.random()-0.5)*10000, (Math.random()-0.5)*10000);
+        }
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(stars, 3));
+        const starMat = new THREE.PointsMaterial({color: 0x00ffff, size: 2});
+        this.scene.add(new THREE.Points(starGeo, starMat));
+
+        // 2. Create Galaxy Targets (Objects)
+        for(let i=0; i<20; i++) {
+            const geom = new THREE.IcosahedronGeometry(Math.random() * 10 + 5, 1);
+            const mat = new THREE.MeshPhongMaterial({ color: 0x00ff88, wireframe: true });
+            const mesh = new THREE.Mesh(geom, mat);
+            
+            mesh.position.set(
+                (Math.random()-0.5)*2000,
+                (Math.random()-0.5)*2000,
+                (Math.random()-0.5)*2000
+            );
+            this.scene.add(mesh);
+            this.objects.push(mesh);
+        }
+    },
+
+    animate() {
+        requestAnimationFrame(() => this.animate());
+
+        // MOVEMENT LOGIC
+        // Left Joy Y = Speed, Right Joy X/Y = Rotation
+        this.camera.translateZ(this.input.move.y * -15); 
+        this.camera.translateX(this.input.move.x * 10);
+
+        this.camera.rotation.y -= this.input.look.x * 0.05;
+        this.camera.rotation.x -= this.input.look.y * 0.05;
+
+        // Rotate the space objects
+        this.objects.forEach(o => { o.rotation.y += 0.01; });
+
+        document.getElementById('c-val').innerText = `${Math.round(this.camera.position.x)},${Math.round(this.camera.position.z)}`;
+        this.renderer.render(this.scene, this.camera);
+    }
+};
+
+// Start when window loads
+window.onload = () => { MobileSurfer.init(); };
+</script>
 </body>
 </html>
