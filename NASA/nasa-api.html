@@ -3,154 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JPL Star-Surfer Mobile Fixed</title>
-    
+    <title>JPL Star-Surfer: Mobile Edition</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
     <style>
-        body { margin: 0; background: #000; color: #0f0; font-family: monospace; overflow: hidden; touch-action: none; }
-        #hud {
-            position: absolute; top: 10px; left: 10px; z-index: 100;
-            background: rgba(0, 20, 0, 0.8); border: 1px solid #0f0; padding: 10px; font-size: 12px; pointer-events: none;
+        body { background: #000; color: #0f0; font-family: monospace; overflow-x: hidden; touch-action: none; }
+        
+        /* 3D Viewport */
+        #space-viewport {
+            width: 100%; height: 60vh; background: #000; position: relative;
+            border-bottom: 2px solid #0f0;
         }
-        /* Joysticks */
-        .joystick-zone {
-            position: absolute; bottom: 50px; width: 100px; height: 100px;
-            background: rgba(0, 255, 0, 0.1); border: 2px dashed #0f0; border-radius: 50%;
-            z-index: 200; display: flex; align-items: center; justify-content: center;
+
+        /* Mobile Joysticks - Only visible on touch */
+        .joystick {
+            position: absolute; bottom: 20px; width: 80px; height: 80px;
+            background: rgba(0, 255, 0, 0.1); border: 1px dashed #0f0;
+            border-radius: 50%; z-index: 1000; display: flex; align-items: center; justify-content: center;
         }
-        #left-joy { left: 30px; } 
-        #right-joy { right: 30px; }
-        .knob { width: 30px; height: 30px; background: #0f0; border-radius: 50%; opacity: 0.6; pointer-events: none; }
+        #move-joy { left: 20px; }
+        #look-joy { right: 20px; }
+        .knob { width: 30px; height: 30px; background: #0f0; border-radius: 50%; opacity: 0.5; }
+
+        /* Data Section */
+        #data-section { height: 40vh; overflow-y: auto; padding: 15px; background: #050505; }
+        .table-dark { font-size: 0.75rem; border-color: #030; }
+        .status { font-size: 10px; color: #0f0; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-<div id="hud">
-    <strong>🚀 SYSTEM ONLINE</strong><br>
-    STATUS: <span id="s-val">ACTIVE</span><br>
-    POS: <span id="c-val">0,0</span>
+<div id="space-viewport">
+    <div style="position:absolute; top:10px; left:10px; z-index:10; font-size:10px;">SYSTEM: STAR-SURFER MOBILE</div>
+    
+    <div id="move-joy" class="joystick"><div class="knob" id="m-knob"></div></div>
+    <div id="look-joy" class="joystick"><div class="knob" id="l-knob"></div></div>
 </div>
 
-<div id="left-joy" class="joystick-zone"><div class="knob" id="l-knob"></div></div>
-<div id="right-joy" class="joystick-zone"><div class="knob" id="r-knob"></div></div>
+<div id="data-section">
+    <div class="status" id="api-status">📡 LINKING TO NASA JPL...</div>
+    <div id="sbdb_query-out"></div>
+</div>
 
 <script>
-// ALL JS LOGIC INSIDE THE HTML FOR 100% RELIABILITY
-const MobileSurfer = {
+const app = {
+    endpoint: "https://ssd-api.jpl.nasa.gov/sbdb_query.api?fields=full_name,a,e,i,om,w&sb-class=IEO",
+    proxy: "https://corsproxy.io/?",
     input: { move: {x:0, y:0}, look: {x:0, y:0} },
-    objects: [],
+    engine: { scene: null, camera: null, renderer: null, asteroids: [] },
 
     init() {
-        try {
-            this.setupScene();
-            this.setupTouch();
-            this.spawnDeepSpace();
-            this.animate();
-            console.log("Space Engine Started");
-        } catch(e) {
-            document.getElementById('s-val').innerText = "ENGINE ERROR: " + e.message;
-        }
+        this.setup3D();
+        this.setupTouch();
+        this.fetchData();
+        this.animate();
     },
 
-    setupScene() {
-        this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 20000);
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setClearColor(0x000000, 1);
-        document.body.appendChild(this.renderer.domElement);
+    setup3D() {
+        const container = document.getElementById('space-viewport');
+        this.engine.scene = new THREE.Scene();
+        this.engine.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 5000);
+        this.engine.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.engine.renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(this.engine.renderer.domElement);
 
-        this.camera.position.set(0, 0, 100);
+        // Lights (Crucial so objects aren't black)
+        this.engine.scene.add(new THREE.AmbientLight(0x444444));
+        const sunLight = new THREE.PointLight(0xffffff, 2, 2000);
+        this.engine.scene.add(sunLight);
 
-        // Add Ambient Light so you can actually see objects
-        const ambient = new THREE.AmbientLight(0xffffff, 0.5);
-        this.scene.add(ambient);
-        const point = new THREE.PointLight(0x00ffcc, 2, 1000);
-        this.scene.add(point);
+        // Starfield
+        const starGeo = new THREE.BufferGeometry();
+        const stars = [];
+        for(let i=0; i<10000; i++) stars.push((Math.random()-0.5)*3000, (Math.random()-0.5)*3000, (Math.random()-0.5)*3000);
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(stars, 3));
+        this.engine.scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0x00ffff, size: 1})));
+
+        this.engine.camera.position.set(0, 50, 200);
     },
 
     setupTouch() {
-        const handleJoy = (id, type) => {
+        const handle = (id, key) => {
             const el = document.getElementById(id);
             const knob = document.getElementById(id[0] + '-knob');
-            
-            const onTouch = (e) => {
+            const move = (e) => {
                 e.preventDefault();
-                const touch = e.touches[0];
-                const rect = el.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                
-                const dx = (touch.clientX - centerX) / (rect.width / 2);
-                const dy = (touch.clientY - centerY) / (rect.height / 2);
-                
-                this.input[type] = { x: Math.max(-1, Math.min(1, dx)), y: Math.max(-1, Math.min(1, dy)) };
-                knob.style.transform = `translate(${this.input[type].x * 25}px, ${this.input[type].y * 25}px)`;
+                const t = e.touches[0];
+                const r = el.getBoundingClientRect();
+                const x = (t.clientX - (r.left + r.width/2)) / (r.width/2);
+                const y = (t.clientY - (r.top + r.height/2)) / (r.height/2);
+                this.input[key] = { x: Math.max(-1, Math.min(1, x)), y: Math.max(-1, Math.min(1, y)) };
+                knob.style.transform = `translate(${this.input[key].x * 20}px, ${this.input[key].y * 20}px)`;
             };
-
-            const onEnd = () => {
-                this.input[type] = {x:0, y:0};
+            const reset = () => {
+                this.input[key] = {x:0, y:0};
                 knob.style.transform = `translate(0,0)`;
             };
-
-            el.addEventListener('touchstart', onTouch, {passive: false});
-            el.addEventListener('touchmove', onTouch, {passive: false});
-            el.addEventListener('touchend', onEnd);
+            el.addEventListener('touchstart', move, {passive: false});
+            el.addEventListener('touchmove', move, {passive: false});
+            el.addEventListener('touchend', reset);
         };
-
-        handleJoy('left-joy', 'move');
-        handleJoy('right-joy', 'look');
+        handle('move-joy', 'move');
+        handle('look-joy', 'look');
     },
 
-    spawnDeepSpace() {
-        // 1. Create Starfield (Background)
-        const starGeo = new THREE.BufferGeometry();
-        const stars = [];
-        for(let i=0; i<15000; i++) {
-            stars.push((Math.random()-0.5)*10000, (Math.random()-0.5)*10000, (Math.random()-0.5)*10000);
+    async fetchData() {
+        try {
+            const res = await fetch(this.proxy + encodeURIComponent(this.endpoint));
+            const data = await res.json();
+            this.renderTable(data);
+            this.plotAsteroids(data);
+            document.getElementById('api-status').innerText = "SYSTEM SYNCHRONIZED";
+        } catch (e) {
+            document.getElementById('api-status').innerText = "LINK FAILED";
         }
-        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(stars, 3));
-        const starMat = new THREE.PointsMaterial({color: 0x00ffff, size: 2});
-        this.scene.add(new THREE.Points(starGeo, starMat));
+    },
 
-        // 2. Create Galaxy Targets (Objects)
-        for(let i=0; i<20; i++) {
-            const geom = new THREE.IcosahedronGeometry(Math.random() * 10 + 5, 1);
-            const mat = new THREE.MeshPhongMaterial({ color: 0x00ff88, wireframe: true });
-            const mesh = new THREE.Mesh(geom, mat);
-            
-            mesh.position.set(
-                (Math.random()-0.5)*2000,
-                (Math.random()-0.5)*2000,
-                (Math.random()-0.5)*2000
+    plotAsteroids(data) {
+        data.data.forEach((row, i) => {
+            const a = parseFloat(row[1]);
+            const mesh = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(2, 0),
+                new THREE.MeshStandardMaterial({ color: 0x00ffcc, wireframe: true })
             );
-            this.scene.add(mesh);
-            this.objects.push(mesh);
-        }
+            const dist = a * 150;
+            const angle = (i / data.data.length) * Math.PI * 2;
+            mesh.position.set(Math.cos(angle)*dist, (Math.random()-0.5)*50, Math.sin(angle)*dist);
+            this.engine.scene.add(mesh);
+            this.engine.asteroids.push(mesh);
+        });
+    },
+
+    renderTable(data) {
+        let html = `<table class="table table-dark table-striped"><thead><tr>`;
+        data.fields.forEach(f => html += `<th>${f}</th>`);
+        html += `</tr></thead><tbody>`;
+        data.data.slice(0, 20).forEach(row => {
+            html += `<tr>${row.map(c => `<td>${c}</td>`).join('')}</tr>`;
+        });
+        document.getElementById('sbdb_query-out').innerHTML = html + "</tbody></table>";
     },
 
     animate() {
         requestAnimationFrame(() => this.animate());
+        
+        // Flight Physics
+        this.engine.camera.translateZ(this.input.move.y * -5);
+        this.engine.camera.translateX(this.input.move.x * 5);
+        this.engine.camera.rotation.y -= this.input.look.x * 0.03;
+        this.engine.camera.rotation.x -= this.input.look.y * 0.03;
 
-        // MOVEMENT LOGIC
-        // Left Joy Y = Speed, Right Joy X/Y = Rotation
-        this.camera.translateZ(this.input.move.y * -15); 
-        this.camera.translateX(this.input.move.x * 10);
-
-        this.camera.rotation.y -= this.input.look.x * 0.05;
-        this.camera.rotation.x -= this.input.look.y * 0.05;
-
-        // Rotate the space objects
-        this.objects.forEach(o => { o.rotation.y += 0.01; });
-
-        document.getElementById('c-val').innerText = `${Math.round(this.camera.position.x)},${Math.round(this.camera.position.z)}`;
-        this.renderer.render(this.scene, this.camera);
+        this.engine.asteroids.forEach(a => a.rotation.y += 0.01);
+        this.engine.renderer.render(this.engine.scene, this.engine.camera);
     }
 };
 
-// Start when window loads
-window.onload = () => { MobileSurfer.init(); };
+window.onload = () => app.init();
 </script>
 </body>
 </html>
