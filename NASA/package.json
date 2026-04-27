@@ -1,6 +1,9 @@
 {
   "name": "nasa-star-surfer",
   "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'No build step needed'"
+  },
   "dependencies": {
     "@capacitor/core": "latest",
     "@capacitor/android": "latest"
