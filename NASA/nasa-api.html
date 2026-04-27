@@ -1,48 +1,22 @@
-      <!DOCTYPE html>
+                      <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JPL Star-Surfer: Cinematic Edition</title>
+    <title>JPL Star-Surfer: Enhanced Visibility</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        :root { --glow: #00ffcc; --dark-green: #002211; }
+        :root { --glow: #00ffcc; }
         body { background: #000; color: var(--glow); font-family: 'Courier New', monospace; overflow: hidden; touch-action: none; }
-        
         #space-viewport { width: 100%; height: 65vh; position: relative; border-bottom: 2px solid var(--glow); }
-
-        /* CRT MONITOR STYLING */
-        #data-section { 
-            height: 35vh; overflow-y: auto; padding: 15px; 
-            background: radial-gradient(circle, #001100 0%, #000 100%);
-            position: relative;
-        }
-
-        /* CRT Scanline Effect */
-        #data-section::before {
-            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 10; background-size: 100% 4px, 3px 100%; pointer-events: none;
-        }
-
-        /* Flickering Animation */
-        @keyframes flicker {
-            0% { opacity: 0.97; } 5% { opacity: 0.95; } 10% { opacity: 0.9; } 100% { opacity: 1; }
-        }
-        #data-section { animation: flicker 0.15s infinite; }
-
-        .table-monitor { color: var(--glow); border-color: var(--dark-green); text-shadow: 0 0 5px var(--glow); }
-        .table-monitor th { border-bottom: 2px solid var(--glow); text-transform: uppercase; letter-spacing: 2px; }
-
-        .joystick {
-            position: absolute; bottom: 20px; width: 70px; height: 70px;
-            background: rgba(0, 255, 204, 0.1); border: 1px solid var(--glow);
-            border-radius: 50%; z-index: 1000; box-shadow: 0 0 15px var(--glow);
-        }
+        #data-section { height: 35vh; overflow-y: auto; padding: 15px; background: #000a05; position: relative; animation: flicker 0.2s infinite; }
+        #data-section::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05)); background-size: 100% 2px, 3px 100%; pointer-events: none; }
+        @keyframes flicker { 0% { opacity: 0.98; } 100% { opacity: 1; } }
+        .joystick { position: absolute; bottom: 20px; width: 80px; height: 80px; background: rgba(0, 255, 204, 0.1); border: 2px solid var(--glow); border-radius: 50%; z-index: 1000; box-shadow: 0 0 20px var(--glow); }
         #move-joy { left: 20px; } #look-joy { right: 20px; }
-        .knob { width: 25px; height: 25px; background: var(--glow); border-radius: 50%; box-shadow: 0 0 10px #fff; }
+        .knob { width: 30px; height: 30px; background: var(--glow); border-radius: 50%; box-shadow: 0 0 10px #fff; pointer-events: none; }
+        .table-monitor { color: var(--glow); border-color: #003322; font-size: 11px; }
     </style>
 </head>
 <body>
@@ -53,7 +27,7 @@
 </div>
 
 <div id="data-section">
-    <div style="font-size: 12px; margin-bottom: 5px;">[ STATUS: INTERCEPTING JPL TELEMETRY... ]</div>
+    <div style="font-size: 12px; margin-bottom: 5px;">[ SENSOR FEED: NASA JPL-NAVO ]</div>
     <div id="sbdb_query-out"></div>
 </div>
 
@@ -74,47 +48,46 @@ const app = {
     setup3D() {
         const container = document.getElementById('space-viewport');
         this.engine.scene = new THREE.Scene();
-        this.engine.scene.fog = new THREE.FogExp2(0x000000, 0.001); // Adds deep space depth
+        this.engine.scene.background = new THREE.Color(0x000505);
 
         this.engine.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 10000);
         this.engine.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.engine.renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(this.engine.renderer.domElement);
 
-        // Realistic Lighting
-        this.engine.scene.add(new THREE.AmbientLight(0x111111));
-        const sun = new THREE.PointLight(0x00ffcc, 3, 5000);
-        sun.position.set(500, 500, 500);
-        this.engine.scene.add(sun);
+        // SHIP LIGHT (Scanner)
+        const shipLight = new THREE.SpotLight(0xffffff, 5);
+        shipLight.position.set(0, 0, 1);
+        this.engine.camera.add(shipLight);
+        this.engine.scene.add(this.engine.camera);
 
-        // Starfield with varying sizes
+        // AMBIENT GLOW
+        this.engine.scene.add(new THREE.AmbientLight(0x222222));
+        
+        // STARFIELD
         const starGeo = new THREE.BufferGeometry();
         const stars = [];
-        for(let i=0; i<15000; i++) stars.push((Math.random()-0.5)*8000, (Math.random()-0.5)*8000, (Math.random()-0.5)*8000);
+        for(let i=0; i<8000; i++) stars.push((Math.random()-0.5)*5000, (Math.random()-0.5)*5000, (Math.random()-0.5)*5000);
         starGeo.setAttribute('position', new THREE.Float32BufferAttribute(stars, 3));
-        this.engine.scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 1.5, transparent: true, opacity: 0.8})));
+        this.engine.scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0x00ffcc, size: 2})));
 
-        this.engine.camera.position.set(0, 20, 300);
+        this.engine.camera.position.set(0, 10, 100);
     },
 
     setupTouch() {
         const handle = (id, key) => {
             const el = document.getElementById(id);
             const knob = document.getElementById(id[0] + '-knob');
-            const move = (e) => {
+            const touch = (e) => {
                 e.preventDefault();
                 const t = e.touches[0];
                 const r = el.getBoundingClientRect();
-                this.input[key] = { 
-                    x: (t.clientX - (r.left + r.width/2)) / (r.width/2), 
-                    y: (t.clientY - (r.top + r.height/2)) / (r.height/2) 
-                };
+                this.input[key] = { x: (t.clientX - (r.left + r.width/2)) / (r.width/2), y: (t.clientY - (r.top + r.height/2)) / (r.width/2) };
                 knob.style.transform = `translate(${this.input[key].x * 20}px, ${this.input[key].y * 20}px)`;
             };
-            const reset = () => { this.input[key] = {x:0, y:0}; knob.style.transform = `translate(0,0)`; };
-            el.addEventListener('touchstart', move, {passive: false});
-            el.addEventListener('touchmove', move, {passive: false});
-            el.addEventListener('touchend', reset);
+            el.addEventListener('touchstart', touch, {passive: false});
+            el.addEventListener('touchmove', touch, {passive: false});
+            el.addEventListener('touchend', () => { this.input[key] = {x:0, y:0}; knob.style.transform = 'translate(0,0)'; });
         };
         handle('move-joy', 'move'); handle('look-joy', 'look');
     },
@@ -125,56 +98,45 @@ const app = {
             const data = await res.json();
             this.renderTable(data);
             this.plotAsteroids(data);
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Link error", e); }
     },
 
     plotAsteroids(data) {
         data.data.forEach((row, i) => {
             const a = parseFloat(row[1]);
-            // REALISTIC GEOMETRY: Jagged Asteroid look
-            const geo = new THREE.DodecahedronGeometry(Math.random() * 4 + 2, 0);
+            const geo = new THREE.DodecahedronGeometry(8, 0); // Much larger asteroids
             const mat = new THREE.MeshStandardMaterial({ 
-                color: 0x444444, 
-                roughness: 0.8, 
-                metalness: 0.2,
+                color: 0x00ffcc, 
+                wireframe: true,
                 emissive: 0x00ffcc,
-                emissiveIntensity: 0.05
+                emissiveIntensity: 0.5 
             });
             const mesh = new THREE.Mesh(geo, mat);
-            
-            const dist = a * 250;
+            const dist = a * 300;
             const angle = (i / data.data.length) * Math.PI * 2;
-            mesh.position.set(Math.cos(angle)*dist, (Math.random()-0.5)*100, Math.sin(angle)*dist);
-            mesh.rotation.set(Math.random(), Math.random(), Math.random());
-            
+            mesh.position.set(Math.cos(angle)*dist, (Math.random()-0.5)*200, Math.sin(angle)*dist);
             this.engine.scene.add(mesh);
             this.engine.asteroids.push(mesh);
         });
     },
 
     renderTable(data) {
-        let html = `<table class="table table-monitor"><thead><tr>`;
-        data.fields.forEach(f => html += `<th>${f}</th>`);
-        html += `</tr></thead><tbody>`;
-        data.data.slice(0, 15).forEach(row => {
-            html += `<tr>${row.map(c => `<td>${c}</td>`).join('')}</tr>`;
-        });
-        document.getElementById('sbdb_query-out').innerHTML = html + "</tbody></table>";
+        let h = `<table class="table table-monitor"><thead><tr><th>Name</th><th>A</th><th>E</th><th>Q</th></tr></thead><tbody>`;
+        data.data.slice(0, 12).forEach(r => h += `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`);
+        document.getElementById('sbdb_query-out').innerHTML = h + "</tbody></table>";
     },
 
     animate() {
         requestAnimationFrame(() => this.animate());
-        this.engine.camera.translateZ(this.input.move.y * -8);
-        this.engine.camera.translateX(this.input.move.x * 8);
-        this.engine.camera.rotation.y -= this.input.look.x * 0.04;
-        this.engine.camera.rotation.x -= this.input.look.y * 0.04;
-        this.engine.asteroids.forEach(a => { a.rotation.y += 0.005; a.rotation.x += 0.002; });
+        this.engine.camera.translateZ(this.input.move.y * -10);
+        this.engine.camera.translateX(this.input.move.x * 10);
+        this.engine.camera.rotation.y -= this.input.look.x * 0.05;
+        this.engine.camera.rotation.x -= this.input.look.y * 0.05;
+        this.engine.asteroids.forEach(a => a.rotation.y += 0.01);
         this.engine.renderer.render(this.engine.scene, this.engine.camera);
     }
 };
-
 window.onload = () => app.init();
 </script>
 </body>
 </html>
-  
