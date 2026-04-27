@@ -1,53 +1,65 @@
-<!DOCTYPE html>
+      <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JPL Star-Surfer: Mobile Edition</title>
+    <title>JPL Star-Surfer: Cinematic Edition</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { background: #000; color: #0f0; font-family: monospace; overflow-x: hidden; touch-action: none; }
+        :root { --glow: #00ffcc; --dark-green: #002211; }
+        body { background: #000; color: var(--glow); font-family: 'Courier New', monospace; overflow: hidden; touch-action: none; }
         
-        /* 3D Viewport */
-        #space-viewport {
-            width: 100%; height: 60vh; background: #000; position: relative;
-            border-bottom: 2px solid #0f0;
+        #space-viewport { width: 100%; height: 65vh; position: relative; border-bottom: 2px solid var(--glow); }
+
+        /* CRT MONITOR STYLING */
+        #data-section { 
+            height: 35vh; overflow-y: auto; padding: 15px; 
+            background: radial-gradient(circle, #001100 0%, #000 100%);
+            position: relative;
         }
 
-        /* Mobile Joysticks - Only visible on touch */
+        /* CRT Scanline Effect */
+        #data-section::before {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 10; background-size: 100% 4px, 3px 100%; pointer-events: none;
+        }
+
+        /* Flickering Animation */
+        @keyframes flicker {
+            0% { opacity: 0.97; } 5% { opacity: 0.95; } 10% { opacity: 0.9; } 100% { opacity: 1; }
+        }
+        #data-section { animation: flicker 0.15s infinite; }
+
+        .table-monitor { color: var(--glow); border-color: var(--dark-green); text-shadow: 0 0 5px var(--glow); }
+        .table-monitor th { border-bottom: 2px solid var(--glow); text-transform: uppercase; letter-spacing: 2px; }
+
         .joystick {
-            position: absolute; bottom: 20px; width: 80px; height: 80px;
-            background: rgba(0, 255, 0, 0.1); border: 1px dashed #0f0;
-            border-radius: 50%; z-index: 1000; display: flex; align-items: center; justify-content: center;
+            position: absolute; bottom: 20px; width: 70px; height: 70px;
+            background: rgba(0, 255, 204, 0.1); border: 1px solid var(--glow);
+            border-radius: 50%; z-index: 1000; box-shadow: 0 0 15px var(--glow);
         }
-        #move-joy { left: 20px; }
-        #look-joy { right: 20px; }
-        .knob { width: 30px; height: 30px; background: #0f0; border-radius: 50%; opacity: 0.5; }
-
-        /* Data Section */
-        #data-section { height: 40vh; overflow-y: auto; padding: 15px; background: #050505; }
-        .table-dark { font-size: 0.75rem; border-color: #030; }
-        .status { font-size: 10px; color: #0f0; margin-bottom: 10px; }
+        #move-joy { left: 20px; } #look-joy { right: 20px; }
+        .knob { width: 25px; height: 25px; background: var(--glow); border-radius: 50%; box-shadow: 0 0 10px #fff; }
     </style>
 </head>
 <body>
 
 <div id="space-viewport">
-    <div style="position:absolute; top:10px; left:10px; z-index:10; font-size:10px;">SYSTEM: STAR-SURFER MOBILE</div>
-    
     <div id="move-joy" class="joystick"><div class="knob" id="m-knob"></div></div>
     <div id="look-joy" class="joystick"><div class="knob" id="l-knob"></div></div>
 </div>
 
 <div id="data-section">
-    <div class="status" id="api-status">📡 LINKING TO NASA JPL...</div>
+    <div style="font-size: 12px; margin-bottom: 5px;">[ STATUS: INTERCEPTING JPL TELEMETRY... ]</div>
     <div id="sbdb_query-out"></div>
 </div>
 
 <script>
 const app = {
-    endpoint: "https://ssd-api.jpl.nasa.gov/sbdb_query.api?fields=full_name,a,e,i,om,w&sb-class=IEO",
+    endpoint: "https://ssd-api.jpl.nasa.gov/sbdb_query.api?fields=full_name,a,e,q,i,om&sb-class=IEO",
     proxy: "https://corsproxy.io/?",
     input: { move: {x:0, y:0}, look: {x:0, y:0} },
     engine: { scene: null, camera: null, renderer: null, asteroids: [] },
@@ -62,24 +74,27 @@ const app = {
     setup3D() {
         const container = document.getElementById('space-viewport');
         this.engine.scene = new THREE.Scene();
-        this.engine.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 5000);
+        this.engine.scene.fog = new THREE.FogExp2(0x000000, 0.001); // Adds deep space depth
+
+        this.engine.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 10000);
         this.engine.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.engine.renderer.setSize(container.clientWidth, container.clientHeight);
         container.appendChild(this.engine.renderer.domElement);
 
-        // Lights (Crucial so objects aren't black)
-        this.engine.scene.add(new THREE.AmbientLight(0x444444));
-        const sunLight = new THREE.PointLight(0xffffff, 2, 2000);
-        this.engine.scene.add(sunLight);
+        // Realistic Lighting
+        this.engine.scene.add(new THREE.AmbientLight(0x111111));
+        const sun = new THREE.PointLight(0x00ffcc, 3, 5000);
+        sun.position.set(500, 500, 500);
+        this.engine.scene.add(sun);
 
-        // Starfield
+        // Starfield with varying sizes
         const starGeo = new THREE.BufferGeometry();
         const stars = [];
-        for(let i=0; i<10000; i++) stars.push((Math.random()-0.5)*3000, (Math.random()-0.5)*3000, (Math.random()-0.5)*3000);
+        for(let i=0; i<15000; i++) stars.push((Math.random()-0.5)*8000, (Math.random()-0.5)*8000, (Math.random()-0.5)*8000);
         starGeo.setAttribute('position', new THREE.Float32BufferAttribute(stars, 3));
-        this.engine.scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0x00ffff, size: 1})));
+        this.engine.scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 1.5, transparent: true, opacity: 0.8})));
 
-        this.engine.camera.position.set(0, 50, 200);
+        this.engine.camera.position.set(0, 20, 300);
     },
 
     setupTouch() {
@@ -90,21 +105,18 @@ const app = {
                 e.preventDefault();
                 const t = e.touches[0];
                 const r = el.getBoundingClientRect();
-                const x = (t.clientX - (r.left + r.width/2)) / (r.width/2);
-                const y = (t.clientY - (r.top + r.height/2)) / (r.height/2);
-                this.input[key] = { x: Math.max(-1, Math.min(1, x)), y: Math.max(-1, Math.min(1, y)) };
+                this.input[key] = { 
+                    x: (t.clientX - (r.left + r.width/2)) / (r.width/2), 
+                    y: (t.clientY - (r.top + r.height/2)) / (r.height/2) 
+                };
                 knob.style.transform = `translate(${this.input[key].x * 20}px, ${this.input[key].y * 20}px)`;
             };
-            const reset = () => {
-                this.input[key] = {x:0, y:0};
-                knob.style.transform = `translate(0,0)`;
-            };
+            const reset = () => { this.input[key] = {x:0, y:0}; knob.style.transform = `translate(0,0)`; };
             el.addEventListener('touchstart', move, {passive: false});
             el.addEventListener('touchmove', move, {passive: false});
             el.addEventListener('touchend', reset);
         };
-        handle('move-joy', 'move');
-        handle('look-joy', 'look');
+        handle('move-joy', 'move'); handle('look-joy', 'look');
     },
 
     async fetchData() {
@@ -113,32 +125,38 @@ const app = {
             const data = await res.json();
             this.renderTable(data);
             this.plotAsteroids(data);
-            document.getElementById('api-status').innerText = "SYSTEM SYNCHRONIZED";
-        } catch (e) {
-            document.getElementById('api-status').innerText = "LINK FAILED";
-        }
+        } catch (e) { console.error(e); }
     },
 
     plotAsteroids(data) {
         data.data.forEach((row, i) => {
             const a = parseFloat(row[1]);
-            const mesh = new THREE.Mesh(
-                new THREE.IcosahedronGeometry(2, 0),
-                new THREE.MeshStandardMaterial({ color: 0x00ffcc, wireframe: true })
-            );
-            const dist = a * 150;
+            // REALISTIC GEOMETRY: Jagged Asteroid look
+            const geo = new THREE.DodecahedronGeometry(Math.random() * 4 + 2, 0);
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: 0x444444, 
+                roughness: 0.8, 
+                metalness: 0.2,
+                emissive: 0x00ffcc,
+                emissiveIntensity: 0.05
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            
+            const dist = a * 250;
             const angle = (i / data.data.length) * Math.PI * 2;
-            mesh.position.set(Math.cos(angle)*dist, (Math.random()-0.5)*50, Math.sin(angle)*dist);
+            mesh.position.set(Math.cos(angle)*dist, (Math.random()-0.5)*100, Math.sin(angle)*dist);
+            mesh.rotation.set(Math.random(), Math.random(), Math.random());
+            
             this.engine.scene.add(mesh);
             this.engine.asteroids.push(mesh);
         });
     },
 
     renderTable(data) {
-        let html = `<table class="table table-dark table-striped"><thead><tr>`;
+        let html = `<table class="table table-monitor"><thead><tr>`;
         data.fields.forEach(f => html += `<th>${f}</th>`);
         html += `</tr></thead><tbody>`;
-        data.data.slice(0, 20).forEach(row => {
+        data.data.slice(0, 15).forEach(row => {
             html += `<tr>${row.map(c => `<td>${c}</td>`).join('')}</tr>`;
         });
         document.getElementById('sbdb_query-out').innerHTML = html + "</tbody></table>";
@@ -146,14 +164,11 @@ const app = {
 
     animate() {
         requestAnimationFrame(() => this.animate());
-        
-        // Flight Physics
-        this.engine.camera.translateZ(this.input.move.y * -5);
-        this.engine.camera.translateX(this.input.move.x * 5);
-        this.engine.camera.rotation.y -= this.input.look.x * 0.03;
-        this.engine.camera.rotation.x -= this.input.look.y * 0.03;
-
-        this.engine.asteroids.forEach(a => a.rotation.y += 0.01);
+        this.engine.camera.translateZ(this.input.move.y * -8);
+        this.engine.camera.translateX(this.input.move.x * 8);
+        this.engine.camera.rotation.y -= this.input.look.x * 0.04;
+        this.engine.camera.rotation.x -= this.input.look.y * 0.04;
+        this.engine.asteroids.forEach(a => { a.rotation.y += 0.005; a.rotation.x += 0.002; });
         this.engine.renderer.render(this.engine.scene, this.engine.camera);
     }
 };
@@ -162,3 +177,4 @@ window.onload = () => app.init();
 </script>
 </body>
 </html>
+  
