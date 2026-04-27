@@ -1,5 +1,8 @@
 name: Build Android APK
-on: [push]
+on: 
+  push:
+    branches:
+      - main  # Adjust this if your default branch is named differently
 
 jobs:
   build:
@@ -9,24 +12,27 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Node.js
-        uses: actions/apps/node@v3
+        uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build Android Project
+      - name: Install Capacitor
         run: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          
+      - name: Build Android Project
+        # This part enters your NASA folder to run the build
+        run: |
+          cd NASA
           npx cap add android
           npx cap sync android
 
       - name: Build Debug APK
         run: |
-          cd android && ./gradlew assembleDebug
+          cd NASA/android && ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Rename and Upload APK
         uses: actions/upload-artifact@v3
         with:
-          name: star-surfer-app
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: nasa-space-apk
+          path: NASA/android/app/build/outputs/apk/debug/app-debug.apk
