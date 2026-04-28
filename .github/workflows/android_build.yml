@@ -11,19 +11,24 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
 
+      - name: Setup Java 21
+        # FIXED: This ensures the Java compiler is ready for Capacitor
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - name: Prepare Web Assets
-        # This creates the 'www' folder Capacitor is looking for
         run: |
           cd NASA
-          mkdir www
-          cp index.html app.js sw.js manifest.json www/
-          # If you have other .js files like api-config.js, add them here:
-          cp api-config.js www/ || true 
+          mkdir -p www
+          cp index.html app.js sw.js manifest.json api-config.js www/ || true
+          cp "manifest json" www/manifest.json || true
 
       - name: Install Dependencies
         run: |
@@ -33,7 +38,9 @@ jobs:
       - name: Initialize Android Project
         run: |
           cd NASA
+          rm -rf android
           npx cap add android
+          npx cap copy android
           npx cap sync android
 
       - name: Build Debug APK
