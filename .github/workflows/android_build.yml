@@ -29,8 +29,11 @@ jobs:
         run: |
           cd NASA
           mkdir -p www
-          # Search for icon in both root and NASA folder
-          cp ../icon.png icon.png || cp icon.png icon.png || true 
+          # Check for the icon and STOP if missing
+          if [ ! -f "icon.png" ]; then
+            echo "❌ ERROR: icon.png is missing from the NASA folder!"
+            exit 1
+          fi
           cp index.html app.js sw.js manifest.json api-config.js icon.png www/ || true
           cp "manifest json" www/manifest.json || true
 
@@ -54,12 +57,12 @@ jobs:
           mkdir -p android/app/src/main/res/mipmap-xxhdpi
           mkdir -p android/app/src/main/res/mipmap-xxxhdpi
 
-          # Force resize. If icon.png is missing, we will know.
-          convert icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          convert icon.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-          convert icon.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          convert icon.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-          convert icon.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          # This will only run if icon.png was found
+          magick icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          magick icon.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          magick icon.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          magick icon.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          magick icon.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           
           find android/app/src/main/res -name "ic_launcher.png" -execdir cp {} ic_launcher_round.png \;
 
@@ -80,5 +83,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nasa-space-apk
-          # We use a wildcard (*) here to find the file regardless of the exact sub-folder path
           path: "**/app-debug.apk"
