@@ -22,8 +22,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Setup ImageMagick (For Icon Cropping)
-        # We need this tool to handle the image manipulation safely in the cloud
+      - name: Setup ImageMagick
         run: sudo apt-get update && sudo apt-get install -y imagemagick
 
       - name: Prepare Web Assets
@@ -32,15 +31,6 @@ jobs:
           mkdir -p www
           cp index.html app.js sw.js manifest.json api-config.js www/ || true
           cp "manifest json" www/manifest.json || true
-          # We need a copy of the icon in the working directory for the next step
-          cp icon.png www/icon.png || true
-
-      - name: Generate Android App Icons
-        # This uses cordova-res to auto-crop, auto-size, and auto-place your icons
-        run: |
-          cd NASA
-          npx cordova-res --icon src:icon.png --platform android
-          # The icons are now generated in NASA/resources/android/icon
 
       - name: Install Dependencies
         run: |
@@ -52,17 +42,36 @@ jobs:
           cd NASA
           rm -rf android
           npx cap add android
-          
-          # CRITICAL STEP: Copy the generated icons from resources into the native project
-          mkdir -p android/app/src/main/res
-          cp -r resources/android/icon/* android/app/src/main/res/
-          
-          npx cap copy android
-          npx cap sync android
 
-      - name: Build Debug APK
+      - name: Generate and Inject App Icons
         run: |
-          cd NASA/android && ./gradlew assembleDebug
+          cd NASA
+          # Create the required Android resource folders
+          mkdir -p android/app/src/main/res/mipmap-mdpi
+          mkdir -p android/app/src/main/res/mipmap-hdpi
+          mkdir -p android/app/src/main/res/mipmap-xhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+
+          # Resize your icon.png into all the required sizes
+          convert icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          convert icon.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          convert icon.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          convert icon.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          convert icon.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          
+          # Copy to 'round' icons as well so Android 11+ looks good
+          cp android/app/src/main/res/mipmap-mdpi/ic_launcher.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+          cp android/app/src/main/res/mipmap-hdpi/ic_launcher.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+          cp android/app/src/main/res/mipmap-xhdpi/ic_launcher.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+          cp android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+          cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+
+      - name: Sync and Build
+        run: |
+          cd NASA
+          npx cap sync android
+          cd android && ./gradlew assembleDebug
 
       - name: Upload nasa-space.apk
         uses: actions/upload-artifact@v4
