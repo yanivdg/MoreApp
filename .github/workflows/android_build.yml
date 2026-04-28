@@ -29,15 +29,11 @@ jobs:
         run: |
           cd NASA
           mkdir -p www
-          # If icon.png is in the root, move it into NASA
-          if [ -f "../icon.png" ]; then cp ../icon.png icon.png; fi
-          
-          # Check for the icon and STOP if missing
+          # Critical Check: Stop build if icon.png is missing
           if [ ! -f "icon.png" ]; then
-            echo "❌ ERROR: icon.png is missing! Please upload it to the NASA folder."
+            echo "❌ ERROR: icon.png not found in NASA folder. Please upload it!"
             exit 1
           fi
-          
           cp index.html app.js sw.js manifest.json api-config.js icon.png www/ || true
           cp "manifest json" www/manifest.json || true
 
@@ -55,23 +51,24 @@ jobs:
       - name: Generate and Inject App Icons
         run: |
           cd NASA
-          mkdir -p android/app/src/main/res/mipmap-mdpi
-          mkdir -p android/app/src/main/res/mipmap-hdpi
-          mkdir -p android/app/src/main/res/mipmap-xhdpi
-          mkdir -p android/app/src/main/res/mipmap-xxhdpi
-          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+          # Create Android resource folders
+          for dir in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p android/app/src/main/res/mipmap-$dir
+          done
 
-          # Using 'convert' instead of 'magick' for compatibility
-          convert icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          convert icon.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-          convert icon.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          convert icon.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-          convert icon.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          # Force Square Center-Crop and Resize (Handles any input size/shape)
+          convert icon.png -thumbnail 48x48^   -gravity center -extent 48x48   android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          convert icon.png -thumbnail 72x72^   -gravity center -extent 72x72   android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          convert icon.png -resize    96x96    -gravity center -extent 96x96   android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          convert icon.png -resize    144x144  -gravity center -extent 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          convert icon.png -resize    192x192  -gravity center -extent 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           
+          # Create Round Icon variants
           find android/app/src/main/res -name "ic_launcher.png" -execdir cp {} ic_launcher_round.png \;
 
-      - name: Fix Adaptive Icons
+      - name: Fix Adaptive Icons (Android 8+)
         run: |
+          # Forces Android to use our generated icon instead of the default grid
           RES_DIR="NASA/android/app/src/main/res/mipmap-anydpi-v26"
           mkdir -p $RES_DIR
           echo '<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@android:color/black"/><foreground android:drawable="@mipmap/ic_launcher"/></adaptive-icon>' > $RES_DIR/ic_launcher.xml
