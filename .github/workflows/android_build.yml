@@ -29,7 +29,7 @@ jobs:
         run: |
           cd NASA
           mkdir -p www
-          cp index.html app.js sw.js manifest.json api-config.js www/ || true
+          cp index.html app.js sw.js manifest.json api-config.js icon.png www/ || true
           cp "manifest json" www/manifest.json || true
 
       - name: Install Dependencies
@@ -46,28 +46,32 @@ jobs:
       - name: Generate and Inject App Icons
         run: |
           cd NASA
-          # Create the required Android resource folders
+          # Create folders
           mkdir -p android/app/src/main/res/mipmap-mdpi
           mkdir -p android/app/src/main/res/mipmap-hdpi
           mkdir -p android/app/src/main/res/mipmap-xhdpi
           mkdir -p android/app/src/main/res/mipmap-xxhdpi
           mkdir -p android/app/src/main/res/mipmap-xxxhdpi
 
-          # Resize your icon.png into all the required sizes
+          # Convert icon.png to various sizes
           convert icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           convert icon.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           convert icon.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
           convert icon.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
           convert icon.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           
-          # Copy to 'round' icons as well so Android 11+ looks good
-          cp android/app/src/main/res/mipmap-mdpi/ic_launcher.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
-          cp android/app/src/main/res/mipmap-hdpi/ic_launcher.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
-          cp android/app/src/main/res/mipmap-xhdpi/ic_launcher.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
-          cp android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
-          cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+          # Copy to round icon filenames
+          find android/app/src/main/res -name "ic_launcher.png" -execdir cp {} ic_launcher_round.png \;
 
-      - name: Sync and Build
+      - name: Fix Adaptive Icons (Android 8+)
+        run: |
+          # This forces Android to stop using the default 'Background/Foreground' layers and use your icon instead
+          RES_DIR="NASA/android/app/src/main/res/mipmap-anydpi-v26"
+          mkdir -p $RES_DIR
+          echo '<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@android:color/black"/><foreground android:drawable="@mipmap/ic_launcher"/></adaptive-icon>' > $RES_DIR/ic_launcher.xml
+          cp $RES_DIR/ic_launcher.xml $RES_DIR/ic_launcher_round.xml
+
+      - name: Final Sync and Build
         run: |
           cd NASA
           npx cap sync android
