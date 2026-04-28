@@ -1,6 +1,6 @@
 {
-  "appId": "com.yanivdg.nasascout",
-  "appName": "NASA Star Surfer",
-  "webDir": ".",
+  "appId": "com.yanivdg.nasaspace",
+  "appName": "NASA Space",
+  "webDir": "www",
   "bundledWebRuntime": false
 }
