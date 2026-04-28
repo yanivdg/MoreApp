@@ -12,7 +12,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Java 21
-        # FIXED: This ensures the Java compiler is ready for Capacitor
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
@@ -23,12 +22,25 @@ jobs:
         with:
           node-version: 22
 
+      - name: Setup ImageMagick (For Icon Cropping)
+        # We need this tool to handle the image manipulation safely in the cloud
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
       - name: Prepare Web Assets
         run: |
           cd NASA
           mkdir -p www
           cp index.html app.js sw.js manifest.json api-config.js www/ || true
           cp "manifest json" www/manifest.json || true
+          # We need a copy of the icon in the working directory for the next step
+          cp icon.png www/icon.png || true
+
+      - name: Generate Android App Icons
+        # This uses cordova-res to auto-crop, auto-size, and auto-place your icons
+        run: |
+          cd NASA
+          npx cordova-res --icon src:icon.png --platform android
+          # The icons are now generated in NASA/resources/android/icon
 
       - name: Install Dependencies
         run: |
@@ -40,6 +52,11 @@ jobs:
           cd NASA
           rm -rf android
           npx cap add android
+          
+          # CRITICAL STEP: Copy the generated icons from resources into the native project
+          mkdir -p android/app/src/main/res
+          cp -r resources/android/icon/* android/app/src/main/res/
+          
           npx cap copy android
           npx cap sync android
 
