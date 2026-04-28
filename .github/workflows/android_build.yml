@@ -29,6 +29,8 @@ jobs:
         run: |
           cd NASA
           mkdir -p www
+          # Look for icon.png in NASA folder or one level up
+          cp ../icon.png icon.png || true 
           cp index.html app.js sw.js manifest.json api-config.js icon.png www/ || true
           cp "manifest json" www/manifest.json || true
 
@@ -53,7 +55,7 @@ jobs:
           mkdir -p android/app/src/main/res/mipmap-xxhdpi
           mkdir -p android/app/src/main/res/mipmap-xxxhdpi
 
-          # Convert icon.png to various sizes
+          # Force resize. If icon.png is missing, this will fail here so we know why!
           convert icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           convert icon.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           convert icon.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
@@ -63,9 +65,8 @@ jobs:
           # Copy to round icon filenames
           find android/app/src/main/res -name "ic_launcher.png" -execdir cp {} ic_launcher_round.png \;
 
-      - name: Fix Adaptive Icons (Android 8+)
+      - name: Fix Adaptive Icons (Force our Icon)
         run: |
-          # This forces Android to stop using the default 'Background/Foreground' layers and use your icon instead
           RES_DIR="NASA/android/app/src/main/res/mipmap-anydpi-v26"
           mkdir -p $RES_DIR
           echo '<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@android:color/black"/><foreground android:drawable="@mipmap/ic_launcher"/></adaptive-icon>' > $RES_DIR/ic_launcher.xml
@@ -76,9 +77,11 @@ jobs:
           cd NASA
           npx cap sync android
           cd android && ./gradlew assembleDebug
+          # Rename the actual file before uploading
+          mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/nasa-space.apk
 
       - name: Upload nasa-space.apk
         uses: actions/upload-artifact@v4
         with:
           name: nasa-space-apk
-          path: NASA/android/app/build/outputs/apk/debug/app-debug.apk
+          path: NASA/android/app/build/outputs/apk/debug/nasa-space.apk
