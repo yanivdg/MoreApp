@@ -29,9 +29,8 @@ jobs:
         run: |
           cd NASA
           mkdir -p www
-          # Critical Check: Stop build if icon.png is missing
           if [ ! -f "icon.png" ]; then
-            echo "❌ ERROR: icon.png not found in NASA folder. Please upload it!"
+            echo "❌ ERROR: icon.png not found in NASA folder."
             exit 1
           fi
           cp index.html app.js sw.js manifest.json api-config.js icon.png www/ || true
@@ -51,24 +50,18 @@ jobs:
       - name: Generate and Inject App Icons
         run: |
           cd NASA
-          # Create Android resource folders
           for dir in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
             mkdir -p android/app/src/main/res/mipmap-$dir
           done
-
-          # Force Square Center-Crop and Resize (Handles any input size/shape)
           convert icon.png -thumbnail 48x48^   -gravity center -extent 48x48   android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           convert icon.png -thumbnail 72x72^   -gravity center -extent 72x72   android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           convert icon.png -resize    96x96    -gravity center -extent 96x96   android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
           convert icon.png -resize    144x144  -gravity center -extent 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
           convert icon.png -resize    192x192  -gravity center -extent 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-          
-          # Create Round Icon variants
           find android/app/src/main/res -name "ic_launcher.png" -execdir cp {} ic_launcher_round.png \;
 
-      - name: Fix Adaptive Icons (Android 8+)
+      - name: Fix Adaptive Icons
         run: |
-          # Forces Android to use our generated icon instead of the default grid
           RES_DIR="NASA/android/app/src/main/res/mipmap-anydpi-v26"
           mkdir -p $RES_DIR
           echo '<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@android:color/black"/><foreground android:drawable="@mipmap/ic_launcher"/></adaptive-icon>' > $RES_DIR/ic_launcher.xml
@@ -80,8 +73,13 @@ jobs:
           npx cap sync android
           cd android && ./gradlew assembleDebug
 
+      - name: Rename and Prepare APK
+        run: |
+          # Finds the generated APK and renames it to your specific name
+          find . -name "app-debug.apk" -exec mv {} nasa-space.apk \;
+
       - name: Upload nasa-space.apk
         uses: actions/upload-artifact@v4
         with:
           name: nasa-space-apk
-          path: "**/app-debug.apk"
+          path: nasa-space.apk
