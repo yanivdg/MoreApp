@@ -14,7 +14,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22  # FIXED: Updated to version 22 to satisfy Capacitor CLI
+          node-version: 22
+
+      - name: Prepare Web Assets
+        # This creates the 'www' folder Capacitor is looking for
+        run: |
+          cd NASA
+          mkdir www
+          cp index.html app.js sw.js manifest.json www/
+          # If you have other .js files like api-config.js, add them here:
+          cp api-config.js www/ || true 
 
       - name: Install Dependencies
         run: |
