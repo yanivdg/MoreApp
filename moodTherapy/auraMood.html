@@ -51,7 +51,7 @@
 
     /* Glassmorphism System */
     .glass-panel {
-      background: rgba(9, 13, 24, 0.62);
+      background: rgba(9, 13, 24, 0.72);
       backdrop-filter: blur(26px) saturate(165%);
       -webkit-backdrop-filter: blur(26px) saturate(165%);
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -144,12 +144,18 @@
       transform: scaleX(-1);
     }
 
+    /* Allow text selection inside logs drawer */
+    #logs-feed-container {
+      user-select: text;
+    }
+
     /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 4px;
+      height: 4px;
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.22);
       border-radius: 999px;
     }
   </style>
@@ -250,9 +256,9 @@
     <!-- TOP BAR: Brand / Controls / Session Journey + Live Biometric Camera Card -->
     <div class="flex flex-wrap items-start justify-between gap-3">
 
-      <!-- Left: System Title, Utility Controls & Biometric Session Journey -->
-      <div class="pointer-events-auto flex flex-col gap-2 max-w-xs sm:max-w-sm">
-        <div class="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3">
+      <!-- Left: System Title, Utility Controls & Diagnostic/Journey Drawers -->
+      <div class="pointer-events-auto flex flex-col gap-2 max-w-full sm:max-w-lg z-30">
+        <div class="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3 w-fit">
           <div class="relative flex items-center justify-center w-3 h-3">
             <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_12px_#2dd4bf]"></span>
           </div>
@@ -295,6 +301,76 @@
             </svg>
             <span>Journey (<span id="journey-count">0</span>)</span>
           </button>
+
+          <!-- Diagnostic Telemetry Logs Toggle -->
+          <button id="btn-logs-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-sky-200 flex items-center gap-1.5 cursor-pointer" title="Inspect Real vs Fallback Telemetry & Live Event Logs">
+            <svg class="w-3.5 h-3.5 text-sky-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>Logs</span>
+            <span id="logs-alert-badge" class="hidden mono text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/25 text-amber-200 border border-amber-400/40">0</span>
+          </button>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- DIAGNOSTIC TELEMETRY & EVENT LOGGER DRAWER                -->
+        <!-- ========================================================= -->
+        <div id="logs-drawer" class="hidden glass-panel rounded-2xl p-3.5 w-[92vw] sm:w-[460px] animate-float-up border border-sky-400/25">
+          <!-- Header & Export Controls -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 mb-2.5 border-b border-white/10">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+              <span class="text-xs font-semibold text-white tracking-wide">System Telemetry & Truth Logs</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button id="btn-copy-logs" class="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] mono text-slate-200 cursor-pointer transition-colors" title="Copy logs to clipboard">
+                Copy
+              </button>
+              <button id="btn-download-logs" class="px-2 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/30 text-[10px] mono text-sky-200 cursor-pointer transition-colors" title="Download full diagnostic report as TXT">
+                Export .TXT
+              </button>
+              <button id="btn-clear-logs" class="px-2 py-1 rounded-lg bg-white/5 hover:bg-rose-500/25 text-[10px] mono text-slate-400 hover:text-rose-200 cursor-pointer transition-colors">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <!-- Real-Time Subsystem Ground Truth Badges -->
+          <div class="grid grid-cols-3 gap-1.5 mb-2.5 text-[10px]">
+            <div class="rounded-xl bg-black/40 border border-white/10 p-2">
+              <div class="text-slate-400 uppercase tracking-wider text-[9px] mb-0.5">Vision Engine</div>
+              <div id="truth-vision-badge" class="mono font-semibold text-amber-300 truncate">IDLE / INIT</div>
+            </div>
+            <div class="rounded-xl bg-black/40 border border-white/10 p-2">
+              <div class="text-slate-400 uppercase tracking-wider text-[9px] mb-0.5">AI Coach</div>
+              <div id="truth-ai-badge" class="mono font-semibold text-slate-300 truncate">STANDBY</div>
+            </div>
+            <div class="rounded-xl bg-black/40 border border-white/10 p-2">
+              <div class="text-slate-400 uppercase tracking-wider text-[9px] mb-0.5">Vision FPS / Age</div>
+              <div id="truth-fps-badge" class="mono font-semibold text-teal-300 truncate">0.0 fps • --</div>
+            </div>
+          </div>
+
+          <!-- Filter Tabs -->
+          <div class="flex items-center gap-1 mb-2 text-[10px] mono">
+            <button data-log-filter="ALL" class="log-filter-btn px-2.5 py-1 rounded-lg bg-white/15 text-white font-semibold cursor-pointer">
+              All (<span id="count-log-all">0</span>)
+            </button>
+            <button data-log-filter="VISION" class="log-filter-btn px-2.5 py-1 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer">
+              Vision
+            </button>
+            <button data-log-filter="AI" class="log-filter-btn px-2.5 py-1 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer">
+              AI
+            </button>
+            <button data-log-filter="ALERT" class="log-filter-btn px-2.5 py-1 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer">
+              Fallbacks/Err
+            </button>
+          </div>
+
+          <!-- Scrollable Terminal Log Feed -->
+          <div id="logs-feed-container" class="bg-slate-950/80 border border-white/10 rounded-xl p-2.5 max-h-52 overflow-y-auto space-y-1.5 mono text-[10px] leading-relaxed">
+            <!-- Populated dynamically by AuraLogger -->
+          </div>
         </div>
 
         <!-- Live Biometric Session Journey Drawer -->
@@ -572,15 +648,216 @@
   <!-- MAIN APPLICATION SCRIPT (4K WEBGL + MEDIAPIPE + GEMINI)   -->
   <!-- ========================================================= -->
   <script type="module">
+    /**
+     * ============================================================================
+     * 0. DIAGNOSTIC TELEMETRY & REAL-VS-FALLBACK EVENT LOGGER
+     * ============================================================================
+     */
+    const AuraLogger = {
+      entries: [],
+      maxEntries: 250,
+      filter: "ALL",
+      alertCount: 0,
+      visionTruth: "IDLE / INIT",
+      aiTruth: "STANDBY",
+      inferenceFps: 0,
+      lastInferenceTime: 0,
+      framesInWindow: 0,
+      fpsWindowStart: performance.now(),
+      lastTelemetryLogTime: 0,
+
+      formatTimestamp(date = new Date()) {
+        const hh = String(date.getHours()).padStart(2, "0");
+        const mm = String(date.getMinutes()).padStart(2, "0");
+        const ss = String(date.getSeconds()).padStart(2, "0");
+        const ms = String(date.getMilliseconds()).padStart(3, "0");
+        return `${hh}:${mm}:${ss}.${ms}`;
+      },
+
+      log(category, level, message, details = null) {
+        const entry = {
+          id: this.entries.length + 1,
+          ts: this.formatTimestamp(),
+          iso: new Date().toISOString(),
+          category, // "VISION" | "AI" | "AUDIO" | "SYSTEM"
+          level,    // "INFO" | "REAL" | "FALLBACK" | "WARN" | "ERROR"
+          message,
+          details
+        };
+
+        this.entries.push(entry);
+        if (this.entries.length > this.maxEntries) {
+          this.entries.shift();
+        }
+
+        if (level === "FALLBACK" || level === "WARN" || level === "ERROR") {
+          this.alertCount += 1;
+          const badge = document.getElementById("logs-alert-badge");
+          if (badge) {
+            badge.textContent = this.alertCount;
+            badge.classList.remove("hidden");
+          }
+        }
+
+        const countAllEl = document.getElementById("count-log-all");
+        if (countAllEl) countAllEl.textContent = this.entries.length;
+
+        this.renderEntry(entry);
+      },
+
+      setVisionTruth(statusText, tone = "warn") {
+        this.visionTruth = statusText;
+        const el = document.getElementById("truth-vision-badge");
+        if (!el) return;
+        el.textContent = statusText;
+        const colors = {
+          real: "mono font-semibold text-emerald-300 truncate",
+          fallback: "mono font-semibold text-amber-300 truncate",
+          fake: "mono font-semibold text-sky-300 truncate",
+          error: "mono font-semibold text-rose-300 truncate",
+          warn: "mono font-semibold text-slate-300 truncate"
+        };
+        el.className = colors[tone] || colors.warn;
+      },
+
+      setAITruth(statusText, tone = "warn") {
+        this.aiTruth = statusText;
+        const el = document.getElementById("truth-ai-badge");
+        if (!el) return;
+        el.textContent = statusText;
+        const colors = {
+          real: "mono font-semibold text-emerald-300 truncate",
+          fallback: "mono font-semibold text-amber-300 truncate",
+          error: "mono font-semibold text-rose-300 truncate",
+          warn: "mono font-semibold text-slate-300 truncate"
+        };
+        el.className = colors[tone] || colors.warn;
+      },
+
+      recordInferenceTick() {
+        const now = performance.now();
+        this.lastInferenceTime = now;
+        this.framesInWindow += 1;
+        if (now - this.fpsWindowStart >= 1000) {
+          this.inferenceFps = (this.framesInWindow * 1000) / (now - this.fpsWindowStart);
+          this.framesInWindow = 0;
+          this.fpsWindowStart = now;
+        }
+      },
+
+      updateLiveTelemetryBanner() {
+        const fpsEl = document.getElementById("truth-fps-badge");
+        if (!fpsEl) return;
+        if (this.lastInferenceTime === 0) {
+          fpsEl.textContent = "0.0 fps • No frames";
+          return;
+        }
+        const ageSec = ((performance.now() - this.lastInferenceTime) / 1000).toFixed(1);
+        fpsEl.textContent = `${this.inferenceFps.toFixed(1)} fps • ${ageSec}s ago`;
+      },
+
+      matchesFilter(entry) {
+        if (this.filter === "ALL") return true;
+        if (this.filter === "ALERT") {
+          return entry.level === "FALLBACK" || entry.level === "WARN" || entry.level === "ERROR";
+        }
+        return entry.category === this.filter;
+      },
+
+      renderEntry(entry) {
+        const container = document.getElementById("logs-feed-container");
+        if (!container || !this.matchesFilter(entry)) return;
+
+        const levelStyles = {
+          REAL: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
+          FALLBACK: "bg-amber-500/20 text-amber-300 border-amber-400/30",
+          WARN: "bg-orange-500/20 text-orange-300 border-orange-400/30",
+          ERROR: "bg-rose-500/25 text-rose-300 border-rose-400/40",
+          INFO: "bg-sky-500/15 text-sky-300 border-sky-400/25"
+        };
+
+        const row = document.createElement("div");
+        row.className = "border-b border-white/[0.06] pb-1.5 last:border-none";
+
+        const detailStr =
+          entry.details !== null && entry.details !== undefined
+            ? `<div class="text-slate-400 text-[9px] mt-0.5 break-all">${
+                typeof entry.details === "string" ? entry.details : JSON.stringify(entry.details)
+              }</div>`
+            : "";
+
+        row.innerHTML = `
+          <div class="flex items-start gap-1.5">
+            <span class="text-slate-500 shrink-0">${entry.ts}</span>
+            <span class="px-1 rounded border text-[9px] shrink-0 ${levelStyles[entry.level] || levelStyles.INFO}">${entry.level}</span>
+            <span class="text-slate-400 shrink-0">[${entry.category}]</span>
+            <span class="text-slate-100 break-words">${entry.message}</span>
+          </div>
+          ${detailStr}
+        `;
+
+        container.appendChild(row);
+        container.scrollTop = container.scrollHeight;
+      },
+
+      rerenderAll() {
+        const container = document.getElementById("logs-feed-container");
+        if (!container) return;
+        container.innerHTML = "";
+        this.entries.forEach((e) => this.renderEntry(e));
+      },
+
+      exportAsText() {
+        const header = [
+          "=================================================================",
+          "AURA 4K BIOMETRIC MOOD ENGINE — DIAGNOSTIC TELEMETRY REPORT",
+          `Exported At: ${new Date().toISOString()}`,
+          `Vision Ground Truth: ${this.visionTruth}`,
+          `AI Coach Ground Truth: ${this.aiTruth}`,
+          `Measured Vision FPS: ${this.inferenceFps.toFixed(1)} fps`,
+          "=================================================================",
+          ""
+        ].join("\n");
+
+        const body = this.entries
+          .map((e) => {
+            const det = e.details ? ` | ${typeof e.details === "string" ? e.details : JSON.stringify(e.details)}` : "";
+            return `[${e.ts}] [${e.level}] [${e.category}] ${e.message}${det}`;
+          })
+          .join("\n");
+
+        return header + body;
+      },
+
+      clear() {
+        this.entries = [];
+        this.alertCount = 0;
+        const badge = document.getElementById("logs-alert-badge");
+        if (badge) {
+          badge.textContent = "0";
+          badge.classList.add("hidden");
+        }
+        const countAllEl = document.getElementById("count-log-all");
+        if (countAllEl) countAllEl.textContent = "0";
+        this.rerenderAll();
+        this.log("SYSTEM", "INFO", "Diagnostic log buffer cleared by user.");
+      }
+    };
+
+    AuraLogger.log("SYSTEM", "INFO", "AURA 4K HUD booted. Indicators initialized to static defaults (42% Mood / 20% Smile) awaiting session start.");
+
     // Attempt dynamic import of MediaPipe Tasks Vision for real-time facial blendshapes
     let FaceLandmarker = null;
     let FilesetResolver = null;
     try {
+      AuraLogger.log("VISION", "INFO", "Loading @mediapipe/tasks-vision@0.10.14 ESM bundle from jsDelivr CDN...");
       const mp = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm");
       FaceLandmarker = mp.FaceLandmarker;
       FilesetResolver = mp.FilesetResolver;
+      AuraLogger.log("VISION", "REAL", "MediaPipe Tasks Vision ESM library loaded successfully.");
     } catch (err) {
-      console.warn("MediaPipe CDN unavailable, will use graceful fallback if needed:", err);
+      AuraLogger.log("VISION", "FALLBACK", "MediaPipe CDN ESM import failed. Real facial tracking unavailable; will fallback if camera starts.", err.message || String(err));
+      AuraLogger.setVisionTruth("CDN FAILED", "error");
     }
 
     /**
@@ -588,8 +865,8 @@
      * 1. APPLICATION STATE & SPRING PHYSICS ENGINE
      * ============================================================================
      */
-    const TARGET_MOOD_THRESHOLD = 85; // 85% = Radiant / Elevated Target
-    const AUTO_LIFT_TRIGGER_DELTA = 12; // +12% facial smile lift auto-celebrates
+    const TARGET_MOOD_THRESHOLD = 85;
+    const AUTO_LIFT_TRIGGER_DELTA = 12;
 
     const state = {
       isRunning: false,
@@ -614,16 +891,16 @@
       baselineMood: null,
       preQuestionMood: 42,
       peakMood: 42,
-      stepIndex: 0, // 0 = Calibration, 1..N = AI Prompts
+      stepIndex: 0,
       completedTarget: false,
       reflectionsLog: [],
-      conversationHistory: [], // Stores { role, question, userReply, moodBefore, moodAfter }
+      conversationHistory: [],
       burstIntensity: 0,
       lastPromptTime: 0,
       autoLiftCooldown: false
     };
 
-    // Offline / Fallback Question Bank (if Gemini API network is unreachable)
+    // Offline / Fallback Question Bank (if Gemini API network is unreachable or key missing)
     const FALLBACK_QUESTION_BANK = {
       low: [
         {
@@ -687,10 +964,26 @@
       const apiKey = document.getElementById("gemini-api-key").value.trim();
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
+      if (!apiKey) {
+        AuraLogger.log("AI", "FALLBACK", "No Gemini API key provided. Bypassing API and using hardcoded FALLBACK_QUESTION_BANK.");
+        AuraLogger.setAITruth("FALLBACK (No Key)", "fallback");
+        document.getElementById("ai-engine-badge").textContent = "Adaptive Engine Active (Offline)";
+        return selectLocalFallbackQuestion(userReplyText, moodDelta);
+      }
+
       const moodScore = Math.round(state.currentMood);
       const smilePct = Math.round(state.rawSmile * 100);
       const serenityPct = Math.round(state.rawSerenity * 100);
       const energyPct = Math.round(state.rawEnergy * 100);
+
+      AuraLogger.log("AI", "INFO", "Sending coaching prompt to Gemini API (gemini-3-flash-preview)...", {
+        moodScore,
+        smilePct,
+        serenityPct,
+        energyPct,
+        moodDelta,
+        visionSource: AuraLogger.visionTruth
+      });
 
       const recentContext = state.conversationHistory
         .slice(-3)
@@ -754,9 +1047,9 @@ Generate the next coaching step as JSON.`;
         }
       };
 
-      // Exponential backoff retry (1s, 2s, 4s)
       const delays = [1000, 2000, 4000];
       for (let attempt = 0; attempt <= delays.length; attempt++) {
+        const reqStart = performance.now();
         try {
           const response = await fetch(apiUrl, {
             method: "POST",
@@ -764,16 +1057,25 @@ Generate the next coaching step as JSON.`;
             body: JSON.stringify(payload)
           });
 
+          const latencyMs = Math.round(performance.now() - reqStart);
+
           if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            const errBody = await response.text().catch(() => "");
+            throw new Error(`HTTP ${response.status} (${latencyMs}ms): ${errBody.slice(0, 120)}`);
           }
 
           const result = await response.json();
           const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (!rawText) throw new Error("Empty Gemini response");
+          if (!rawText) throw new Error("Empty Gemini response payload");
 
           const parsed = JSON.parse(rawText);
           document.getElementById("ai-engine-badge").textContent = "Gemini AI Live";
+          AuraLogger.setAITruth("REAL (Gemini API)", "real");
+          AuraLogger.log("AI", "REAL", `Gemini API responded in ${latencyMs}ms with personalized coaching turn.`, {
+            tag: parsed.tag,
+            question: parsed.question
+          });
+
           return {
             tag: parsed.tag || "AI Reflection",
             empathy: parsed.empathyResponse || "",
@@ -783,9 +1085,11 @@ Generate the next coaching step as JSON.`;
           };
         } catch (err) {
           if (attempt < delays.length) {
+            AuraLogger.log("AI", "WARN", `Gemini API attempt ${attempt + 1} failed (${err.message}). Retrying in ${delays[attempt]}ms...`);
             await new Promise((res) => setTimeout(res, delays[attempt]));
           } else {
-            // Graceful fallback to intelligent local adaptive engine
+            AuraLogger.log("AI", "FALLBACK", `All Gemini API attempts failed. Switching to offline FALLBACK_QUESTION_BANK.`, err.message);
+            AuraLogger.setAITruth("FALLBACK (Offline)", "fallback");
             document.getElementById("ai-engine-badge").textContent = "Adaptive Engine Active";
             return selectLocalFallbackQuestion(userReplyText, moodDelta);
           }
@@ -834,6 +1138,7 @@ Generate the next coaching step as JSON.`;
 
       recognition.onstart = () => {
         state.isListeningVoice = true;
+        AuraLogger.log("SYSTEM", "REAL", "Web Speech API microphone listening started.");
         const btn = document.getElementById("btn-voice-input");
         btn.classList.add("mic-recording");
         document.getElementById("mic-label").textContent = "Listening...";
@@ -848,6 +1153,7 @@ Generate the next coaching step as JSON.`;
         document.getElementById("reflection-input").value = transcript;
 
         if (event.results[event.results.length - 1].isFinal && transcript.trim().length > 0) {
+          AuraLogger.log("SYSTEM", "REAL", `Final speech transcript captured: "${transcript.trim()}"`);
           setTimeout(() => {
             if (!state.isGeneratingAI) {
               handleReflectionSubmit(transcript.trim());
@@ -857,6 +1163,7 @@ Generate the next coaching step as JSON.`;
       };
 
       recognition.onerror = (e) => {
+        AuraLogger.log("SYSTEM", "WARN", `Web Speech API error: ${e.error}`);
         stopVoiceListening();
         if (e.error !== "no-speech" && e.error !== "aborted") {
           showToast("Voice input unavailable — you can type or click a prompt chip");
@@ -878,6 +1185,7 @@ Generate the next coaching step as JSON.`;
 
     document.getElementById("btn-voice-input").addEventListener("click", () => {
       if (!recognition) {
+        AuraLogger.log("SYSTEM", "FALLBACK", "Web Speech API not supported in this browser.");
         showToast("Speech recognition not supported in this browser — type or tap a chip");
         return;
       }
@@ -887,7 +1195,7 @@ Generate the next coaching step as JSON.`;
         try {
           recognition.start();
         } catch (err) {
-          console.warn("Speech start error:", err);
+          AuraLogger.log("SYSTEM", "ERROR", "Failed to start Web Speech API", err.message);
         }
       }
     });
@@ -922,7 +1230,6 @@ Generate the next coaching step as JSON.`;
         this.filter.connect(this.masterGain);
         this.masterGain.connect(this.ctx.destination);
 
-        // Warm Lydian / Major 9th harmonic pad frequencies (Hz)
         const baseFreqs = [130.81, 196.00, 246.94, 293.66, 329.63];
         baseFreqs.forEach((freq, idx) => {
           const osc = this.ctx.createOscillator();
@@ -939,6 +1246,7 @@ Generate the next coaching step as JSON.`;
         });
 
         this.isInitialized = true;
+        AuraLogger.log("AUDIO", "REAL", `Web Audio API 5-oscillator harmonic synthesizer initialized (${this.ctx.sampleRate}Hz).`);
       }
 
       setEnabled(enabled) {
@@ -951,6 +1259,7 @@ Generate the next coaching step as JSON.`;
         }
         const targetGain = enabled ? 0.25 : 0.0001;
         this.masterGain.gain.setTargetAtTime(targetGain, this.ctx.currentTime, 0.4);
+        AuraLogger.log("AUDIO", "INFO", `Generative soundscape ${enabled ? "enabled" : "muted"} (AudioContext state: ${this.ctx.state}).`);
       }
 
       updateMoodModulation(moodNormalized) {
@@ -1429,10 +1738,16 @@ Generate the next coaching step as JSON.`;
 
     let faceLandmarker = null;
     let lastVideoTime = -1;
+    let wasFaceLocked = false;
 
     async function initMediaPipeLandmarker() {
-      if (!FaceLandmarker || !FilesetResolver) return false;
+      if (!FaceLandmarker || !FilesetResolver) {
+        AuraLogger.log("VISION", "FALLBACK", "MediaPipe classes missing; cannot initialize FaceLandmarker.");
+        return false;
+      }
+      const initStart = performance.now();
       try {
+        AuraLogger.log("VISION", "INFO", "Fetching MediaPipe WASM runtime & face_landmarker.task (float16 GPU)...");
         const vision = await FilesetResolver.forVisionTasks(
           "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
         );
@@ -1446,9 +1761,11 @@ Generate the next coaching step as JSON.`;
           runningMode: "VIDEO",
           numFaces: 1
         });
+        const initMs = Math.round(performance.now() - initStart);
+        AuraLogger.log("VISION", "REAL", `FaceLandmarker initialized on GPU in ${initMs}ms. 52 blendshapes + 478 landmarks active.`);
         return true;
       } catch (e) {
-        console.warn("MediaPipe model init failed:", e);
+        AuraLogger.log("VISION", "FALLBACK", "FaceLandmarker GPU model initialization failed. Metrics will remain frozen unless Demo Mode is used.", e.message || String(e));
         return false;
       }
     }
@@ -1457,6 +1774,7 @@ Generate the next coaching step as JSON.`;
       const statusLabel = document.getElementById("vision-mode-label");
       const faceBadge = document.getElementById("face-detected-badge");
       statusLabel.textContent = "Requesting camera access...";
+      AuraLogger.log("VISION", "INFO", "Requesting navigator.mediaDevices.getUserMedia (user-facing 640x480)...");
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -1468,10 +1786,19 @@ Generate the next coaching step as JSON.`;
           audio: false
         });
 
+        const videoTrack = stream.getVideoTracks()[0];
+        const trackSettings = videoTrack ? videoTrack.getSettings() : {};
+        AuraLogger.log("VISION", "REAL", `Webcam stream granted: "${videoTrack?.label || "Camera"}"`, {
+          width: trackSettings.width,
+          height: trackSettings.height,
+          frameRate: trackSettings.frameRate
+        });
+
         videoEl.srcObject = stream;
         await videoEl.play();
 
         state.mode = "camera";
+        wasFaceLocked = false;
         document.getElementById("demo-avatar-box").classList.add("hidden");
         document.getElementById("demo-controls-panel").classList.add("hidden");
         document.getElementById("switch-mode-text").textContent = "Demo Mode";
@@ -1482,13 +1809,16 @@ Generate the next coaching step as JSON.`;
         if (loaded) {
           statusLabel.textContent = "60fps Biometric Vision Active";
           faceBadge.textContent = "SCANNING FACE";
+          AuraLogger.setVisionTruth("REAL (MediaPipe)", "real");
         } else {
           statusLabel.textContent = "Optical Biometric Sensor Active";
           faceBadge.textContent = "OPTICAL LOCK";
+          AuraLogger.setVisionTruth("FALLBACK (No Model)", "fallback");
+          AuraLogger.log("VISION", "FALLBACK", "WARNING: Badge set to 'OPTICAL LOCK' without MediaPipe model—facial metrics are NOT updating from video!");
         }
         return true;
       } catch (err) {
-        console.warn("Camera permission denied or unavailable:", err);
+        AuraLogger.log("VISION", "FALLBACK", `Camera access denied or unavailable (${err.name}: ${err.message}). Falling back to Demo Mode.`);
         showToast("Camera unavailable — switched to Interactive Demo Mode");
         activateDemoMode();
         return false;
@@ -1498,10 +1828,13 @@ Generate the next coaching step as JSON.`;
     function activateDemoMode() {
       state.mode = "demo";
       state.faceDetected = true;
+      wasFaceLocked = false;
+      AuraLogger.setVisionTruth("FAKE (Demo Slider)", "fake");
 
       if (videoEl.srcObject) {
         videoEl.srcObject.getTracks().forEach((t) => t.stop());
         videoEl.srcObject = null;
+        AuraLogger.log("VISION", "INFO", "Stopped physical webcam tracks.");
       }
 
       document.getElementById("demo-avatar-box").classList.remove("hidden");
@@ -1511,6 +1844,7 @@ Generate the next coaching step as JSON.`;
       document.getElementById("switch-mode-text").textContent = "Use Webcam";
 
       const sliderVal = parseInt(document.getElementById("demo-mood-slider").value, 10);
+      AuraLogger.log("VISION", "FALLBACK", `Activated Simulated Face Mode (synthetic slider value: ${sliderVal}%).`);
       applySimulatedExpression(sliderVal);
     }
 
@@ -1542,9 +1876,15 @@ Generate the next coaching step as JSON.`;
       if (faceLandmarker && videoEl.currentTime !== lastVideoTime) {
         lastVideoTime = videoEl.currentTime;
         const results = faceLandmarker.detectForVideo(videoEl, performance.now());
+        AuraLogger.recordInferenceTick();
 
         if (results.faceBlendshapes && results.faceBlendshapes.length > 0) {
           state.faceDetected = true;
+          if (!wasFaceLocked) {
+            wasFaceLocked = true;
+            AuraLogger.log("VISION", "REAL", "Face locked! Live 52-blendshape extraction active.");
+          }
+
           const badge = document.getElementById("face-detected-badge");
           badge.textContent = "FACE LOCKED";
           badge.className =
@@ -1575,10 +1915,27 @@ Generate the next coaching step as JSON.`;
           const rawScore = 34 + smile * 46 + serenity * 14 + cheekRaise * 12 - browFurrow * 18 - frown * 15;
           state.targetMood = Math.max(8, Math.min(99, rawScore));
 
+          // Periodically log raw blendshape telemetry (every 2.5s) so user can verify live values
+          const now = performance.now();
+          if (now - AuraLogger.lastTelemetryLogTime > 2500) {
+            AuraLogger.lastTelemetryLogTime = now;
+            AuraLogger.log("VISION", "REAL", `Live blendshape sample (${AuraLogger.inferenceFps.toFixed(1)} fps)`, {
+              smileL: +(map["mouthSmileLeft"] || 0).toFixed(3),
+              smileR: +(map["mouthSmileRight"] || 0).toFixed(3),
+              browDownL: +(map["browDownLeft"] || 0).toFixed(3),
+              cheekSquintL: +(map["cheekSquintLeft"] || 0).toFixed(3),
+              targetMood: `${Math.round(state.targetMood)}%`
+            });
+          }
+
           if (state.showMesh && results.faceLandmarks && results.faceLandmarks[0]) {
             drawBiometricOverlay(results.faceLandmarks[0], meshCanvas.width, meshCanvas.height);
           }
         } else {
+          if (wasFaceLocked) {
+            wasFaceLocked = false;
+            AuraLogger.log("VISION", "WARN", "Face lost from camera frame (ALIGN FACE). Holding last mood target.");
+          }
           state.faceDetected = false;
           const badge = document.getElementById("face-detected-badge");
           badge.textContent = "ALIGN FACE";
@@ -1684,6 +2041,7 @@ Generate the next coaching step as JSON.`;
             const slider = document.getElementById("demo-mood-slider");
             const boosted = Math.min(98, parseInt(slider.value, 10) + 16);
             slider.value = boosted;
+            AuraLogger.log("VISION", "FALLBACK", `Demo Mode chip clicked: artificially boosted simulated slider by +16% -> ${boosted}%.`);
             applySimulatedExpression(boosted);
           }
           handleReflectionSubmit(chipText);
@@ -1750,12 +2108,12 @@ Generate the next coaching step as JSON.`;
 
       const inputVal = (customText ?? document.getElementById("reflection-input").value).trim();
 
-      // Step 0: Complete Baseline Calibration -> Launch First Gemini AI Prompt
       if (state.stepIndex === 0) {
         state.baselineMood = Math.round(state.currentMood);
         state.peakMood = state.baselineMood;
         document.getElementById("baseline-readout").innerHTML = `Start: <strong class="text-slate-200 mono">${state.baselineMood}%</strong>`;
         state.stepIndex = 1;
+        AuraLogger.log("SYSTEM", "INFO", `Baseline mood locked at ${state.baselineMood}% (Vision source: ${AuraLogger.visionTruth}).`);
 
         setAIThinkingState(true);
         const firstPrompt = await fetchGeminiCoachingTurn("", 0);
@@ -1764,10 +2122,16 @@ Generate the next coaching step as JSON.`;
         return;
       }
 
-      // Measure mood delta before vs after reflecting on the question
       const nowMood = Math.round(state.currentMood);
       const delta = nowMood - state.preQuestionMood;
       const displayAnswer = inputVal || (isAutoFacialLift ? "✨ Genuine Smile Lift" : "(Reflected visually)");
+
+      AuraLogger.log("SYSTEM", isAutoFacialLift ? "REAL" : "INFO", `Step ${state.stepIndex} completed (${isAutoFacialLift ? "Auto-Lift Triggered" : "User Submitted"}).`, {
+        moodBefore: state.preQuestionMood,
+        moodAfter: nowMood,
+        delta,
+        answer: displayAnswer
+      });
 
       state.reflectionsLog.push({
         step: state.stepIndex,
@@ -1796,16 +2160,15 @@ Generate the next coaching step as JSON.`;
         );
       }
 
-      // Check if user reached the Radiant Target Threshold (85%+)
       if (nowMood >= TARGET_MOOD_THRESHOLD && !state.completedTarget) {
         state.completedTarget = true;
+        AuraLogger.log("SYSTEM", "REAL", `Target resonance threshold (${TARGET_MOOD_THRESHOLD}%) reached! Peak mood: ${state.peakMood}%.`);
         setTimeout(() => {
           openSummaryModal();
         }, 900);
         return;
       }
 
-      // Request next personalized Gemini AI coaching turn based on words + facial telemetry
       state.stepIndex += 1;
       setAIThinkingState(true);
       const nextPrompt = await fetchGeminiCoachingTurn(displayAnswer, delta);
@@ -1854,6 +2217,7 @@ Generate the next coaching step as JSON.`;
       state.conversationHistory = [];
       askedFallbackQuestions.clear();
       updateJourneyDrawer();
+      AuraLogger.log("SYSTEM", "INFO", "Session reset to Calibration step.");
 
       document.getElementById("summary-modal").classList.add("hidden");
       document.getElementById("baseline-readout").innerHTML = `Start: <strong class="text-slate-200 mono">--%</strong>`;
@@ -1919,7 +2283,6 @@ Generate the next coaching step as JSON.`;
         statusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_16px_#fbbf24]";
       }
 
-      // Live delta vs session baseline
       const deltaBadge = document.getElementById("mood-delta-badge");
       if (state.baselineMood !== null) {
         const diff = score - state.baselineMood;
@@ -1935,7 +2298,6 @@ Generate the next coaching step as JSON.`;
         }
       }
 
-      // Live delta on current AI question step
       if (state.stepIndex >= 1 && !state.isGeneratingAI) {
         const stepDelta = score - state.preQuestionMood;
         const stepPill = document.getElementById("step-delta-pill");
@@ -1949,7 +2311,6 @@ Generate the next coaching step as JSON.`;
             "mono text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-200 border border-teal-400/30";
         }
 
-        // Closed-loop auto-advancement when user's facial expression lifts by >= +12% or crosses 85%
         const elapsedOnStep = performance.now() - state.lastPromptTime;
         if (
           state.isRunning &&
@@ -1963,7 +2324,6 @@ Generate the next coaching step as JSON.`;
         }
       }
 
-      // Micro-expression bars
       const smilePct = Math.round(state.rawSmile * 100);
       const serenityPct = Math.round(state.rawSerenity * 100);
       const energyPct = Math.round(state.rawEnergy * 100);
@@ -1976,6 +2336,8 @@ Generate the next coaching step as JSON.`;
 
       document.getElementById("metric-energy-val").textContent = `${energyPct}%`;
       document.getElementById("metric-energy-bar").style.width = `${energyPct}%`;
+
+      AuraLogger.updateLiveTelemetryBanner();
     }
 
     /**
@@ -2000,6 +2362,8 @@ Generate the next coaching step as JSON.`;
 
       document.getElementById("submit-btn-label").textContent = "Lock Baseline & Begin";
 
+      AuraLogger.log("SYSTEM", "INFO", `Launching experience (Requested mode: ${useCamera ? "Real Webcam + MediaPipe" : "Simulated Demo Mode"}).`);
+
       if (useCamera) {
         startCameraVision();
       } else {
@@ -2014,15 +2378,18 @@ Generate the next coaching step as JSON.`;
 
     try {
       geminiApiKeyInput.value = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY) || "";
+      if (geminiApiKeyInput.value.trim()) {
+        AuraLogger.log("AI", "INFO", "Restored saved Gemini API key from localStorage.");
+      }
     } catch (err) {
-      console.warn("Could not read the saved Gemini API key from local storage:", err);
+      AuraLogger.log("SYSTEM", "WARN", "Could not read saved Gemini API key from localStorage.");
     }
 
     geminiApiKeyInput.addEventListener("input", () => {
       try {
         localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, geminiApiKeyInput.value.trim());
       } catch (err) {
-        console.warn("Could not save the Gemini API key to local storage:", err);
+        // Ignore storage errors
       }
     });
 
@@ -2060,17 +2427,74 @@ Generate the next coaching step as JSON.`;
     });
 
     document.getElementById("btn-journey-toggle").addEventListener("click", () => {
+      document.getElementById("logs-drawer").classList.add("hidden");
       document.getElementById("journey-drawer").classList.toggle("hidden");
     });
 
+    // Diagnostic Logs Drawer Interactions
+    document.getElementById("btn-logs-toggle").addEventListener("click", () => {
+      document.getElementById("journey-drawer").classList.add("hidden");
+      const drawer = document.getElementById("logs-drawer");
+      drawer.classList.toggle("hidden");
+      if (!drawer.classList.contains("hidden")) {
+        AuraLogger.rerenderAll();
+      }
+    });
+
+    document.querySelectorAll(".log-filter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".log-filter-btn").forEach((b) => {
+          b.className = "log-filter-btn px-2.5 py-1 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer";
+        });
+        btn.className = "log-filter-btn px-2.5 py-1 rounded-lg bg-white/15 text-white font-semibold cursor-pointer";
+        AuraLogger.filter = btn.getAttribute("data-log-filter");
+        AuraLogger.rerenderAll();
+      });
+    });
+
+    document.getElementById("btn-copy-logs").addEventListener("click", () => {
+      const report = AuraLogger.exportAsText();
+      const tempArea = document.createElement("textarea");
+      tempArea.value = report;
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      try {
+        document.execCommand("copy");
+        showToast("Diagnostic logs copied to clipboard");
+      } catch (err) {
+        showToast("Could not copy logs");
+      }
+      document.body.removeChild(tempArea);
+    });
+
+    document.getElementById("btn-download-logs").addEventListener("click", () => {
+      const report = AuraLogger.exportAsText();
+      const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `aura-telemetry-logs-${new Date().toISOString().replace(/[:.]/g, "-")}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Downloaded diagnostic .TXT log file");
+    });
+
+    document.getElementById("btn-clear-logs").addEventListener("click", () => {
+      AuraLogger.clear();
+    });
+
     document.getElementById("demo-mood-slider").addEventListener("input", (e) => {
-      applySimulatedExpression(parseInt(e.target.value, 10));
+      const val = parseInt(e.target.value, 10);
+      applySimulatedExpression(val);
     });
 
     document.querySelectorAll(".demo-preset-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const val = parseInt(btn.getAttribute("data-preset"), 10);
         document.getElementById("demo-mood-slider").value = val;
+        AuraLogger.log("VISION", "FALLBACK", `Demo preset clicked: set synthetic mood to ${val}%.`);
         applySimulatedExpression(val);
       });
     });
@@ -2171,6 +2595,7 @@ Generate the next coaching step as JSON.`;
       const effectiveW = Math.round(window.innerWidth * dpr);
       const effectiveH = Math.round(window.innerHeight * dpr);
       document.getElementById("resolution-badge").textContent = `${effectiveW}×${effectiveH} • UHD`;
+      AuraLogger.log("SYSTEM", "INFO", `WebGL Renderer ready (${effectiveW}x${effectiveH} effective pixels, DPR ${dpr}).`);
       animate();
     });
   </script>
