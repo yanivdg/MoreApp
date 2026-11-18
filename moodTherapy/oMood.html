@@ -1,1 +1,1603 @@
-placeholder
+<!-- ... existing code ... -->
+    <title>סטודיו תלת-ממד אינטראקטיבי + AI | WebGL PBR & Gemini</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Heebo & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Three.js & Post-Processing via CDN (r128 compatible) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+    <style>
+        body {
+            font-family: 'Heebo', 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: #07080c;
+            color: #f8fafc;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            outline: none;
+        }
+        .glass-panel {
+            background: rgba(12, 16, 26, 0.76);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.11);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+        }
+        .btn-tactile {
+            transition: all 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .btn-tactile:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.13);
+        }
+        .btn-tactile:active {
+            transform: translateY(1px) scale(0.98);
+        }
+        .btn-active {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.26), rgba(99, 102, 241, 0.26));
+            border-color: rgba(56, 189, 248, 0.65);
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.22);
+        }
+        .btn-release-active {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(245, 158, 11, 0.28));
+            border-color: rgba(248, 113, 113, 0.7);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+        }
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.22);
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden">
+
+    <!-- WebGL Container -->
+    <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+    <!-- Top Header & Status Bar -->
+    <header class="absolute top-3 right-3 left-3 sm:left-auto sm:w-[410px] z-10 pointer-events-none">
+        <div class="glass-panel rounded-2xl p-3.5 pointer-events-auto">
+            <div class="flex items-center justify-between gap-2">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-l from-sky-300 via-indigo-300 to-emerald-300 bg-clip-text text-transparent">
+                            מעבדת PBR וסימולציית AI
+                        </h1>
+                        <span class="text-[10px] mono-font px-2 py-0.5 rounded-md bg-indigo-500/20 border border-indigo-400/30 text-indigo-300">
+                            GEMINI 3
+                        </span>
+                    </div>
+                    <p id="mode-status-text" class="text-xs text-slate-300/80 mt-0.5">
+                        מצב מחקר ופוקוס • שליטה ידנית מלאה
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleAudioMute()" id="btn-sound" title="הפעלה/השתקה של סאונד סינתיסייזר" class="btn-tactile rounded-xl p-2 border border-white/15 bg-white/5 text-sky-300">
+                        <svg id="icon-sound-on" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+                        </svg>
+                        <svg id="icon-sound-off" class="w-4 h-4 hidden text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+                        </svg>
+                    </button>
+                    <button onclick="toggleLeftPanel()" id="btn-toggle-studio" class="btn-tactile rounded-xl px-2.5 py-2 border border-white/15 bg-white/5 text-xs font-medium text-slate-200">
+                        בקרי 3D
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4-6 Breathing Pacer Banner (Shown in 'calm' mode) -->
+            <div id="breathing-hud" class="hidden mt-3 pt-2.5 border-t border-white/10">
+                <div class="flex items-center justify-between text-xs mb-1.5">
+                    <span id="breath-phase-label" class="font-semibold text-emerald-300">שאיפה עמוקה (4 שניות)...</span>
+                    <span id="breath-timer" class="mono-font text-slate-300">0.0s</span>
+                </div>
+                <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="breath-progress-bar" class="h-full bg-gradient-to-l from-emerald-400 to-cyan-400 transition-all duration-75" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- AI Cognitive Reframer & Lab Console (Right / Bottom-Right Floating Drawer) -->
+    <section class="absolute bottom-3 right-3 left-3 sm:left-auto sm:w-[410px] z-20 pointer-events-none flex flex-col gap-2">
+        <div class="glass-panel rounded-2xl p-3.5 pointer-events-auto flex flex-col gap-2.5">
+            
+            <!-- Console Header -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-200">מסוף AI: ניתוח לוגי, מוזיקה ומעבדה</h2>
+                </div>
+                <button onclick="stopRiffPlayback()" id="btn-stop-riff" class="hidden text-[11px] px-2 py-0.5 rounded-md bg-rose-500/20 border border-rose-400/40 text-rose-300 hover:bg-rose-500/30">
+                    ⏹ עצור ריף
+                </button>
+            </div>
+
+            <!-- AI Response Output Box -->
+            <div id="ai-response-box" class="bg-slate-950/70 border border-white/10 rounded-xl p-3 text-xs leading-relaxed text-slate-200 max-h-36 overflow-y-auto select-text">
+                <p class="text-slate-300">
+                    מערכת מוכנה. אפשר לכתוב כאן כל מחשבה אחרי תרגול פסיכומטרי או שיעור נהיגה, לבקש ריף גיטרה לפריקת מתח, או לשאול שאלה מדעית על DNA וגנטיקה של תוכים.
+                </p>
+            </div>
+
+            <!-- Riff Tab Visualizer Strip (Visible when riff is active) -->
+            <div id="riff-tab-box" class="hidden bg-black/60 border border-amber-500/30 rounded-xl px-3 py-2 flex items-center justify-between">
+                <div class="flex flex-col">
+                    <span class="text-[10px] text-amber-300/80 font-semibold">רצף שריגים פעיל (Frets)</span>
+                    <span id="riff-notes-display" class="mono-font text-xs text-amber-300 tracking-wider mt-0.5">0 - 3 - 5 - 0 - 6 - 5</span>
+                </div>
+                <button onclick="replayCurrentRiff()" class="btn-tactile rounded-lg px-2.5 py-1.5 bg-amber-500/20 border border-amber-400/40 text-xs font-medium text-amber-200">
+                    ▶ נגן שוב
+                </button>
+            </div>
+
+            <!-- Quick-Select Adult Prompt Chips -->
+            <div class="flex gap-1.5 overflow-x-auto pb-1">
+                <button onclick="sendQuickPrompt('תן לי ריף מטאל כבד בסולם מי מינור לפרוק עצבים')" class="btn-tactile shrink-0 rounded-lg px-2.5 py-1.5 bg-rose-500/15 border border-rose-400/30 text-[11px] font-medium text-rose-200">
+                    🎸 פריקת עצבים: ריף מטאל
+                </button>
+                <button onclick="sendQuickPrompt('הראש שלי מתפוצץ מהפסיכומטרי ואני מרגיש שנכשלתי, תעזור לי לעשות איפוס לוגי')" class="btn-tactile shrink-0 rounded-lg px-2.5 py-1.5 bg-sky-500/15 border border-sky-400/30 text-[11px] font-medium text-sky-200">
+                    🧠 איפוס קוגניטיבי אחרי טעות
+                </button>
+                <button onclick="sendQuickPrompt('איך נוצר צבע כחול מבני בנוצות של תוכי ארה מבחינה ביולוגית?')" class="btn-tactile shrink-0 rounded-lg px-2.5 py-1.5 bg-amber-500/15 border border-amber-400/30 text-[11px] font-medium text-amber-200">
+                    🦜 מעבדת ביולוגיה: נוצות תוכים
+                </button>
+                <button onclick="sendQuickPrompt('הפעל קצב נשימה 4-6 על סליל ה-DNA להורדת עומס חושי')" class="btn-tactile shrink-0 rounded-lg px-2.5 py-1.5 bg-emerald-500/15 border border-emerald-400/30 text-[11px] font-medium text-emerald-200">
+                    🧬 קצב נשימה 4-6 (DNA)
+                </button>
+            </div>
+
+            <!-- Gemini API Key Input -->
+            <div class="flex flex-col gap-1.5">
+                <label for="gemini-api-key" class="text-[10px] text-slate-400">מפתח API של Gemini</label>
+                <input
+                    id="gemini-api-key"
+                    type="password"
+                    placeholder="הזן Gemini API key..."
+                    class="w-full bg-slate-900/90 border border-white/15 focus:border-sky-400/70 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 outline-none"
+                    autocomplete="off"
+                />
+            </div>
+
+            <!-- Free-Text Command Input -->
+            <form onsubmit="handlePromptSubmit(event)" class="flex items-center gap-2">
+                <input
+                    id="ai-prompt-input"
+                    type="text"
+                    placeholder="כתוב פקודה, שאלה בביולוגיה או מה יושב לך על הראש..."
+                    class="flex-1 bg-slate-900/90 border border-white/15 focus:border-sky-400/70 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 outline-none"
+                    autocomplete="off"
+                />
+                <button
+                    type="submit"
+                    id="btn-send-ai"
+                    class="btn-tactile rounded-xl px-3.5 py-2 bg-gradient-to-l from-sky-500 to-indigo-600 text-xs font-semibold text-white shadow-lg shadow-sky-500/20 flex items-center gap-1.5 shrink-0"
+                >
+                    <span id="send-btn-text">שלח</span>
+                    <svg id="send-spinner" class="w-3.5 h-3.5 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Left Floating 3D Studio Controls Panel -->
+    <aside id="left-studio-panel" class="hidden md:flex absolute bottom-3 left-3 w-80 lg:w-88 z-10 pointer-events-none flex-col gap-3">
+        <div class="glass-panel rounded-2xl p-4 pointer-events-auto space-y-3.5 max-h-[75vh] overflow-y-auto">
+            
+            <!-- 1. Object Selector -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">מודל תלת-ממדי</span>
+                    <span id="model-subtitle" class="text-[11px] text-sky-300 font-medium">גיטרה חשמלית ומיתרים</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="selectModel('guitar')" id="btn-model-guitar" class="btn-tactile btn-active rounded-xl p-2 border border-white/10 flex flex-col items-center gap-1 text-center">
+                        <span class="text-base">🎸</span>
+                        <span class="text-xs font-medium">גיטרה</span>
+                    </button>
+                    <button onclick="selectModel('dna')" id="btn-model-dna" class="btn-tactile rounded-xl p-2 border border-white/10 flex flex-col items-center gap-1 text-center">
+                        <span class="text-base">🧬</span>
+                        <span class="text-xs font-medium">סליל DNA</span>
+                    </button>
+                    <button onclick="selectModel('feather')" id="btn-model-feather" class="btn-tactile rounded-xl p-2 border border-white/10 flex flex-col items-center gap-1 text-center">
+                        <span class="text-base">🦜</span>
+                        <span class="text-xs font-medium">נוצת תוכי</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Material Inspector -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">גימור חומר (PBR)</span>
+                    <span id="material-stats" class="text-[10px] text-slate-400 mono-font">Metal: 0.92 | Rough: 0.24</span>
+                </div>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button onclick="selectMaterial('brushed')" id="btn-mat-brushed" class="btn-tactile btn-active rounded-xl py-1.5 px-2 border border-white/10 text-xs font-medium">
+                        מתכת מוברשת
+                    </button>
+                    <button onclick="selectMaterial('carbon')" id="btn-mat-carbon" class="btn-tactile rounded-xl py-1.5 px-2 border border-white/10 text-xs font-medium">
+                        קרבון מבריק
+                    </button>
+                    <button onclick="selectMaterial('glass')" id="btn-mat-glass" class="btn-tactile rounded-xl py-1.5 px-2 border border-white/10 text-xs font-medium">
+                        זכוכית קריסטל
+                    </button>
+                    <button onclick="selectMaterial('organic')" id="btn-mat-organic" class="btn-tactile rounded-xl py-1.5 px-2 border border-white/10 text-xs font-medium">
+                        ביו-אורגני
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. Lighting Presets -->
+            <div>
+                <span class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">אווירת תאורה (HDRI & Bloom)</span>
+                <div class="grid grid-cols-3 gap-1.5">
+                    <button onclick="selectLighting('studio')" id="btn-light-studio" class="btn-tactile btn-active rounded-xl py-1.5 px-2 border border-white/10 text-xs font-medium flex items-center justify-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-slate-200"></span>
+                        <span>סטודיו</span>
+                    </button>
+                    <button onclick="selectLighting('sunset')" id="btn-light-sunset" class="btn-tactile rounded-xl py-1.5 px-2 border border-white/10 text-xs font-medium flex items-center justify-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                        <span>חם</span>
+                    </button>
+                    <button onclick="selectLighting('neon')" id="btn-light-neon" class="btn-tactile rounded-xl py-1.5 px-2 border border-white/10 text-xs font-medium flex items-center justify-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        <span>מטאל/סייבר</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4. Rotation & Pulse -->
+            <div class="pt-2 border-t border-white/10 flex items-center justify-between gap-2">
+                <button onclick="toggleAutoRotate()" id="btn-rotate" class="btn-tactile btn-active flex-1 rounded-xl py-2 px-2.5 border border-white/10 text-xs font-medium flex items-center justify-center gap-1.5">
+                    <svg id="rotate-icon" class="w-3.5 h-3.5 text-sky-400 animate-spin" style="animation-duration: 6s;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span id="rotate-text">סיבוב: פעיל</span>
+                </button>
+
+                <button onclick="triggerEnergyPulse(1.0)" class="btn-tactile rounded-xl py-2 px-3 bg-sky-500/20 border border-sky-400/40 text-xs font-semibold text-sky-200">
+                    ⚡ פולס
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        /**
+         * Global Scene, Audio & AI State
+         */
+        let scene, camera, renderer, controls, composer, bloomPass;
+        let currentModelGroup = null;
+        let pedestalMesh, ringMesh, particleSystem;
+        let keyLight, fillLight, rimLight, ambientLight;
+        let autoRotate = true;
+        let currentModelType = 'guitar';
+        let currentMaterialType = 'brushed';
+        let currentLightingType = 'studio';
+        let currentMood = 'focus'; // 'release' | 'calm' | 'focus' | 'lab'
+        let currentHighlightPart = '';
+        let pulseIntensity = 0;
+        let clock = new THREE.Clock();
+
+        // Interactive 3D Sub-parts References
+        let guitarStrings = [];
+        let guitarFrets = [];
+        let dnaBasePairs = [];
+        let featherBarbs = [];
+        let featherCoreMesh = null;
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+
+        // Web Audio API Synthesizer State
+        let audioCtx = null;
+        let isMuted = false;
+        let riffInterval = null;
+        let activeRiffNotes = [
+            { string: 0, fret: 0, freq: 82.41 },
+            { string: 0, fret: 3, freq: 98.00 },
+            { string: 0, fret: 5, freq: 110.00 },
+            { string: 0, fret: 0, freq: 82.41 },
+            { string: 0, fret: 6, freq: 116.54 },
+            { string: 0, fret: 5, freq: 110.00 }
+        ];
+        let activeBpm = 135;
+
+        // Procedural Textures Cache
+        const textures = {};
+
+        /**
+         * Initialize / Resume Web Audio Context
+         */
+        function ensureAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContextClass();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleAudioMute() {
+            isMuted = !isMuted;
+            document.getElementById('icon-sound-on').classList.toggle('hidden', isMuted);
+            document.getElementById('icon-sound-off').classList.toggle('hidden', !isMuted);
+            if (isMuted) {
+                stopRiffPlayback();
+            }
+        }
+
+        /**
+         * Synthesize Distorted Heavy Rock / Metal Electric Guitar Note via Web Audio API
+         */
+        function playDistortedGuitarNote(freq, duration = 0.24, stringIdx = 0, fretNum = 0) {
+            // Visually illuminate 3D string & fret even if muted
+            highlightGuitarStringAndFret(stringIdx, fretNum);
+            triggerEnergyPulse(0.35);
+
+            if (isMuted) return;
+            try {
+                ensureAudioContext();
+                const now = audioCtx.currentTime;
+
+                // Dual detuned sawtooth oscillators for thick metal power-chord tone
+                const osc1 = audioCtx.createOscillator();
+                const osc2 = audioCtx.createOscillator();
+                osc1.type = 'sawtooth';
+                osc2.type = 'sawtooth';
+                osc1.frequency.setValueAtTime(freq, now);
+                osc2.frequency.setValueAtTime(freq * 1.498, now); // Fifth interval (Power Chord)
+
+                // Waveshaper Overdrive / Distortion Curve
+                const shaper = audioCtx.createWaveShaper();
+                const amount = 95;
+                const nSamples = 44100;
+                const curve = new Float32Array(nSamples);
+                const deg = Math.PI / 180;
+                for (let i = 0; i < nSamples; ++i) {
+                    const x = (i * 2) / nSamples - 1;
+                    curve[i] = ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
+                }
+                shaper.curve = curve;
+                shaper.oversample = '4x';
+
+                // Cabinet Lowpass Filter
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(2400, now);
+                filter.Q.setValueAtTime(2.5, now);
+
+                // Amplitude Envelope
+                const gainNode = audioCtx.createGain();
+                gainNode.gain.setValueAtTime(0.001, now);
+                gainNode.gain.linearRampToValueAtTime(0.16, now + 0.015);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                osc1.connect(shaper);
+                osc2.connect(shaper);
+                shaper.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                osc1.start(now);
+                osc2.start(now);
+                osc1.stop(now + duration + 0.02);
+                osc2.stop(now + duration + 0.02);
+            } catch (e) {
+                // Audio blocked or unsupported
+            }
+        }
+
+        /**
+         * Illuminate Specific 3D Guitar String & Fret
+         */
+        function highlightGuitarStringAndFret(stringIdx, fretNum) {
+            if (guitarStrings[stringIdx]) {
+                const sMesh = guitarStrings[stringIdx];
+                sMesh.material.emissive.setHex(0xff2a55);
+                sMesh.material.emissiveIntensity = 4.2;
+                sMesh.userData.vibrateTime = 0.25;
+            }
+            const clampedFret = Math.max(0, Math.min(guitarFrets.length - 1, fretNum));
+            if (guitarFrets[clampedFret]) {
+                const fMesh = guitarFrets[clampedFret];
+                fMesh.material.emissive.setHex(0xf59e0b);
+                fMesh.material.emissiveIntensity = 3.8;
+            }
+        }
+
+        /**
+         * Start Sequenced Heavy Rock Riff Playback Synced to 3D Guitar
+         */
+        function startRiffPlayback(notes, bpm = 135) {
+            stopRiffPlayback();
+            if (!notes || notes.length === 0) return;
+
+            activeRiffNotes = notes;
+            activeBpm = Math.max(70, Math.min(200, bpm || 135));
+
+            // Update UI tab display
+            const tabBox = document.getElementById('riff-tab-box');
+            const tabDisplay = document.getElementById('riff-notes-display');
+            const stopBtn = document.getElementById('btn-stop-riff');
+            tabBox.classList.remove('hidden');
+            stopBtn.classList.remove('hidden');
+            tabDisplay.textContent = notes.map(n => `S${(n.string || 0) + 1}:F${n.fret ?? 0}`).join('  |  ');
+
+            let step = 0;
+            const stepMs = (60 / activeBpm / 2) * 1000; // Eighth notes
+
+            const playStep = () => {
+                const note = activeRiffNotes[step % activeRiffNotes.length];
+                const freq = note.freq || (82.41 * Math.pow(2, (note.fret || 0) / 12));
+                playDistortedGuitarNote(freq, (stepMs / 1000) * 0.9, note.string || 0, note.fret || 0);
+                step++;
+            };
+
+            playStep();
+            riffInterval = setInterval(playStep, stepMs);
+        }
+
+        function stopRiffPlayback() {
+            if (riffInterval) {
+                clearInterval(riffInterval);
+                riffInterval = null;
+            }
+            document.getElementById('btn-stop-riff').classList.add('hidden');
+        }
+
+        function replayCurrentRiff() {
+            if (currentModelType !== 'guitar') {
+                selectModel('guitar');
+            }
+            startRiffPlayback(activeRiffNotes, activeBpm);
+        }
+
+        /**
+         * Generate High-Resolution Procedural Canvas Textures
+         */
+        function generateProceduralTextures() {
+            // 1. Brushed Metal
+            const metalCanvas = document.createElement('canvas');
+            metalCanvas.width = 512;
+            metalCanvas.height = 512;
+            const mCtx = metalCanvas.getContext('2d');
+            mCtx.fillStyle = '#808080';
+            mCtx.fillRect(0, 0, 512, 512);
+            for (let i = 0; i < 4000; i++) {
+                const y = Math.random() * 512;
+                const alpha = Math.random() * 0.18;
+                mCtx.fillStyle = Math.random() > 0.5 ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha})`;
+                mCtx.fillRect(0, y, 512, 1 + Math.random() * 1.5);
+            }
+            const brushedTex = new THREE.CanvasTexture(metalCanvas);
+            brushedTex.wrapS = THREE.RepeatWrapping;
+            brushedTex.wrapT = THREE.RepeatWrapping;
+            brushedTex.repeat.set(3, 3);
+            textures.brushed = brushedTex;
+
+            // 2. Carbon Fiber Twill Weave
+            const carbonCanvas = document.createElement('canvas');
+            carbonCanvas.width = 128;
+            carbonCanvas.height = 128;
+            const cCtx = carbonCanvas.getContext('2d');
+            cCtx.fillStyle = '#111318';
+            cCtx.fillRect(0, 0, 128, 128);
+            const cellSize = 16;
+            for (let y = 0; y < 128; y += cellSize) {
+                for (let x = 0; x < 128; x += cellSize) {
+                    const isEven = ((x + y) / cellSize) % 2 === 0;
+                    const grad = cCtx.createLinearGradient(x, y, x + cellSize, y + cellSize);
+                    if (isEven) {
+                        grad.addColorStop(0, '#2a2f3a');
+                        grad.addColorStop(0.5, '#475569');
+                        grad.addColorStop(1, '#181b22');
+                    } else {
+                        grad.addColorStop(0, '#0f1115');
+                        grad.addColorStop(0.5, '#272c36');
+                        grad.addColorStop(1, '#090a0d');
+                    }
+                    cCtx.fillStyle = grad;
+                    cCtx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+                }
+            }
+            const carbonTex = new THREE.CanvasTexture(carbonCanvas);
+            carbonTex.wrapS = THREE.RepeatWrapping;
+            carbonTex.wrapT = THREE.RepeatWrapping;
+            carbonTex.repeat.set(14, 14);
+            textures.carbon = carbonTex;
+
+            // 3. Bio-Organic / Photonic Microstructure
+            const orgCanvas = document.createElement('canvas');
+            orgCanvas.width = 512;
+            orgCanvas.height = 512;
+            const oCtx = orgCanvas.getContext('2d');
+            oCtx.fillStyle = '#7a7a7a';
+            oCtx.fillRect(0, 0, 512, 512);
+            for (let i = 0; i < 650; i++) {
+                const x = Math.random() * 512;
+                const y = Math.random() * 512;
+                const r = 4 + Math.random() * 18;
+                const g = oCtx.createRadialGradient(x, y, 1, x, y, r);
+                g.addColorStop(0, 'rgba(255,255,255,0.24)');
+                g.addColorStop(0.7, 'rgba(128,128,128,0.1)');
+                g.addColorStop(1, 'rgba(20,20,20,0.28)');
+                oCtx.fillStyle = g;
+                oCtx.beginPath();
+                oCtx.arc(x, y, r, 0, Math.PI * 2);
+                oCtx.fill();
+            }
+            const organicTex = new THREE.CanvasTexture(orgCanvas);
+            organicTex.wrapS = THREE.RepeatWrapping;
+            organicTex.wrapT = THREE.RepeatWrapping;
+            organicTex.repeat.set(4, 4);
+            textures.organic = organicTex;
+        }
+
+        /**
+         * Create PBR Material Based on Selected Preset & Accent Color
+         */
+        function createPBRMaterial(preset, baseColorHex = 0x38bdf8, emissiveHex = 0x000000, emissiveIntensity = 0) {
+            const color = new THREE.Color(baseColorHex);
+            
+            switch (preset) {
+                case 'brushed':
+                    return new THREE.MeshPhysicalMaterial({
+                        color: color,
+                        metalness: 0.92,
+                        roughness: 0.24,
+                        roughnessMap: textures.brushed,
+                        bumpMap: textures.brushed,
+                        bumpScale: 0.015,
+                        clearcoat: 0.35,
+                        clearcoatRoughness: 0.2,
+                        emissive: emissiveHex,
+                        emissiveIntensity: emissiveIntensity
+                    });
+
+                case 'carbon':
+                    return new THREE.MeshPhysicalMaterial({
+                        color: color.clone().multiplyScalar(0.55),
+                        map: textures.carbon,
+                        bumpMap: textures.carbon,
+                        bumpScale: 0.025,
+                        metalness: 0.35,
+                        roughness: 0.18,
+                        clearcoat: 1.0,
+                        clearcoatRoughness: 0.06,
+                        emissive: emissiveHex,
+                        emissiveIntensity: emissiveIntensity
+                    });
+
+                case 'glass':
+                    return new THREE.MeshPhysicalMaterial({
+                        color: color.clone().lerp(new THREE.Color(0xffffff), 0.35),
+                        metalness: 0.05,
+                        roughness: 0.05,
+                        transmission: 0.88,
+                        transparent: true,
+                        opacity: 0.92,
+                        ior: 1.52,
+                        thickness: 1.2,
+                        clearcoat: 1.0,
+                        clearcoatRoughness: 0.04,
+                        emissive: emissiveHex,
+                        emissiveIntensity: emissiveIntensity * 1.3
+                    });
+
+                case 'organic':
+                default:
+                    return new THREE.MeshPhysicalMaterial({
+                        color: color,
+                        metalness: 0.15,
+                        roughness: 0.34,
+                        bumpMap: textures.organic,
+                        bumpScale: 0.03,
+                        roughnessMap: textures.organic,
+                        clearcoat: 0.7,
+                        clearcoatRoughness: 0.2,
+                        sheen: 0.85,
+                        sheenColor: color.clone().lerp(new THREE.Color(0xffffff), 0.5),
+                        emissive: emissiveHex,
+                        emissiveIntensity: emissiveIntensity
+                    });
+            }
+        }
+
+        /**
+         * Build 3D Object 1: Heavy Rock Electric Guitar with Interactive Strings & Glowing Frets
+         */
+        function buildGuitarModel(materialPreset) {
+            const group = new THREE.Group();
+            guitarStrings = [];
+            guitarFrets = [];
+
+            // 1. Sculpted Superstrat Body
+            const bodyShape = new THREE.Shape();
+            bodyShape.moveTo(0, -1.6);
+            bodyShape.bezierCurveTo(1.1, -1.6, 1.45, -0.8, 1.15, -0.15);
+            bodyShape.bezierCurveTo(0.95, 0.2, 1.35, 0.65, 1.25, 1.15);
+            bodyShape.bezierCurveTo(1.15, 1.45, 0.85, 1.3, 0.65, 0.85);
+            bodyShape.bezierCurveTo(0.45, 0.5, -0.45, 0.5, -0.65, 0.95);
+            bodyShape.bezierCurveTo(-0.85, 1.55, -1.25, 1.65, -1.35, 1.25);
+            bodyShape.bezierCurveTo(-1.45, 0.75, -1.0, 0.25, -1.2, -0.2);
+            bodyShape.bezierCurveTo(-1.5, -0.85, -1.1, -1.6, 0, -1.6);
+
+            const bodyGeo = new THREE.ExtrudeGeometry(bodyShape, {
+                depth: 0.36,
+                bevelEnabled: true,
+                bevelSegments: 8,
+                steps: 2,
+                bevelSize: 0.08,
+                bevelThickness: 0.08
+            });
+            bodyGeo.center();
+            const bodyMat = createPBRMaterial(materialPreset, 0xdc2626, 0x7f1d1d, 0.18);
+            const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+            bodyMesh.castShadow = true;
+            bodyMesh.receiveShadow = true;
+            group.add(bodyMesh);
+
+            // 2. Chrome Hardware (Dual Humbuckers, Bridge, Knobs)
+            const chromeMat = new THREE.MeshStandardMaterial({
+                color: 0xe2e8f0,
+                metalness: 0.96,
+                roughness: 0.12
+            });
+            const darkCoilMat = new THREE.MeshStandardMaterial({
+                color: 0x0f172a,
+                metalness: 0.35,
+                roughness: 0.4
+            });
+
+            [-0.15, -0.65].forEach((yPos) => {
+                const pickupGroup = new THREE.Group();
+                const frame = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.42, 0.08), chromeMat);
+                const coil1 = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.16, 0.1), darkCoilMat);
+                coil1.position.y = 0.09;
+                const coil2 = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.16, 0.1), darkCoilMat);
+                coil2.position.y = -0.09;
+                pickupGroup.add(frame, coil1, coil2);
+                pickupGroup.position.set(0, yPos, 0.24);
+                pickupGroup.castShadow = true;
+                group.add(pickupGroup);
+            });
+
+            const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.22, 0.11), chromeMat);
+            bridge.position.set(0, -1.08, 0.25);
+            bridge.castShadow = true;
+            group.add(bridge);
+
+            const knobGeo = new THREE.CylinderGeometry(0.11, 0.12, 0.14, 24);
+            knobGeo.rotateX(Math.PI / 2);
+            [[0.65, -0.75], [0.85, -1.02], [0.55, -1.25]].forEach(([kx, ky]) => {
+                const knob = new THREE.Mesh(knobGeo, chromeMat);
+                knob.position.set(kx, ky, 0.26);
+                knob.castShadow = true;
+                group.add(knob);
+            });
+
+            // 3. Ebony Fretboard Neck & 12 Individual Interactive Frets
+            const neckGeo = new THREE.BoxGeometry(0.48, 1.85, 0.16);
+            const neckMat = new THREE.MeshStandardMaterial({ color: 0x141210, roughness: 0.4, metalness: 0.15 });
+            const neck = new THREE.Mesh(neckGeo, neckMat);
+            neck.position.set(0, 1.45, 0.16);
+            neck.castShadow = true;
+            group.add(neck);
+
+            for (let f = 0; f < 12; f++) {
+                const fy = 2.22 - f * 0.145;
+                const fretGeo = new THREE.BoxGeometry(0.46, 0.022, 0.03);
+                const fretMat = new THREE.MeshStandardMaterial({
+                    color: 0xcbd5e1,
+                    emissive: 0x38bdf8,
+                    emissiveIntensity: 0.15,
+                    metalness: 0.9,
+                    roughness: 0.15
+                });
+                const fretMesh = new THREE.Mesh(fretGeo, fretMat);
+                fretMesh.position.set(0, fy, 0.245);
+                guitarFrets.push(fretMesh);
+                group.add(fretMesh);
+            }
+
+            // 4. 6 Interactive Glowing Strings (Standard Tuning E2-A2-D3-G3-B3-E4)
+            const openFreqs = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
+            for (let s = 0; s < 6; s++) {
+                const sx = -0.17 + s * 0.068;
+                const radius = 0.014 - s * 0.0012;
+                const strGeo = new THREE.CylinderGeometry(radius, radius, 3.35, 10);
+                const strMat = new THREE.MeshStandardMaterial({
+                    color: 0x7dd3fc,
+                    emissive: 0x0284c7,
+                    emissiveIntensity: 0.75,
+                    metalness: 0.85,
+                    roughness: 0.18
+                });
+                const strMesh = new THREE.Mesh(strGeo, strMat);
+                strMesh.position.set(sx, 0.62, 0.31);
+                strMesh.userData = {
+                    isGuitarString: true,
+                    stringIndex: s,
+                    baseFreq: openFreqs[s],
+                    baseX: sx,
+                    vibrateTime: 0
+                };
+                guitarStrings.push(strMesh);
+                group.add(strMesh);
+            }
+
+            // 5. Orbiting Plectrum
+            const pickShape = new THREE.Shape();
+            pickShape.moveTo(0, -0.42);
+            pickShape.bezierCurveTo(0.4, -0.1, 0.36, 0.32, 0, 0.35);
+            pickShape.bezierCurveTo(-0.36, 0.32, -0.4, -0.1, 0, -0.42);
+            const pickGeo = new THREE.ExtrudeGeometry(pickShape, {
+                depth: 0.04,
+                bevelEnabled: true,
+                bevelSegments: 3,
+                bevelSize: 0.015,
+                bevelThickness: 0.015
+            });
+            pickGeo.center();
+            const pickMat = createPBRMaterial(materialPreset, 0x38bdf8, 0x0284c7, 0.45);
+            const pickMesh = new THREE.Mesh(pickGeo, pickMat);
+            pickMesh.position.set(1.5, 0.55, 0.6);
+            pickMesh.name = 'floatingAcc';
+            group.add(pickMesh);
+
+            group.rotation.x = -0.2;
+            return group;
+        }
+
+        /**
+         * Build 3D Object 2: Anatomical Biological DNA Double-Helix (with A-T, C-G Base Pair Highlighting)
+         */
+        function buildDNAModel(materialPreset) {
+            const group = new THREE.Group();
+            dnaBasePairs = [];
+            const numPairs = 22;
+            const height = 3.6;
+            const radius = 0.85;
+
+            const strandMat1 = createPBRMaterial(materialPreset, 0x10b981, 0x047857, 0.25);
+            const strandMat2 = createPBRMaterial(materialPreset, 0x06b6d4, 0x0e7490, 0.25);
+
+            // Base Pair Types: A-T (Adenine-Thymine) vs C-G (Cytosine-Guanine)
+            const pairConfigs = [
+                { type: 'AT', c1: 0xf43f5e, c2: 0xf59e0b },
+                { type: 'CG', c1: 0x8b5cf6, c2: 0x3b82f6 }
+            ];
+            const sphereGeo = new THREE.SphereGeometry(0.14, 24, 24);
+            const bondGeo = new THREE.CylinderGeometry(0.042, 0.042, 1, 16);
+
+            const curvePoints1 = [];
+            const curvePoints2 = [];
+
+            for (let i = 0; i < numPairs; i++) {
+                const t = i / (numPairs - 1);
+                const y = (t - 0.5) * height;
+                const angle = t * Math.PI * 3.2;
+
+                const x1 = Math.cos(angle) * radius;
+                const z1 = Math.sin(angle) * radius;
+                const x2 = Math.cos(angle + Math.PI) * radius;
+                const z2 = Math.sin(angle + Math.PI) * radius;
+
+                curvePoints1.push(new THREE.Vector3(x1, y, z1));
+                curvePoints2.push(new THREE.Vector3(x2, y, z2));
+
+                const node1 = new THREE.Mesh(sphereGeo, strandMat1);
+                node1.position.set(x1, y, z1);
+                node1.castShadow = true;
+                group.add(node1);
+
+                const node2 = new THREE.Mesh(sphereGeo, strandMat2);
+                node2.position.set(x2, y, z2);
+                node2.castShadow = true;
+                group.add(node2);
+
+                const cfg = pairConfigs[i % 2];
+                const p1 = new THREE.Vector3(x1, y, z1);
+                const p2 = new THREE.Vector3(x2, y, z2);
+                const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+
+                const half1 = new THREE.Mesh(bondGeo, createPBRMaterial(materialPreset, cfg.c1, cfg.c1, 0.35));
+                half1.position.lerpVectors(p1, mid, 0.5);
+                half1.scale.set(1, p1.distanceTo(mid), 1);
+                half1.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), mid.clone().sub(p1).normalize());
+                half1.userData = { baseType: cfg.type, baseColor: cfg.c1 };
+
+                const half2 = new THREE.Mesh(bondGeo, createPBRMaterial(materialPreset, cfg.c2, cfg.c2, 0.35));
+                half2.position.lerpVectors(mid, p2, 0.5);
+                half2.scale.set(1, mid.distanceTo(p2), 1);
+                half2.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), p2.clone().sub(mid).normalize());
+                half2.userData = { baseType: cfg.type, baseColor: cfg.c2 };
+
+                dnaBasePairs.push(half1, half2);
+                group.add(half1, half2);
+            }
+
+            const curve1 = new THREE.CatmullRomCurve3(curvePoints1);
+            const curve2 = new THREE.CatmullRomCurve3(curvePoints2);
+            const tube1 = new THREE.Mesh(new THREE.TubeGeometry(curve1, 80, 0.065, 16, false), strandMat1);
+            const tube2 = new THREE.Mesh(new THREE.TubeGeometry(curve2, 80, 0.065, 16, false), strandMat2);
+            tube1.castShadow = true;
+            tube2.castShadow = true;
+            group.add(tube1, tube2);
+
+            const cellMesh = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(0.26, 3),
+                createPBRMaterial(materialPreset, 0x34d399, 0x10b981, 0.5)
+            );
+            cellMesh.position.set(1.45, 0.6, 0.4);
+            cellMesh.name = 'floatingAcc';
+            group.add(cellMesh);
+
+            return group;
+        }
+
+        /**
+         * Build 3D Object 3: Tropical Parrot Plumage with Photonic Barbule Micro-Structure
+         */
+        function buildPlumageModel(materialPreset) {
+            const group = new THREE.Group();
+            featherBarbs = [];
+
+            const coreGeo = new THREE.SphereGeometry(0.6, 48, 48);
+            const coreMat = createPBRMaterial(materialPreset, 0x0ea5e9, 0x0284c7, 0.3);
+            featherCoreMesh = new THREE.Mesh(coreGeo, coreMat);
+            featherCoreMesh.castShadow = true;
+            group.add(featherCoreMesh);
+
+            const featherColors = [
+                { hex: 0x0284c7, em: 0x0369a1, name: 'structural_blue' }, // Macaw Structural Blue
+                { hex: 0xfacc15, em: 0x854d0e, name: 'psittacofulvin_gold' }, // Parrot Gold Pigment
+                { hex: 0xef4444, em: 0x991b1b, name: 'scarlet_red' },
+                { hex: 0x10b981, em: 0x065f46, name: 'emerald_green' },
+                { hex: 0xf97316, em: 0x9a3412, name: 'sun_orange' }
+            ];
+
+            const featherShape = new THREE.Shape();
+            featherShape.moveTo(0, 0);
+            featherShape.bezierCurveTo(0.26, 0.4, 0.34, 1.3, 0.14, 1.95);
+            featherShape.bezierCurveTo(0.05, 2.15, -0.05, 2.15, -0.14, 1.95);
+            featherShape.bezierCurveTo(-0.34, 1.3, -0.26, 0.4, 0, 0);
+
+            const featherGeo = new THREE.ExtrudeGeometry(featherShape, {
+                depth: 0.025,
+                bevelEnabled: true,
+                bevelSegments: 4,
+                bevelSize: 0.015,
+                bevelThickness: 0.015
+            });
+
+            const posAttr = featherGeo.attributes.position;
+            for (let i = 0; i < posAttr.count; i++) {
+                const y = posAttr.getY(i);
+                const x = posAttr.getX(i);
+                const z = posAttr.getZ(i);
+                const bend = Math.pow(y * 0.48, 2.1) * 0.38;
+                const cup = Math.abs(x) * 0.18;
+                posAttr.setZ(i, z - bend + cup);
+            }
+            featherGeo.computeVertexNormals();
+
+            const numFeathers = 14;
+            for (let i = 0; i < numFeathers; i++) {
+                const angle = (i / numFeathers) * Math.PI * 2;
+                const palette = featherColors[i % featherColors.length];
+                const fMat = createPBRMaterial(materialPreset, palette.hex, palette.em, 0.28);
+
+                const featherHolder = new THREE.Group();
+                const featherMesh = new THREE.Mesh(featherGeo, fMat);
+                featherMesh.castShadow = true;
+                featherMesh.userData = { pigmentType: palette.name, baseEmissive: palette.em };
+                featherBarbs.push(featherMesh);
+
+                const shaftGeo = new THREE.CylinderGeometry(0.012, 0.024, 2.05, 8);
+                shaftGeo.translate(0, 1.0, 0.02);
+                const shaft = new THREE.Mesh(shaftGeo, new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.3 }));
+
+                featherHolder.add(featherMesh, shaft);
+
+                const layer = i % 2;
+                featherHolder.scale.setScalar(0.95 - layer * 0.15);
+                featherHolder.rotation.y = angle;
+                featherHolder.rotation.x = 0.55 + layer * 0.32;
+                featherHolder.position.y = -0.15 + layer * 0.18;
+
+                group.add(featherHolder);
+            }
+
+            const dropMesh = new THREE.Mesh(
+                new THREE.OctahedronGeometry(0.24, 2),
+                createPBRMaterial(materialPreset, 0x38bdf8, 0x0284c7, 0.55)
+            );
+            dropMesh.position.set(-1.45, 0.85, 0.55);
+            dropMesh.name = 'floatingAcc';
+            group.add(dropMesh);
+
+            return group;
+        }
+
+        /**
+         * Initialize Three.js Scene, Lighting, Post-Processing & Raycasting
+         */
+        function init() {
+            const container = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x07090e);
+            scene.fog = new THREE.FogExp2(0x07090e, 0.045);
+
+            camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 1.4, 5.4);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.15;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            container.appendChild(renderer.domElement);
+
+            const pmremGenerator = new THREE.PMREMGenerator(renderer);
+            pmremGenerator.compileEquirectangularShader();
+            const roomEnv = new THREE.RoomEnvironment();
+            const envRT = pmremGenerator.fromScene(roomEnv, 0.04);
+            scene.environment = envRT.texture;
+            roomEnv.dispose();
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.06;
+            controls.minDistance = 2.6;
+            controls.maxDistance = 10.5;
+            controls.maxPolarAngle = Math.PI * 0.62;
+            controls.target.set(0, 0.25, 0);
+
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
+            scene.add(ambientLight);
+
+            keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+            keyLight.position.set(4, 6, 4);
+            keyLight.castShadow = true;
+            keyLight.shadow.mapSize.width = 2048;
+            keyLight.shadow.mapSize.height = 2048;
+            keyLight.shadow.camera.near = 0.5;
+            keyLight.shadow.camera.far = 20;
+            const d = 3.5;
+            keyLight.shadow.camera.left = -d;
+            keyLight.shadow.camera.right = d;
+            keyLight.shadow.camera.top = d;
+            keyLight.shadow.camera.bottom = -d;
+            keyLight.shadow.bias = -0.0005;
+            scene.add(keyLight);
+
+            fillLight = new THREE.PointLight(0x38bdf8, 1.4, 15);
+            fillLight.position.set(-4.5, 2.2, 3);
+            scene.add(fillLight);
+
+            rimLight = new THREE.PointLight(0x818cf8, 1.8, 15);
+            rimLight.position.set(0, 3.5, -4.5);
+            scene.add(rimLight);
+
+            const floorGeo = new THREE.CircleGeometry(14, 64);
+            floorGeo.rotateX(-Math.PI / 2);
+            const floorMesh = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({
+                color: 0x0b0e14,
+                metalness: 0.7,
+                roughness: 0.28
+            }));
+            floorMesh.position.y = -2.05;
+            floorMesh.receiveShadow = true;
+            scene.add(floorMesh);
+
+            pedestalMesh = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.75, 1.95, 0.16, 64),
+                new THREE.MeshPhysicalMaterial({ color: 0x111827, metalness: 0.85, roughness: 0.2, clearcoat: 0.8 })
+            );
+            pedestalMesh.position.y = -1.96;
+            pedestalMesh.receiveShadow = true;
+            pedestalMesh.castShadow = true;
+            scene.add(pedestalMesh);
+
+            const ringGeo = new THREE.TorusGeometry(1.76, 0.018, 16, 100);
+            ringGeo.rotateX(Math.PI / 2);
+            ringMesh = new THREE.Mesh(ringGeo, new THREE.MeshStandardMaterial({
+                color: 0x38bdf8,
+                emissive: 0x38bdf8,
+                emissiveIntensity: 1.6
+            }));
+            ringMesh.position.y = -1.88;
+            scene.add(ringMesh);
+
+            const pCount = 160;
+            const pGeo = new THREE.BufferGeometry();
+            const pPos = new Float32Array(pCount * 3);
+            for (let i = 0; i < pCount * 3; i += 3) {
+                pPos[i] = (Math.random() - 0.5) * 10;
+                pPos[i + 1] = Math.random() * 5 - 1.5;
+                pPos[i + 2] = (Math.random() - 0.5) * 10;
+            }
+            pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+            particleSystem = new THREE.Points(pGeo, new THREE.PointsMaterial({
+                color: 0x7dd3fc,
+                size: 0.035,
+                transparent: true,
+                opacity: 0.55
+            }));
+            scene.add(particleSystem);
+
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(new THREE.RenderPass(scene, camera));
+            bloomPass = new THREE.UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                0.45,
+                0.65,
+                0.82
+            );
+            composer.addPass(bloomPass);
+
+            generateProceduralTextures();
+            rebuildShowcaseModel();
+
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Interactive Click / Tap on 3D Objects (e.g., Strumming Guitar Strings)
+            renderer.domElement.addEventListener('pointerdown', (e) => {
+                renderer.domElement.dataset.downX = e.clientX;
+                renderer.domElement.dataset.downY = e.clientY;
+            });
+            renderer.domElement.addEventListener('pointerup', (e) => {
+                const dx = Math.abs(e.clientX - Number(renderer.domElement.dataset.downX || 0));
+                const dy = Math.abs(e.clientY - Number(renderer.domElement.dataset.downY || 0));
+                if (dx < 6 && dy < 6) {
+                    handleCanvasTap(e.clientX, e.clientY);
+                }
+            });
+        }
+
+        /**
+         * Handle Direct Tap/Click on 3D Scene Objects
+         */
+        function handleCanvasTap(clientX, clientY) {
+            pointer.x = (clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+
+            if (currentModelType === 'guitar' && guitarStrings.length > 0) {
+                const hits = raycaster.intersectObjects(guitarStrings, false);
+                if (hits.length > 0) {
+                    const hitObj = hits[0].object;
+                    playDistortedGuitarNote(hitObj.userData.baseFreq, 0.45, hitObj.userData.stringIndex, 0);
+                    return;
+                }
+                // Strum a random string if tapping guitar body
+                const randStr = Math.floor(Math.random() * guitarStrings.length);
+                const sObj = guitarStrings[randStr];
+                playDistortedGuitarNote(sObj.userData.baseFreq, 0.35, randStr, 3);
+                return;
+            }
+
+            triggerEnergyPulse(0.8);
+        }
+
+        /**
+         * Rebuild Active 3D Object
+         */
+        function rebuildShowcaseModel() {
+            if (currentModelGroup) {
+                scene.remove(currentModelGroup);
+            }
+
+            if (currentModelType === 'guitar') {
+                currentModelGroup = buildGuitarModel(currentMaterialType);
+            } else if (currentModelType === 'dna') {
+                currentModelGroup = buildDNAModel(currentMaterialType);
+            } else {
+                currentModelGroup = buildPlumageModel(currentMaterialType);
+            }
+
+            currentModelGroup.position.y = 0.25;
+            scene.add(currentModelGroup);
+        }
+
+        /**
+         * Apply Mood & Highlight State Returned by Gemini AI
+         */
+        function applyAISceneState(aiData) {
+            const targetModel = aiData.model || currentModelType;
+            const targetMood = aiData.mood || 'focus';
+            currentMood = targetMood;
+            currentHighlightPart = aiData.highlightPart || '';
+
+            // 1. Switch 3D Model if needed
+            if (targetModel !== currentModelType) {
+                selectModel(targetModel, false);
+            }
+
+            // 2. Apply Mood Lighting & HUD
+            const breathingHud = document.getElementById('breathing-hud');
+            const statusText = document.getElementById('mode-status-text');
+
+            if (targetMood === 'release') {
+                selectLighting('neon');
+                breathingHud.classList.add('hidden');
+                statusText.textContent = 'מצב פריקת אנרגיה • סנכרון ריף גיטרה';
+            } else if (targetMood === 'calm') {
+                selectLighting('studio');
+                // Cool soothing cyan/emerald tint
+                fillLight.color.setHex(0x10b981);
+                rimLight.color.setHex(0x06b6d4);
+                ringMesh.material.color.setHex(0x10b981);
+                ringMesh.material.emissive.setHex(0x10b981);
+                breathingHud.classList.remove('hidden');
+                statusText.textContent = 'מצב ויסות ונשימה 4-6 • הורדת עומס';
+            } else if (targetMood === 'lab') {
+                selectLighting('sunset');
+                breathingHud.classList.add('hidden');
+                statusText.textContent = 'מצב מעבדה וחקר מדעי';
+            } else {
+                selectLighting('studio');
+                breathingHud.classList.add('hidden');
+                statusText.textContent = 'מצב איפוס קוגניטיבי ופוקוס';
+            }
+
+            // 3. Highlight Specific Scientific Sub-Parts if requested
+            if (currentModelType === 'dna' && dnaBasePairs.length > 0) {
+                dnaBasePairs.forEach(mesh => {
+                    const isTarget = currentHighlightPart && mesh.userData.baseType &&
+                        currentHighlightPart.toUpperCase().includes(mesh.userData.baseType);
+                    mesh.material.emissiveIntensity = isTarget ? 1.8 : 0.35;
+                });
+            }
+
+            if (currentModelType === 'feather' && featherBarbs.length > 0) {
+                featherBarbs.forEach(mesh => {
+                    const isBlueTarget = currentHighlightPart.includes('blue') && mesh.userData.pigmentType === 'structural_blue';
+                    mesh.material.emissiveIntensity = isBlueTarget ? 1.6 : 0.35;
+                });
+            }
+
+            // 4. Play Synthesized Riff if Guitar & Riff Notes exist
+            if (targetModel === 'guitar' && Array.isArray(aiData.riffNotes) && aiData.riffNotes.length > 0) {
+                startRiffPlayback(aiData.riffNotes, aiData.bpm || 135);
+            } else if (targetModel !== 'guitar') {
+                stopRiffPlayback();
+                document.getElementById('riff-tab-box').classList.add('hidden');
+            }
+        }
+
+        /**
+         * Gemini API Integration with Structured JSON Output & Exponential Backoff
+         */
+        async function callGeminiStudioAssistant(userPrompt) {
+            const apiKey = document.getElementById("gemini-api-key").value.trim();
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const systemPrompt = `אתה עוזר AI חכם, בוגר, ישיר ולא שיפוטי עבור צעיר בן 18 בתפקוד גבוה על הרצף האוטיסטי שאוהב גיטרה חשמלית ורוק כבד, ביולוגיה ותוכים, ומתמודד לעיתים עם תסכול מלימודי פסיכומטרי, שיעורי נהיגה או לחץ.
+כללי תקשורת קריטיים:
+1. דבר איתו בגובה העיניים כאל אדם בוגר, אינטליגנטי ועצמאי. לעולם אל תתנשא, אל תשתמש בשפה ילדותית ואל תטיף מוסר.
+2. אם הוא מבטא תסכול או תחושת כישלון (למשל בפסיכומטרי או בנהיגה), נרמל זאת בצורה לוגית ומדעית: הצג טעות כנתון טכני בתהליך למידה (כמו ניפוי באגים בקוד או ניסוי במעבדה) ולא ככישלון אישי, והצע פעולת איפוס קצרה ומעשית.
+3. אם הוא שואל על ביולוגיה, DNA או תוכים (כגון צבעים מבניים בנוצות או גנטיקה), ענה בצורה מדעית מדויקת ומרתקת.
+4. אם הוא מבקש ריף מטאל/רוק או רוצה לפרוק עצבים, תן לו ריף גיטרה עם רצף שריגים (frets) ותדרים (freq) מתאימים.
+5. החזר תמיד תשובת JSON תקנית התואמת לסכימה המבוקשת.`;
+
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            replyHebrew: {
+                                type: "STRING",
+                                description: "תשובה ברורה, בוגרת, תומכת ולוגית בעברית (3-5 משפטים)."
+                            },
+                            model: {
+                                type: "STRING",
+                                enum: ["guitar", "dna", "feather"],
+                                description: "המודל התלת-ממדי המתאים ביותר לבקשה."
+                            },
+                            mood: {
+                                type: "STRING",
+                                enum: ["release", "calm", "focus", "lab"],
+                                description: "מצב התאורה והאווירה: release לפריקת עצבים/רוק, calm לנשימה והרגעה, focus לאיפוס קוגניטיבי, lab למחקר ביולוגיה/תוכים."
+                            },
+                            bpm: {
+                                type: "NUMBER",
+                                description: "קצב BPM (בין 80 ל-170 עבור ריף גיטרה)."
+                            },
+                            highlightPart: {
+                                type: "STRING",
+                                description: "מזהה חלק להדגשה במודל, למשל 'AT', 'CG', 'blue', או 'frets'."
+                            },
+                            riffNotes: {
+                                type: "ARRAY",
+                                description: "רשימת 6-8 תווים לריף גיטרה חשמלית.",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        string: { type: "INTEGER", description: "אינדקס מיתר 0 עד 5 (0 הוא מיתר בס נמוך E)" },
+                                        fret: { type: "INTEGER", description: "מספר שריג 0 עד 11" },
+                                        freq: { type: "NUMBER", description: "תדר בהרץ (למשל 82.41 עבור E2, 98.0 עבור G2, 110.0 עבור A2)" }
+                                    },
+                                    required: ["string", "fret", "freq"]
+                                }
+                            }
+                        },
+                        required: ["replyHebrew", "model", "mood", "bpm", "highlightPart", "riffNotes"]
+                    }
+                }
+            };
+
+            const delays = [1000, 2000, 4000];
+            for (let attempt = 0; attempt <= delays.length; attempt++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    const result = await response.json();
+                    const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!rawText) throw new Error("Empty AI response");
+                    return JSON.parse(rawText);
+                } catch (err) {
+                    if (attempt === delays.length) {
+                        throw err;
+                    }
+                    await new Promise(res => setTimeout(res, delays[attempt]));
+                }
+            }
+        }
+
+        /**
+         * Handle Form Submit & Quick Chips
+         */
+        async function handlePromptSubmit(event) {
+            event.preventDefault();
+            const inputEl = document.getElementById('ai-prompt-input');
+            const text = inputEl.value.trim();
+            if (!text) return;
+            inputEl.value = '';
+            await processUserCommand(text);
+        }
+
+        async function sendQuickPrompt(promptText) {
+            await processUserCommand(promptText);
+        }
+
+        async function processUserCommand(promptText) {
+            const responseBox = document.getElementById('ai-response-box');
+            const sendBtn = document.getElementById('btn-send-ai');
+            const sendText = document.getElementById('send-btn-text');
+            const spinner = document.getElementById('send-spinner');
+
+            sendBtn.disabled = true;
+            sendText.textContent = 'מעבד...';
+            spinner.classList.remove('hidden');
+
+            responseBox.innerHTML = `<div class="text-sky-300/90 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span><span>מנתח ומכייל את הסביבה התלת-ממדית...</span></div>`;
+
+            try {
+                const aiData = await callGeminiStudioAssistant(promptText);
+                responseBox.innerHTML = `<p class="text-slate-100 leading-relaxed">${escapeHtml(aiData.replyHebrew)}</p>`;
+                applyAISceneState(aiData);
+            } catch (error) {
+                // Intelligent Local Fallback if offline
+                const fallback = buildLocalFallbackResponse(promptText);
+                responseBox.innerHTML = `<p class="text-slate-100 leading-relaxed">${escapeHtml(fallback.replyHebrew)}</p>`;
+                applyAISceneState(fallback);
+            } finally {
+                sendBtn.disabled = false;
+                sendText.textContent = 'שלח';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function buildLocalFallbackResponse(text) {
+            if (text.includes('ריף') || text.includes('מטאל') || text.includes('גיטרה') || text.includes('עצבני')) {
+                return {
+                    replyHebrew: "מעביר את הסביבה למצב פריקת מתח עם ריף מטאל כבד בסולם מי מינור. אפשר ללחוץ על המיתרים המוארים או להצטרף עם הגיטרה האמיתית כדי לפרוק את האדרנלין.",
+                    model: "guitar",
+                    mood: "release",
+                    bpm: 142,
+                    highlightPart: "frets",
+                    riffNotes: [
+                        { string: 0, fret: 0, freq: 82.41 },
+                        { string: 0, fret: 0, freq: 82.41 },
+                        { string: 0, fret: 3, freq: 98.00 },
+                        { string: 0, fret: 5, freq: 110.00 },
+                        { string: 0, fret: 6, freq: 116.54 },
+                        { string: 0, fret: 5, freq: 110.00 },
+                        { string: 0, fret: 3, freq: 98.00 },
+                        { string: 0, fret: 0, freq: 82.41 }
+                    ]
+                };
+            }
+            if (text.includes('תוכי') || text.includes('נוצ')) {
+                return {
+                    replyHebrew: "הצבע הכחול בנוצות של תוכי ארה אינו פיגמנט כימי, אלא 'צבע מבני' (Structural Color): ננו-מבנים ספוגיים של קרטין וכיסי אוויר בברביולות מפזרים אור כחול בצורה קוהרנטית, בעוד שצהוב ואדום נוצרים מפיגמנטים ייחודיים לתוכים הנקראים פסיטקופולבינים.",
+                    model: "feather",
+                    mood: "lab",
+                    bpm: 100,
+                    highlightPart: "blue",
+                    riffNotes: []
+                };
+            }
+            if (text.includes('נשימה') || text.includes('עומס')) {
+                return {
+                    replyHebrew: "הפעלתי את מסנכרן הנשימה 4-6 על סליל ה-DNA: 4 שניות שאיפה כשהסליל מתרחב, ו-6 שניות נשיפה איטית כשהוא מתכנס. זה מאט פיזיולוגית את קצב הלב דרך עצב הוואגוס.",
+                    model: "dna",
+                    mood: "calm",
+                    bpm: 90,
+                    highlightPart: "AT",
+                    riffNotes: []
+                };
+            }
+            return {
+                replyHebrew: "טעות בסימולציית פסיכומטרי או בזינוק בעלייה היא לא מדד לערך שלך, אלא נקודת מידע טכנית שמראה איפה המוח נתקל בעומס. קח 5 דקות הפסקה מוחלטת ממסכים ושאלות כדי לאפס את הזיכרון העובד.",
+                model: "dna",
+                mood: "focus",
+                bpm: 100,
+                highlightPart: "CG",
+                riffNotes: []
+            };
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        /**
+         * UI Actions
+         */
+        function toggleLeftPanel() {
+            const panel = document.getElementById('left-studio-panel');
+            panel.classList.toggle('hidden');
+            panel.classList.toggle('flex');
+        }
+
+        function selectModel(type, triggerPulse = true) {
+            currentModelType = type;
+            ['guitar', 'dna', 'feather'].forEach(id => {
+                document.getElementById(`btn-model-${id}`).classList.toggle('btn-active', id === type);
+            });
+
+            const subtitles = {
+                guitar: 'גיטרה חשמלית ומיתרים',
+                dna: 'מבנה סליל DNA כפול',
+                feather: 'נוצות תוכי פוטוניות'
+            };
+            document.getElementById('model-subtitle').textContent = subtitles[type];
+
+            if (type !== 'guitar') {
+                stopRiffPlayback();
+            }
+
+            rebuildShowcaseModel();
+            if (triggerPulse) triggerEnergyPulse(0.6);
+        }
+
+        function selectMaterial(matType) {
+            currentMaterialType = matType;
+            ['brushed', 'carbon', 'glass', 'organic'].forEach(id => {
+                document.getElementById(`btn-mat-${id}`).classList.toggle('btn-active', id === matType);
+            });
+
+            const stats = {
+                brushed: 'Metal: 0.92 | Rough: 0.24',
+                carbon: 'Coat: 1.0 | Weave: Twill',
+                glass: 'IOR: 1.52 | Trans: 88%',
+                organic: 'Sheen: 0.85 | Photonic'
+            };
+            document.getElementById('material-stats').textContent = stats[matType];
+
+            rebuildShowcaseModel();
+            triggerEnergyPulse(0.5);
+        }
+
+        function selectLighting(preset) {
+            currentLightingType = preset;
+            ['studio', 'sunset', 'neon'].forEach(id => {
+                document.getElementById(`btn-light-${id}`).classList.toggle('btn-active', id === preset);
+            });
+
+            if (preset === 'studio') {
+                scene.background = new THREE.Color(0x07090e);
+                scene.fog.color.setHex(0x07090e);
+                keyLight.color.setHex(0xffffff);
+                keyLight.intensity = 2.2;
+                fillLight.color.setHex(0x38bdf8);
+                fillLight.intensity = 1.4;
+                rimLight.color.setHex(0x818cf8);
+                rimLight.intensity = 1.8;
+                ringMesh.material.color.setHex(0x38bdf8);
+                ringMesh.material.emissive.setHex(0x38bdf8);
+                bloomPass.strength = 0.45;
+            } else if (preset === 'sunset') {
+                scene.background = new THREE.Color(0x130b08);
+                scene.fog.color.setHex(0x130b08);
+                keyLight.color.setHex(0xffedd5);
+                keyLight.intensity = 2.4;
+                fillLight.color.setHex(0xf97316);
+                fillLight.intensity = 2.0;
+                rimLight.color.setHex(0xf59e0b);
+                rimLight.intensity = 2.2;
+                ringMesh.material.color.setHex(0xf59e0b);
+                ringMesh.material.emissive.setHex(0xf59e0b);
+                bloomPass.strength = 0.55;
+            } else if (preset === 'neon') {
+                scene.background = new THREE.Color(0x090410);
+                scene.fog.color.setHex(0x090410);
+                keyLight.color.setHex(0xf1f5f9);
+                keyLight.intensity = 1.6;
+                fillLight.color.setHex(0xef4444);
+                fillLight.intensity = 2.8;
+                rimLight.color.setHex(0xf59e0b);
+                rimLight.intensity = 2.8;
+                ringMesh.material.color.setHex(0xef4444);
+                ringMesh.material.emissive.setHex(0xef4444);
+                bloomPass.strength = 0.85;
+            }
+        }
+
+        function toggleAutoRotate() {
+            autoRotate = !autoRotate;
+            const btn = document.getElementById('btn-rotate');
+            const text = document.getElementById('rotate-text');
+            const icon = document.getElementById('rotate-icon');
+
+            btn.classList.toggle('btn-active', autoRotate);
+            text.textContent = autoRotate ? 'סיבוב: פעיל' : 'סיבוב: מושהה';
+            icon.style.animationPlayState = autoRotate ? 'running' : 'paused';
+        }
+
+        function triggerEnergyPulse(amount = 1.0) {
+            pulseIntensity = Math.min(1.5, pulseIntensity + amount);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        /**
+         * Main Render, Breathing Pacer & String Vibration Loop
+         */
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const elapsedTime = clock.getElapsedTime();
+
+            if (currentModelGroup) {
+                currentModelGroup.position.y = 0.28 + Math.sin(elapsedTime * 1.5) * 0.07;
+
+                if (autoRotate) {
+                    const rotSpeed = currentMood === 'calm' ? 0.0035 : 0.0065;
+                    currentModelGroup.rotation.y += rotSpeed;
+                }
+
+                // Animate orbiting accessory
+                const acc = currentModelGroup.getObjectByName('floatingAcc');
+                if (acc) {
+                    acc.rotation.y = elapsedTime * 1.4;
+                    acc.rotation.z = Math.sin(elapsedTime * 1.8) * 0.25;
+                }
+
+                // 4-Second Inhale / 6-Second Exhale Pacer in 'calm' mode
+                if (currentMood === 'calm') {
+                    const cycle = elapsedTime % 10.0;
+                    const phaseLabel = document.getElementById('breath-phase-label');
+                    const timerLabel = document.getElementById('breath-timer');
+                    const progressBar = document.getElementById('breath-progress-bar');
+
+                    let breathFactor = 0;
+                    if (cycle < 4.0) {
+                        breathFactor = cycle / 4.0;
+                        phaseLabel.textContent = 'שאיפה עמוקה (4 שניות)...';
+                        timerLabel.textContent = `${cycle.toFixed(1)}s / 4.0s`;
+                        progressBar.style.width = `${breathFactor * 100}%`;
+                    } else {
+                        const exhaleElapsed = cycle - 4.0;
+                        breathFactor = 1.0 - (exhaleElapsed / 6.0);
+                        phaseLabel.textContent = 'נשיפה איטית (6 שניות)...';
+                        timerLabel.textContent = `${exhaleElapsed.toFixed(1)}s / 6.0s`;
+                        progressBar.style.width = `${breathFactor * 100}%`;
+                    }
+                    const smoothBreathScale = 0.94 + breathFactor * 0.14;
+                    currentModelGroup.scale.setScalar(smoothBreathScale);
+                } else if (pulseIntensity > 0.001) {
+                    const scaleBoost = 1 + Math.sin(pulseIntensity * Math.PI) * 0.07;
+                    currentModelGroup.scale.setScalar(scaleBoost);
+                    ringMesh.material.emissiveIntensity = 1.6 + pulseIntensity * 3.5;
+                    pulseIntensity *= 0.91;
+                } else {
+                    currentModelGroup.scale.setScalar(1);
+                    ringMesh.material.emissiveIntensity = 1.6 + Math.sin(elapsedTime * 2.0) * 0.3;
+                }
+
+                // Guitar String Vibration & Fret Glow Decay
+                if (currentModelType === 'guitar') {
+                    guitarStrings.forEach((sMesh) => {
+                        if (sMesh.userData.vibrateTime > 0) {
+                            sMesh.userData.vibrateTime -= delta;
+                            sMesh.position.x = sMesh.userData.baseX + Math.sin(elapsedTime * 95) * 0.012;
+                        } else {
+                            sMesh.position.x = sMesh.userData.baseX;
+                            sMesh.material.emissive.lerp(new THREE.Color(0x0284c7), 0.12);
+                            sMesh.material.emissiveIntensity += (0.75 - sMesh.material.emissiveIntensity) * 0.12;
+                        }
+                    });
+                    guitarFrets.forEach((fMesh) => {
+                        fMesh.material.emissive.lerp(new THREE.Color(0x38bdf8), 0.1);
+                        fMesh.material.emissiveIntensity += (0.15 - fMesh.material.emissiveIntensity) * 0.1;
+                    });
+                }
+
+                // Parrot Feather Iridescent Color Shift
+                if (currentModelType === 'feather' && featherCoreMesh) {
+                    const hue = (elapsedTime * 0.05) % 1;
+                    featherCoreMesh.material.emissive.setHSL(hue, 0.85, 0.45);
+                }
+            }
+
+            if (particleSystem) {
+                particleSystem.rotation.y = elapsedTime * 0.04;
+            }
+
+            controls.update();
+            composer.render();
+        }
+
+        window.onload = function () {
+            init();
+            animate();
+        };
+    </script>
+</body>
+</html>
