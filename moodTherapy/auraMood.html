@@ -197,33 +197,34 @@
         </div>
       </div>
 
+      <div class="api-key-wrapper w-full max-w-md mx-auto" style="margin: 16px 0; text-align: left;">
+        <label for="gemini-api-key" style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; letter-spacing: 0.05em; text-transform: uppercase;">
+          Gemini API Key
+        </label>
+        <div style="display: flex; gap: 8px;">
+          <input
+            type="password"
+            id="gemini-api-key"
+            placeholder="AIzaSy..."
+            autocomplete="off"
+            style="flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(15, 23, 42, 0.6); color: #f8fafc; font-size: 14px; outline: none;"
+          />
+          <button
+            type="button"
+            id="toggle-api-visibility"
+            title="Show/Hide Key"
+            style="padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05); color: #cbd5e1; cursor: pointer; font-size: 13px;"
+          >
+            Show
+          </button>
+        </div>
+      </div>
+
       <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
         <button id="btn-start-camera" class="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-2xl font-semibold text-sm text-slate-950 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 hover:from-amber-100 hover:to-amber-200 shadow-[0_0_30px_rgba(251,191,36,0.35)] transition-all cursor-pointer flex items-center justify-center gap-2">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
-          <div class="api-key-wrapper" style="margin: 16px 0; text-align: left;">
-            <label for="gemini-api-key" style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; letter-spacing: 0.05em; text-transform: uppercase;">
-              Gemini API Key
-            </label>
-            <div style="display: flex; gap: 8px;">
-              <input 
-                type="password" 
-                id="gemini-api-key" 
-                placeholder="AIzaSy..." 
-                autocomplete="off"
-                style="flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(15, 23, 42, 0.6); color: #f8fafc; font-size: 14px; outline: none;"
-              />
-              <button 
-                type="button" 
-                id="toggle-api-visibility"
-                title="Show/Hide Key"
-                style="padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05); color: #cbd5e1; cursor: pointer; font-size: 13px;"
-              >
-                Show
-              </button>
-            </div>
-          </div>
           <span>Start Camera & AI Coach</span>
         </button>
 
@@ -683,7 +684,7 @@
      * ============================================================================
      */
     async function fetchGeminiCoachingTurn(userReplyText = "", moodDelta = 0) {
-      const apiKey = ""; // Provided automatically by runtime environment
+      const apiKey = document.getElementById("gemini-api-key").value.trim();
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
       const moodScore = Math.round(state.currentMood);
@@ -2005,6 +2006,31 @@ Generate the next coaching step as JSON.`;
         activateDemoMode();
       }
     }
+
+    // Restore and persist the Gemini API key in this browser's local storage.
+    const GEMINI_API_KEY_STORAGE_KEY = "aura_gemini_api_key";
+    const geminiApiKeyInput = document.getElementById("gemini-api-key");
+    const toggleApiVisibilityButton = document.getElementById("toggle-api-visibility");
+
+    try {
+      geminiApiKeyInput.value = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY) || "";
+    } catch (err) {
+      console.warn("Could not read the saved Gemini API key from local storage:", err);
+    }
+
+    geminiApiKeyInput.addEventListener("input", () => {
+      try {
+        localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, geminiApiKeyInput.value.trim());
+      } catch (err) {
+        console.warn("Could not save the Gemini API key to local storage:", err);
+      }
+    });
+
+    toggleApiVisibilityButton.addEventListener("click", () => {
+      const showKey = geminiApiKeyInput.type === "password";
+      geminiApiKeyInput.type = showKey ? "text" : "password";
+      toggleApiVisibilityButton.textContent = showKey ? "Hide" : "Show";
+    });
 
     document.getElementById("btn-start-camera").addEventListener("click", () => launchExperience(true));
     document.getElementById("btn-start-demo").addEventListener("click", () => launchExperience(false));
