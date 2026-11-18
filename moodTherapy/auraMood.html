@@ -202,6 +202,28 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
+          <div class="api-key-wrapper" style="margin: 16px 0; text-align: left;">
+            <label for="gemini-api-key" style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; letter-spacing: 0.05em; text-transform: uppercase;">
+              Gemini API Key
+            </label>
+            <div style="display: flex; gap: 8px;">
+              <input 
+                type="password" 
+                id="gemini-api-key" 
+                placeholder="AIzaSy..." 
+                autocomplete="off"
+                style="flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(15, 23, 42, 0.6); color: #f8fafc; font-size: 14px; outline: none;"
+              />
+              <button 
+                type="button" 
+                id="toggle-api-visibility"
+                title="Show/Hide Key"
+                style="padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05); color: #cbd5e1; cursor: pointer; font-size: 13px;"
+              >
+                Show
+              </button>
+            </div>
+          </div>
           <span>Start Camera & AI Coach</span>
         </button>
 
