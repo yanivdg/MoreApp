@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>AURA 4K — AI Biometric Mood Elevation Engine</title>
 
   <!-- Tailwind CSS -->
@@ -32,8 +32,8 @@
       margin: 0;
       padding: 0;
       width: 100%;
-      height: 100%;
-      overflow: hidden;
+      min-height: 100dvh;
+      overflow-x: hidden;
       background-color: #04060c;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       color: #f8fafc;
@@ -52,7 +52,7 @@
 
     /* Glassmorphism System */
     .glass-panel {
-      background: rgba(9, 13, 24, 0.62);
+      background: rgba(9, 13, 24, 0.72);
       backdrop-filter: blur(26px) saturate(165%);
       -webkit-backdrop-filter: blur(26px) saturate(165%);
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -145,12 +145,18 @@
       transform: scaleX(-1);
     }
 
+    /* Allow text selection inside logs drawer */
+    #logs-feed-container {
+      user-select: text;
+    }
+
     /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 4px;
+      height: 4px;
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.22);
       border-radius: 999px;
     }
   </style>
@@ -166,48 +172,72 @@
   <!-- ========================================================= -->
   <!-- ONBOARDING / CALIBRATION OVERLAY                          -->
   <!-- ========================================================= -->
-  <div id="onboarding-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/75 backdrop-blur-xl transition-opacity duration-700">
-    <div class="glass-panel max-w-xl w-full rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden">
+  <div id="onboarding-overlay" class="fixed inset-0 z-50 overflow-y-auto flex items-start sm:items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xl transition-opacity duration-700">
+    <div class="glass-panel max-w-xl w-full my-auto rounded-3xl p-5 sm:p-10 text-center relative overflow-hidden">
       <div class="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-1 bg-gradient-to-r from-transparent via-amber-300/80 to-transparent"></div>
 
-      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium tracking-wider uppercase text-amber-200/90 mb-5">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] sm:text-xs font-medium tracking-wider uppercase text-amber-200/90 mb-4">
         <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
         4K WebGL + Live Gemini AI Coach
       </div>
 
-      <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight bg-gradient-to-br from-white via-slate-100 to-amber-200/90 bg-clip-text text-transparent mb-3">
+      <h1 class="text-2xl sm:text-4xl font-semibold tracking-tight bg-gradient-to-br from-white via-slate-100 to-amber-200/90 bg-clip-text text-transparent mb-2.5">
         AURA Biometric Mirror
       </h1>
 
-      <p class="text-slate-300/90 text-sm sm:text-base leading-relaxed max-w-md mx-auto mb-7">
+      <p class="text-slate-300/90 text-xs sm:text-base leading-relaxed max-w-md mx-auto mb-5 sm:mb-6">
         Continuous 60fps facial expression vision paired with a live Gemini AI coach that listens to your voice or text, senses your micro-expressions, and guides you into radiant positivity.
       </p>
 
-      <div class="grid grid-cols-3 gap-2.5 sm:gap-3 text-left mb-7">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-left mb-5 sm:mb-6">
         <div class="rounded-2xl bg-white/[0.04] border border-white/10 p-3 sm:p-3.5">
-          <div class="text-amber-300 text-xs font-semibold mb-1">01. Sense 60fps</div>
+          <div class="text-amber-300 text-xs font-semibold mb-0.5">01. Sense 60fps</div>
           <div class="text-[11px] sm:text-xs text-slate-400 leading-snug">52 facial blendshapes tracked continuously in real time</div>
         </div>
         <div class="rounded-2xl bg-white/[0.04] border border-white/10 p-3 sm:p-3.5">
-          <div class="text-teal-300 text-xs font-semibold mb-1">02. AI Dialogue</div>
+          <div class="text-teal-300 text-xs font-semibold mb-0.5">02. AI Dialogue</div>
           <div class="text-[11px] sm:text-xs text-slate-400 leading-snug">Gemini tailors follow-up prompts to your words & face</div>
         </div>
         <div class="rounded-2xl bg-white/[0.04] border border-white/10 p-3 sm:p-3.5">
-          <div class="text-rose-300 text-xs font-semibold mb-1">03. Elevate</div>
+          <div class="text-rose-300 text-xs font-semibold mb-0.5">03. Elevate</div>
           <div class="text-[11px] sm:text-xs text-slate-400 leading-snug">Watch liquid glass bloom into gold as your mood lifts</div>
         </div>
       </div>
 
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-        <button id="btn-start-camera" class="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-2xl font-semibold text-sm text-slate-950 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 hover:from-amber-100 hover:to-amber-200 shadow-[0_0_30px_rgba(251,191,36,0.35)] transition-all cursor-pointer flex items-center justify-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+      <!-- Gemini API Key Rubric -->
+      <div class="api-key-wrapper w-full max-w-md mx-auto my-4 text-left">
+        <label for="gemini-api-key" class="block text-[11px] text-slate-400 mb-1.5 tracking-wider uppercase">
+          Gemini API Key
+        </label>
+        <div class="flex gap-2">
+          <input
+            type="password"
+            id="gemini-api-key"
+            placeholder="AIzaSy..."
+            autocomplete="off"
+            class="flex-1 min-w-0 px-3.5 py-2.5 rounded-xl border border-white/15 bg-slate-900/70 text-slate-100 text-sm outline-none focus:border-amber-300/60"
+          />
+          <button
+            type="button"
+            id="toggle-api-visibility"
+            title="Show/Hide Key"
+            class="px-3 rounded-xl border border-white/15 bg-white/5 text-slate-300 cursor-pointer text-xs shrink-0"
+          >
+            Show
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3">
+        <button id="btn-start-camera" class="w-full sm:w-auto flex-1 py-3.5 px-5 rounded-2xl font-semibold text-sm text-slate-950 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 hover:from-amber-100 hover:to-amber-200 shadow-[0_0_30px_rgba(251,191,36,0.35)] transition-all cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
           <span>Start Camera & AI Coach</span>
         </button>
 
         <button id="btn-start-demo" class="w-full sm:w-auto py-3.5 px-5 rounded-2xl font-medium text-sm text-slate-200 glass-pill cursor-pointer flex items-center justify-center gap-2">
-          <svg class="w-4 h-4 text-teal-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-teal-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
           </svg>
           <span>Simulated Face Mode</span>
@@ -221,62 +251,134 @@
   </div>
 
   <!-- ========================================================= -->
-  <!-- MAIN GLASSMORPHIC HUD (TOP & BOTTOM OVERLAYS)             -->
+  <!-- MAIN GLASSMORPHIC HUD (MOBILE-RESPONSIVE & SCROLLABLE)    -->
   <!-- ========================================================= -->
-  <div id="main-hud" class="fixed inset-0 z-20 pointer-events-none flex flex-col justify-between p-3 sm:p-5 md:p-6 opacity-0 transition-opacity duration-700">
+  <div id="main-hud" class="fixed inset-0 z-20 overflow-y-auto overflow-x-hidden pointer-events-none flex flex-col justify-between gap-4 p-2.5 sm:p-5 md:p-6 opacity-0 transition-opacity duration-700">
 
-    <!-- TOP BAR: Brand / Controls / Session Journey + Live Biometric Camera Card -->
-    <div class="flex flex-wrap items-start justify-between gap-3">
+    <!-- TOP BAR: Brand / Controls / Drawers + Live Biometric Camera Card -->
+    <div class="flex flex-col md:flex-row items-stretch md:items-start justify-between gap-2.5 sm:gap-3 w-full">
 
-      <!-- Left: System Title, Utility Controls & Biometric Session Journey -->
-      <div class="pointer-events-auto flex flex-col gap-2 max-w-xs sm:max-w-sm">
-        <div class="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3">
-          <div class="relative flex items-center justify-center w-3 h-3">
-            <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_12px_#2dd4bf]"></span>
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="font-semibold text-sm tracking-wide text-white">AURA AI</span>
-              <span id="resolution-badge" class="mono text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-amber-200/90 border border-white/10">4K UHD • 60FPS</span>
+      <!-- Left: System Title, Utility Controls & Diagnostic/Journey Drawers -->
+      <div class="pointer-events-auto flex flex-col gap-2 w-full md:max-w-lg z-30">
+        <div class="glass-panel rounded-2xl px-3.5 py-2 flex items-center justify-between sm:justify-start gap-3 w-full sm:w-fit">
+          <div class="flex items-center gap-2.5">
+            <div class="relative flex items-center justify-center w-3 h-3 shrink-0">
+              <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_12px_#2dd4bf]"></span>
             </div>
-            <div id="vision-mode-label" class="text-[11px] text-slate-400">Initializing Neural Vision...</div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-xs sm:text-sm tracking-wide text-white">AURA AI</span>
+                <span id="resolution-badge" class="mono text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-amber-200/90 border border-white/10">4K UHD • 60FPS</span>
+              </div>
+              <div id="vision-mode-label" class="text-[10px] sm:text-[11px] text-slate-400">Initializing Neural Vision...</div>
+            </div>
           </div>
         </div>
 
         <!-- Quick Utility Controls -->
         <div class="flex flex-wrap items-center gap-1.5">
           <!-- Soundscape Toggle -->
-          <button id="btn-audio-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer" title="Toggle Generative Harmonic Soundscape">
-            <svg id="icon-audio-on" class="w-3.5 h-3.5 text-amber-300 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <button id="btn-audio-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer" title="Toggle Generative Harmonic Soundscape">
+            <svg id="icon-audio-on" class="w-3.5 h-3.5 text-amber-300 hidden shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
-            <svg id="icon-audio-off" class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <svg id="icon-audio-off" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
             </svg>
             <span id="audio-label">Sound Off</span>
           </button>
 
           <!-- Mesh Overlay Toggle -->
-          <button id="btn-mesh-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer" title="Toggle Facial Biometric Mesh">
+          <button id="btn-mesh-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer" title="Toggle Facial Biometric Mesh">
             <span>Mesh: <strong id="mesh-state-text" class="font-medium text-teal-300">ON</strong></span>
           </button>
 
           <!-- Mode Switcher (Camera vs Simulated) -->
-          <button id="btn-switch-mode" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer">
+          <button id="btn-switch-mode" class="glass-pill rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer">
             <span id="switch-mode-text">Demo Mode</span>
           </button>
 
           <!-- Session Journey Log Toggle -->
-          <button id="btn-journey-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-amber-200 flex items-center gap-1.5 cursor-pointer">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <button id="btn-journey-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-medium text-amber-200 flex items-center gap-1.5 cursor-pointer">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             <span>Journey (<span id="journey-count">0</span>)</span>
           </button>
+
+          <!-- Diagnostic Telemetry Logs Toggle -->
+          <button id="btn-logs-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-medium text-sky-200 flex items-center gap-1.5 cursor-pointer" title="Inspect Real vs Fallback Telemetry & Live Event Logs">
+            <svg class="w-3.5 h-3.5 text-sky-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>Logs</span>
+            <span id="logs-alert-badge" class="hidden mono text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/25 text-amber-200 border border-amber-400/40">0</span>
+          </button>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- DIAGNOSTIC TELEMETRY & EVENT LOGGER DRAWER                -->
+        <!-- ========================================================= -->
+        <div id="logs-drawer" class="hidden glass-panel rounded-2xl p-3 sm:p-3.5 w-full sm:w-[460px] animate-float-up border border-sky-400/25">
+          <!-- Header & Export Controls -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 mb-2.5 border-b border-white/10">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+              <span class="text-xs font-semibold text-white tracking-wide">System Telemetry & Truth Logs</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button id="btn-copy-logs" class="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] mono text-slate-200 cursor-pointer transition-colors" title="Copy logs to clipboard">
+                Copy
+              </button>
+              <button id="btn-download-logs" class="px-2 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/30 text-[10px] mono text-sky-200 cursor-pointer transition-colors" title="Download full diagnostic report as TXT">
+                Export .TXT
+              </button>
+              <button id="btn-clear-logs" class="px-2 py-1 rounded-lg bg-white/5 hover:bg-rose-500/25 text-[10px] mono text-slate-400 hover:text-rose-200 cursor-pointer transition-colors">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <!-- Real-Time Subsystem Ground Truth Badges -->
+          <div class="grid grid-cols-3 gap-1.5 mb-2.5 text-[10px]">
+            <div class="rounded-xl bg-black/40 border border-white/10 p-2 min-w-0">
+              <div class="text-slate-400 uppercase tracking-wider text-[9px] mb-0.5">Vision Engine</div>
+              <div id="truth-vision-badge" class="mono font-semibold text-amber-300 truncate">IDLE / INIT</div>
+            </div>
+            <div class="rounded-xl bg-black/40 border border-white/10 p-2 min-w-0">
+              <div class="text-slate-400 uppercase tracking-wider text-[9px] mb-0.5">AI Coach</div>
+              <div id="truth-ai-badge" class="mono font-semibold text-slate-300 truncate">STANDBY</div>
+            </div>
+            <div class="rounded-xl bg-black/40 border border-white/10 p-2 min-w-0">
+              <div class="text-slate-400 uppercase tracking-wider text-[9px] mb-0.5">Vision FPS / Age</div>
+              <div id="truth-fps-badge" class="mono font-semibold text-teal-300 truncate">0.0 fps • --</div>
+            </div>
+          </div>
+
+          <!-- Filter Tabs -->
+          <div class="flex flex-wrap items-center gap-1 mb-2 text-[10px] mono">
+            <button data-log-filter="ALL" class="log-filter-btn px-2 py-1 rounded-lg bg-white/15 text-white font-semibold cursor-pointer">
+              All (<span id="count-log-all">0</span>)
+            </button>
+            <button data-log-filter="VISION" class="log-filter-btn px-2 py-1 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer">
+              Vision
+            </button>
+            <button data-log-filter="AI" class="log-filter-btn px-2 py-1 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer">
+              AI
+            </button>
+            <button data-log-filter="ALERT" class="log-filter-btn px-2 py-1 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer">
+              Fallbacks/Err
+            </button>
+          </div>
+
+          <!-- Scrollable Terminal Log Feed -->
+          <div id="logs-feed-container" class="bg-slate-950/85 border border-white/10 rounded-xl p-2.5 max-h-44 sm:max-h-52 overflow-y-auto space-y-1.5 mono text-[10px] leading-relaxed">
+            <!-- Populated dynamically by AuraLogger -->
+          </div>
         </div>
 
         <!-- Live Biometric Session Journey Drawer -->
-        <div id="journey-drawer" class="hidden glass-panel rounded-2xl p-3.5 w-72 sm:w-80 animate-float-up">
+        <div id="journey-drawer" class="hidden glass-panel rounded-2xl p-3.5 w-full sm:w-80 animate-float-up">
           <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-white/10">
             <span class="text-xs font-semibold text-amber-200">Biometric Session Journey</span>
             <span id="journey-net-badge" class="mono text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Net +0%</span>
@@ -287,7 +389,7 @@
         </div>
 
         <!-- Simulated Mode Controls (Visible only in Demo/Simulated Mode) -->
-        <div id="demo-controls-panel" class="hidden glass-panel rounded-2xl p-3.5 w-64 sm:w-72 animate-float-up">
+        <div id="demo-controls-panel" class="hidden glass-panel rounded-2xl p-3.5 w-full sm:w-72 animate-float-up">
           <div class="flex items-center justify-between text-xs mb-2">
             <span class="text-amber-200 font-medium">Simulated Expression</span>
             <span id="demo-slider-val" class="mono text-slate-300">38%</span>
@@ -302,7 +404,7 @@
       </div>
 
       <!-- Right: Live Biometric Scanner & Mood Elevation Progress Ring -->
-      <div class="pointer-events-auto glass-panel rounded-3xl p-3 sm:p-3.5 flex items-center gap-3 sm:gap-4 ml-auto">
+      <div class="pointer-events-auto glass-panel rounded-2xl sm:rounded-3xl p-2.5 sm:p-3.5 flex items-center gap-3 sm:gap-4 w-full md:w-auto md:ml-auto shrink-0">
 
         <!-- Webcam Feed + Biometric Landmark Canvas -->
         <div class="relative w-20 h-20 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-slate-900/90 border border-white/15 shrink-0">
@@ -310,24 +412,24 @@
           <canvas id="mesh-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
 
           <!-- Fallback Avatar when in Demo Mode -->
-          <div id="demo-avatar-box" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-800/90 to-slate-950/95 p-2 text-center">
-            <div id="demo-face-emoji" class="text-3xl mb-1 transition-transform duration-300">😌</div>
-            <span class="mono text-[9px] uppercase tracking-wider text-teal-300/90">Sim Sensor</span>
+          <div id="demo-avatar-box" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-800/90 to-slate-950/95 p-1.5 text-center">
+            <div id="demo-face-emoji" class="text-2xl sm:text-3xl mb-0.5 transition-transform duration-300">😌</div>
+            <span class="mono text-[8px] sm:text-[9px] uppercase tracking-wider text-teal-300/90">Sim Sensor</span>
           </div>
 
           <!-- Corner Reticle Marks -->
           <div class="pointer-events-none absolute inset-1.5 border border-white/10 rounded-xl"></div>
-          <div id="face-detected-badge" class="absolute bottom-1.5 left-1.5 right-1.5 text-center py-0.5 rounded bg-black/60 backdrop-blur-sm text-[9px] mono text-emerald-300 tracking-tight">
+          <div id="face-detected-badge" class="absolute bottom-1 left-1 right-1 text-center py-0.5 rounded bg-black/60 backdrop-blur-sm text-[8px] sm:text-[9px] mono text-emerald-300 tracking-tight truncate">
             FACE LOCKED
           </div>
         </div>
 
         <!-- Mood Ring & Real-Time Metrics -->
-        <div class="flex flex-col justify-between pr-1">
-          <div class="flex items-center gap-3">
+        <div class="flex flex-col justify-between flex-1 min-w-0 pr-0.5">
+          <div class="flex items-center gap-2.5 sm:gap-3">
             <!-- Circular Progress Ring targeting 85%+ Radiant Threshold -->
-            <div class="relative w-16 h-16 flex items-center justify-center">
-              <svg class="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+            <div class="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center shrink-0">
+              <svg class="w-14 h-14 sm:w-16 sm:h-16 -rotate-90" viewBox="0 0 64 64">
                 <circle cx="32" cy="32" r="26" stroke="rgba(255,255,255,0.1)" stroke-width="5" fill="none" />
                 <circle id="mood-progress-ring" cx="32" cy="32" r="26" stroke="url(#auraRingGrad)" stroke-width="5" stroke-linecap="round" fill="none" stroke-dasharray="163.36" stroke-dashoffset="110" style="transition: stroke-dashoffset 0.45s ease-out;" />
                 <defs>
@@ -339,14 +441,14 @@
                 </defs>
               </svg>
               <div class="absolute inset-0 flex flex-col items-center justify-center">
-                <span id="mood-score-text" class="mono text-sm sm:text-base font-bold text-white leading-none">42%</span>
-                <span class="text-[8px] uppercase tracking-wider text-slate-400 mt-0.5">Mood</span>
+                <span id="mood-score-text" class="mono text-xs sm:text-base font-bold text-white leading-none">42%</span>
+                <span class="text-[7px] sm:text-[8px] uppercase tracking-wider text-slate-400 mt-0.5">Mood</span>
               </div>
             </div>
 
-            <div>
-              <div class="text-[10px] uppercase tracking-wider text-slate-400 font-medium">60fps Biometric State</div>
-              <div id="mood-state-label" class="text-sm sm:text-base font-semibold text-teal-200 leading-tight">Neutral / Calm</div>
+            <div class="min-w-0">
+              <div class="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-400 font-medium truncate">60fps Biometric State</div>
+              <div id="mood-state-label" class="text-xs sm:text-base font-semibold text-teal-200 leading-tight truncate">Neutral / Calm</div>
               <div class="flex items-center gap-1.5 mt-1">
                 <span class="text-[10px] text-slate-400">Target: <strong class="text-amber-300">85%</strong></span>
                 <span id="mood-delta-badge" class="hidden mono text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">+0%</span>
@@ -355,7 +457,7 @@
           </div>
 
           <!-- Micro Expression Bars -->
-          <div class="grid grid-cols-3 gap-2 mt-2.5 pt-2 border-t border-white/10">
+          <div class="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-white/10">
             <div>
               <div class="flex justify-between text-[9px] text-slate-400 mb-0.5">
                 <span>Smile</span>
@@ -391,12 +493,12 @@
     <!-- ========================================================= -->
     <!-- BOTTOM CONVERSATIONAL GEMINI AI MOOD-ELEVATION CARD       -->
     <!-- ========================================================= -->
-    <div class="w-full max-w-2xl mx-auto pointer-events-auto">
-      <div id="dialogue-card" class="glass-panel rounded-3xl p-4 sm:p-6 transition-all duration-500">
+    <div class="w-full max-w-2xl mx-auto pointer-events-auto mt-auto pb-1">
+      <div id="dialogue-card" class="glass-panel rounded-3xl p-3.5 sm:p-6 transition-all duration-500">
 
         <!-- Step Header, Baseline Snapshot & Live Delta Indicator -->
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5 sm:mb-3">
+          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <span id="step-pill" class="mono text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/10 text-amber-200 border border-white/10">
               Calibration
             </span>
@@ -415,14 +517,14 @@
         </div>
 
         <!-- Personalized AI Reflection Callout (Appears after user speaks/types) -->
-        <div id="ai-empathy-box" class="hidden mb-3 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400/12 via-teal-400/10 to-transparent border border-amber-300/25 text-xs sm:text-sm text-amber-100/95 leading-relaxed">
+        <div id="ai-empathy-box" class="hidden mb-2.5 sm:mb-3 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-2xl bg-gradient-to-r from-amber-400/12 via-teal-400/10 to-transparent border border-amber-300/25 text-xs sm:text-sm text-amber-100/95 leading-relaxed">
           <span class="font-semibold text-amber-300 mr-1">AURA:</span>
           <span id="ai-empathy-text"></span>
         </div>
 
         <!-- AI Loading Indicator -->
-        <div id="ai-thinking-indicator" class="hidden items-center gap-2.5 py-4 text-xs sm:text-sm text-amber-200">
-          <div class="flex items-center gap-1">
+        <div id="ai-thinking-indicator" class="hidden items-center gap-2.5 py-3.5 text-xs sm:text-sm text-amber-200">
+          <div class="flex items-center gap-1 shrink-0">
             <span class="ai-dot w-2 h-2 rounded-full bg-amber-300"></span>
             <span class="ai-dot w-2 h-2 rounded-full bg-teal-300"></span>
             <span class="ai-dot w-2 h-2 rounded-full bg-rose-300"></span>
@@ -432,28 +534,28 @@
 
         <!-- Adaptive Question Display -->
         <div id="question-content-wrapper">
-          <h2 id="question-text" class="text-lg sm:text-xl md:text-2xl font-medium text-white leading-snug mb-1.5">
+          <h2 id="question-text" class="text-base sm:text-xl md:text-2xl font-medium text-white leading-snug mb-1.5">
             Take a gentle breath and look at the light. Let’s sense your baseline mood...
           </h2>
 
-          <p id="question-subtext" class="text-xs sm:text-sm text-slate-300/80 mb-3.5">
+          <p id="question-subtext" class="text-xs sm:text-sm text-slate-300/80 mb-3">
             Relax your shoulders. AURA is calibrating to your natural facial expression right now.
           </p>
 
           <!-- Quick Reflection Chips -->
-          <div id="quick-replies-container" class="flex flex-wrap gap-2 mb-3.5">
+          <div id="quick-replies-container" class="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
             <!-- Populated dynamically per question -->
           </div>
         </div>
 
         <!-- Voice Input + Text Response Form -->
-        <form id="reflection-form" class="flex items-center gap-2">
+        <form id="reflection-form" class="flex items-center gap-1.5 sm:gap-2 w-full">
           <!-- Microphone Voice Input Button (Web Speech API) -->
           <button
             type="button"
             id="btn-voice-input"
             title="Speak your answer out loud"
-            class="p-3 rounded-2xl glass-pill text-slate-200 hover:text-amber-200 cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
+            class="p-2.5 sm:p-3 rounded-2xl glass-pill text-slate-200 hover:text-amber-200 cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
           >
             <svg id="mic-icon" class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
@@ -465,27 +567,27 @@
           <input
             id="reflection-input"
             type="text"
-            placeholder="Speak or type your thought, or simply smile..."
+            placeholder="Speak, type, or smile..."
             autocomplete="off"
-            class="flex-1 bg-white/[0.06] border border-white/12 focus:border-amber-300/60 rounded-2xl px-4 py-3 text-xs sm:text-sm text-white placeholder-slate-400 outline-none transition-colors"
+            class="flex-1 min-w-0 bg-white/[0.06] border border-white/12 focus:border-amber-300/60 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white placeholder-slate-400 outline-none transition-colors"
           />
 
           <button
             type="submit"
             id="btn-submit-reflection"
-            class="px-5 py-3 rounded-2xl font-semibold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-200 to-amber-300 hover:from-amber-100 hover:to-amber-200 shadow-[0_0_20px_rgba(251,191,36,0.25)] transition-all cursor-pointer shrink-0 flex items-center gap-1.5"
+            class="px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-semibold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-200 to-amber-300 hover:from-amber-100 hover:to-amber-200 shadow-[0_0_20px_rgba(251,191,36,0.25)] transition-all cursor-pointer shrink-0 flex items-center gap-1"
           >
-            <span id="submit-btn-label">Lock Baseline & Begin</span>
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <span id="submit-btn-label" class="whitespace-nowrap">Lock & Begin</span>
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </button>
         </form>
 
         <!-- Live Facial Elevation Feedback Bar -->
-        <div id="feedback-banner" class="hidden mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
+        <div id="feedback-banner" class="hidden mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 text-xs">
           <span id="feedback-message" class="text-amber-200 font-medium">✨ Beautiful shift detected!</span>
-          <span id="feedback-delta" class="mono font-semibold text-emerald-300">+12% Mood Lift</span>
+          <span id="feedback-delta" class="mono font-semibold text-emerald-300 shrink-0">+12% Mood Lift</span>
         </div>
 
       </div>
@@ -495,42 +597,42 @@
   <!-- ========================================================= -->
   <!-- TARGET ACHIEVED: MOOD ELEVATED SUMMARY MODAL              -->
   <!-- ========================================================= -->
-  <div id="summary-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-xl">
-    <div class="glass-panel max-w-lg w-full rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden animate-float-up">
+  <div id="summary-modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 bg-slate-950/75 backdrop-blur-xl">
+    <div class="glass-panel max-w-lg w-full my-auto rounded-3xl p-5 sm:p-8 text-center relative overflow-hidden animate-float-up">
       <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-300 via-amber-300 to-rose-400"></div>
 
-      <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-300/25 to-rose-400/25 border border-amber-300/40 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(251,191,36,0.3)]">
+      <div class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-2xl bg-gradient-to-br from-amber-300/25 to-rose-400/25 border border-amber-300/40 flex items-center justify-center text-2xl sm:text-3xl shadow-[0_0_30px_rgba(251,191,36,0.3)]">
         ✨
       </div>
 
       <div class="mono text-[11px] uppercase tracking-widest text-amber-300 mb-1">Target Resonance Reached</div>
       <h2 class="text-2xl sm:text-3xl font-semibold text-white mb-2">Your Aura is Radiant</h2>
-      <p class="text-sm text-slate-300 mb-6">
+      <p class="text-xs sm:text-sm text-slate-300 mb-5 sm:mb-6">
         Your facial micro-expressions and reflections elevated your emotional resonance into golden harmony.
       </p>
 
       <!-- Before vs After Comparison -->
-      <div class="grid grid-cols-3 gap-3 mb-6">
-        <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5">
-          <div class="text-[11px] text-slate-400 mb-1">Starting Mood</div>
-          <div id="summary-start-score" class="mono text-xl font-bold text-slate-200">38%</div>
+      <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-5 sm:mb-6">
+        <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+          <div class="text-[10px] sm:text-[11px] text-slate-400 mb-1">Starting Mood</div>
+          <div id="summary-start-score" class="mono text-lg sm:text-xl font-bold text-slate-200">38%</div>
         </div>
-        <div class="rounded-2xl bg-amber-400/10 border border-amber-300/30 p-3.5">
-          <div class="text-[11px] text-amber-200 mb-1">Net Elevation</div>
-          <div id="summary-delta-score" class="mono text-xl font-bold text-emerald-300">+49%</div>
+        <div class="rounded-2xl bg-amber-400/10 border border-amber-300/30 p-3">
+          <div class="text-[10px] sm:text-[11px] text-amber-200 mb-1">Net Elevation</div>
+          <div id="summary-delta-score" class="mono text-lg sm:text-xl font-bold text-emerald-300">+49%</div>
         </div>
-        <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5">
-          <div class="text-[11px] text-slate-400 mb-1">Peak Resonance</div>
-          <div id="summary-peak-score" class="mono text-xl font-bold text-amber-300">87%</div>
+        <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+          <div class="text-[10px] sm:text-[11px] text-slate-400 mb-1">Peak Resonance</div>
+          <div id="summary-peak-score" class="mono text-lg sm:text-xl font-bold text-amber-300">87%</div>
         </div>
       </div>
 
       <!-- Journey Highlights -->
-      <div id="summary-highlights" class="text-left rounded-2xl bg-white/[0.04] border border-white/10 p-4 mb-6 space-y-2 max-h-40 overflow-y-auto text-xs text-slate-300">
+      <div id="summary-highlights" class="text-left rounded-2xl bg-white/[0.04] border border-white/10 p-3.5 mb-5 sm:mb-6 space-y-2 max-h-36 overflow-y-auto text-xs text-slate-300">
         <!-- Populated dynamically -->
       </div>
 
-      <div class="flex flex-col sm:flex-row gap-3">
+      <div class="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
         <button id="btn-continue-basking" class="flex-1 py-3 px-5 rounded-2xl font-medium text-sm text-slate-200 glass-pill cursor-pointer">
           Continue AI Session
         </button>
@@ -542,7 +644,7 @@
   </div>
 
   <!-- Toast Message Box -->
-  <div id="toast-box" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 glass-panel px-4 py-2.5 rounded-full text-xs font-medium text-amber-200 border border-amber-300/30">
+  <div id="toast-box" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 glass-panel px-4 py-2 rounded-full text-xs font-medium text-amber-200 border border-amber-300/30 max-w-[90vw] text-center">
     Notification
   </div>
 
@@ -550,15 +652,220 @@
   <!-- MAIN APPLICATION SCRIPT (4K WEBGL + MEDIAPIPE + GEMINI)   -->
   <!-- ========================================================= -->
   <script type="module">
+    /**
+     * ============================================================================
+     * 0. DIAGNOSTIC TELEMETRY & REAL-VS-FALLBACK EVENT LOGGER
+     * ============================================================================
+     */
+    const AuraLogger = {
+      entries: [],
+      maxEntries: 250,
+      filter: "ALL",
+      alertCount: 0,
+      visionTruth: "IDLE / INIT",
+      aiTruth: "STANDBY",
+      inferenceFps: 0,
+      lastInferenceTime: 0,
+      framesInWindow: 0,
+      fpsWindowStart: performance.now(),
+      lastTelemetryLogTime: 0,
+
+      formatTimestamp(date = new Date()) {
+        const hh = String(date.getHours()).padStart(2, "0");
+        const mm = String(date.getMinutes()).padStart(2, "0");
+        const ss = String(date.getSeconds()).padStart(2, "0");
+        const ms = String(date.getMilliseconds()).padStart(3, "0");
+        return `${hh}:${mm}:${ss}.${ms}`;
+      },
+
+      log(category, level, message, details = null) {
+        const entry = {
+          id: this.entries.length + 1,
+          ts: this.formatTimestamp(),
+          iso: new Date().toISOString(),
+          category,
+          level,
+          message,
+          details
+        };
+
+        this.entries.push(entry);
+        if (this.entries.length > this.maxEntries) {
+          this.entries.shift();
+        }
+
+        if (level === "FALLBACK" || level === "WARN" || level === "ERROR") {
+          this.alertCount += 1;
+          const badge = document.getElementById("logs-alert-badge");
+          if (badge) {
+            badge.textContent = this.alertCount;
+            badge.classList.remove("hidden");
+          }
+        }
+
+        const countAllEl = document.getElementById("count-log-all");
+        if (countAllEl) countAllEl.textContent = this.entries.length;
+
+        this.renderEntry(entry);
+      },
+
+      setVisionTruth(statusText, tone = "warn") {
+        this.visionTruth = statusText;
+        const el = document.getElementById("truth-vision-badge");
+        if (!el) return;
+        el.textContent = statusText;
+        const colors = {
+          real: "mono font-semibold text-emerald-300 truncate",
+          fallback: "mono font-semibold text-amber-300 truncate",
+          fake: "mono font-semibold text-sky-300 truncate",
+          error: "mono font-semibold text-rose-300 truncate",
+          warn: "mono font-semibold text-slate-300 truncate"
+        };
+        el.className = colors[tone] || colors.warn;
+      },
+
+      setAITruth(statusText, tone = "warn") {
+        this.aiTruth = statusText;
+        const el = document.getElementById("truth-ai-badge");
+        if (!el) return;
+        el.textContent = statusText;
+        const colors = {
+          real: "mono font-semibold text-emerald-300 truncate",
+          fallback: "mono font-semibold text-amber-300 truncate",
+          error: "mono font-semibold text-rose-300 truncate",
+          warn: "mono font-semibold text-slate-300 truncate"
+        };
+        el.className = colors[tone] || colors.warn;
+      },
+
+      recordInferenceTick() {
+        const now = performance.now();
+        this.lastInferenceTime = now;
+        this.framesInWindow += 1;
+        if (now - this.fpsWindowStart >= 1000) {
+          this.inferenceFps = (this.framesInWindow * 1000) / (now - this.fpsWindowStart);
+          this.framesInWindow = 0;
+          this.fpsWindowStart = now;
+        }
+      },
+
+      updateLiveTelemetryBanner() {
+        const fpsEl = document.getElementById("truth-fps-badge");
+        if (!fpsEl) return;
+        if (this.lastInferenceTime === 0) {
+          fpsEl.textContent = "0.0 fps • No frames";
+          return;
+        }
+        const ageSec = ((performance.now() - this.lastInferenceTime) / 1000).toFixed(1);
+        fpsEl.textContent = `${this.inferenceFps.toFixed(1)} fps • ${ageSec}s ago`;
+      },
+
+      matchesFilter(entry) {
+        if (this.filter === "ALL") return true;
+        if (this.filter === "ALERT") {
+          return entry.level === "FALLBACK" || entry.level === "WARN" || entry.level === "ERROR";
+        }
+        return entry.category === this.filter;
+      },
+
+      renderEntry(entry) {
+        const container = document.getElementById("logs-feed-container");
+        if (!container || !this.matchesFilter(entry)) return;
+
+        const levelStyles = {
+          REAL: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
+          FALLBACK: "bg-amber-500/20 text-amber-300 border-amber-400/30",
+          WARN: "bg-orange-500/20 text-orange-300 border-orange-400/30",
+          ERROR: "bg-rose-500/25 text-rose-300 border-rose-400/40",
+          INFO: "bg-sky-500/15 text-sky-300 border-sky-400/25"
+        };
+
+        const row = document.createElement("div");
+        row.className = "border-b border-white/[0.06] pb-1.5 last:border-none";
+
+        const detailStr =
+          entry.details !== null && entry.details !== undefined
+            ? `<div class="text-slate-400 text-[9px] mt-0.5 break-all">${
+                typeof entry.details === "string" ? entry.details : JSON.stringify(entry.details)
+              }</div>`
+            : "";
+
+        row.innerHTML = `
+          <div class="flex items-start gap-1.5">
+            <span class="text-slate-500 shrink-0">${entry.ts}</span>
+            <span class="px-1 rounded border text-[9px] shrink-0 ${levelStyles[entry.level] || levelStyles.INFO}">${entry.level}</span>
+            <span class="text-slate-400 shrink-0">[${entry.category}]</span>
+            <span class="text-slate-100 break-words">${entry.message}</span>
+          </div>
+          ${detailStr}
+        `;
+
+        container.appendChild(row);
+        container.scrollTop = container.scrollHeight;
+      },
+
+      rerenderAll() {
+        const container = document.getElementById("logs-feed-container");
+        if (!container) return;
+        container.innerHTML = "";
+        this.entries.forEach((e) => this.renderEntry(e));
+      },
+
+      exportAsText() {
+        const header = [
+          "=================================================================",
+          "AURA 4K BIOMETRIC MOOD ENGINE — DIAGNOSTIC TELEMETRY REPORT",
+          `Exported At: ${new Date().toISOString()}`,
+          `Vision Ground Truth: ${this.visionTruth}`,
+          `AI Coach Ground Truth: ${this.aiTruth}`,
+          `Measured Vision FPS: ${this.inferenceFps.toFixed(1)} fps`,
+          "=================================================================",
+          ""
+        ].join("\n");
+
+        const body = this.entries
+          .map((e) => {
+            const det = e.details ? ` | ${typeof e.details === "string" ? e.details : JSON.stringify(e.details)}` : "";
+            return `[${e.ts}] [${e.level}] [${e.category}] ${e.message}${det}`;
+          })
+          .join("\n");
+
+        return header + body;
+      },
+
+      clear() {
+        this.entries = [];
+        this.alertCount = 0;
+        const badge = document.getElementById("logs-alert-badge");
+        if (badge) {
+          badge.textContent = "0";
+          badge.classList.add("hidden");
+        }
+        const countAllEl = document.getElementById("count-log-all");
+        if (countAllEl) countAllEl.textContent = "0";
+        this.rerenderAll();
+        this.log("SYSTEM", "INFO", "Diagnostic log buffer cleared by user.");
+      }
+    };
+
+    const isMobileDevice =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      window.innerWidth < 768;
+
+    AuraLogger.log("SYSTEM", "INFO", `AURA 4K HUD booted (${isMobileDevice ? "Mobile/Touch" : "Desktop"} profile). Indicators ready.`);
+
     // Attempt dynamic import of MediaPipe Tasks Vision for real-time facial blendshapes
     let FaceLandmarker = null;
     let FilesetResolver = null;
     try {
+      AuraLogger.log("VISION", "INFO", "Loading @mediapipe/tasks-vision@0.10.14 ESM bundle from jsDelivr CDN...");
       const mp = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm");
       FaceLandmarker = mp.FaceLandmarker;
       FilesetResolver = mp.FilesetResolver;
+      AuraLogger.log("VISION", "REAL", "MediaPipe Tasks Vision ESM library loaded successfully.");
     } catch (err) {
-      console.warn("MediaPipe CDN unavailable, will use graceful fallback if needed:", err);
+      AuraLogger.log("VISION", "FALLBACK", "MediaPipe CDN ESM import failed; will use Optical Pixel-Motion fallback when camera starts.", err.message || String(err));
+      AuraLogger.setVisionTruth("CDN FAILED", "error");
     }
 
     /**
@@ -566,8 +873,8 @@
      * 1. APPLICATION STATE & SPRING PHYSICS ENGINE
      * ============================================================================
      */
-    const TARGET_MOOD_THRESHOLD = 85; // 85% = Radiant / Elevated Target
-    const AUTO_LIFT_TRIGGER_DELTA = 12; // +12% facial smile lift auto-celebrates
+    const TARGET_MOOD_THRESHOLD = 85;
+    const AUTO_LIFT_TRIGGER_DELTA = 12;
 
     const state = {
       isRunning: false,
@@ -592,16 +899,16 @@
       baselineMood: null,
       preQuestionMood: 42,
       peakMood: 42,
-      stepIndex: 0, // 0 = Calibration, 1..N = AI Prompts
+      stepIndex: 0,
       completedTarget: false,
       reflectionsLog: [],
-      conversationHistory: [], // Stores { role, question, userReply, moodBefore, moodAfter }
+      conversationHistory: [],
       burstIntensity: 0,
       lastPromptTime: 0,
       autoLiftCooldown: false
     };
 
-    // Offline / Fallback Question Bank (if Gemini API network is unreachable)
+    // Offline / Fallback Question Bank (if Gemini API network is unreachable or key missing)
     const FALLBACK_QUESTION_BANK = {
       low: [
         {
@@ -662,13 +969,29 @@
      * ============================================================================
      */
     async function fetchGeminiCoachingTurn(userReplyText = "", moodDelta = 0) {
-      const apiKey = ""; // Provided automatically by runtime environment
+      const apiKey = document.getElementById("gemini-api-key").value.trim();
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      if (!apiKey) {
+        AuraLogger.log("AI", "FALLBACK", "No Gemini API key provided. Bypassing API and using FALLBACK_QUESTION_BANK.");
+        AuraLogger.setAITruth("FALLBACK (No Key)", "fallback");
+        document.getElementById("ai-engine-badge").textContent = "Adaptive Engine Active (Offline)";
+        return selectLocalFallbackQuestion(userReplyText, moodDelta);
+      }
 
       const moodScore = Math.round(state.currentMood);
       const smilePct = Math.round(state.rawSmile * 100);
       const serenityPct = Math.round(state.rawSerenity * 100);
       const energyPct = Math.round(state.rawEnergy * 100);
+
+      AuraLogger.log("AI", "INFO", "Sending coaching prompt to Gemini API (gemini-3-flash-preview)...", {
+        moodScore,
+        smilePct,
+        serenityPct,
+        energyPct,
+        moodDelta,
+        visionSource: AuraLogger.visionTruth
+      });
 
       const recentContext = state.conversationHistory
         .slice(-3)
@@ -732,9 +1055,9 @@ Generate the next coaching step as JSON.`;
         }
       };
 
-      // Exponential backoff retry (1s, 2s, 4s)
       const delays = [1000, 2000, 4000];
       for (let attempt = 0; attempt <= delays.length; attempt++) {
+        const reqStart = performance.now();
         try {
           const response = await fetch(apiUrl, {
             method: "POST",
@@ -742,16 +1065,25 @@ Generate the next coaching step as JSON.`;
             body: JSON.stringify(payload)
           });
 
+          const latencyMs = Math.round(performance.now() - reqStart);
+
           if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            const errBody = await response.text().catch(() => "");
+            throw new Error(`HTTP ${response.status} (${latencyMs}ms): ${errBody.slice(0, 120)}`);
           }
 
           const result = await response.json();
           const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (!rawText) throw new Error("Empty Gemini response");
+          if (!rawText) throw new Error("Empty Gemini response payload");
 
           const parsed = JSON.parse(rawText);
           document.getElementById("ai-engine-badge").textContent = "Gemini AI Live";
+          AuraLogger.setAITruth("REAL (Gemini API)", "real");
+          AuraLogger.log("AI", "REAL", `Gemini API responded in ${latencyMs}ms with personalized coaching turn.`, {
+            tag: parsed.tag,
+            question: parsed.question
+          });
+
           return {
             tag: parsed.tag || "AI Reflection",
             empathy: parsed.empathyResponse || "",
@@ -761,9 +1093,11 @@ Generate the next coaching step as JSON.`;
           };
         } catch (err) {
           if (attempt < delays.length) {
+            AuraLogger.log("AI", "WARN", `Gemini API attempt ${attempt + 1} failed (${err.message}). Retrying in ${delays[attempt]}ms...`);
             await new Promise((res) => setTimeout(res, delays[attempt]));
           } else {
-            // Graceful fallback to intelligent local adaptive engine
+            AuraLogger.log("AI", "FALLBACK", `All Gemini API attempts failed. Switching to offline FALLBACK_QUESTION_BANK.`, err.message);
+            AuraLogger.setAITruth("FALLBACK (Offline)", "fallback");
             document.getElementById("ai-engine-badge").textContent = "Adaptive Engine Active";
             return selectLocalFallbackQuestion(userReplyText, moodDelta);
           }
@@ -812,6 +1146,7 @@ Generate the next coaching step as JSON.`;
 
       recognition.onstart = () => {
         state.isListeningVoice = true;
+        AuraLogger.log("SYSTEM", "REAL", "Web Speech API microphone listening started.");
         const btn = document.getElementById("btn-voice-input");
         btn.classList.add("mic-recording");
         document.getElementById("mic-label").textContent = "Listening...";
@@ -826,6 +1161,7 @@ Generate the next coaching step as JSON.`;
         document.getElementById("reflection-input").value = transcript;
 
         if (event.results[event.results.length - 1].isFinal && transcript.trim().length > 0) {
+          AuraLogger.log("SYSTEM", "REAL", `Final speech transcript captured: "${transcript.trim()}"`);
           setTimeout(() => {
             if (!state.isGeneratingAI) {
               handleReflectionSubmit(transcript.trim());
@@ -835,6 +1171,7 @@ Generate the next coaching step as JSON.`;
       };
 
       recognition.onerror = (e) => {
+        AuraLogger.log("SYSTEM", "WARN", `Web Speech API error: ${e.error}`);
         stopVoiceListening();
         if (e.error !== "no-speech" && e.error !== "aborted") {
           showToast("Voice input unavailable — you can type or click a prompt chip");
@@ -851,11 +1188,12 @@ Generate the next coaching step as JSON.`;
       const btn = document.getElementById("btn-voice-input");
       btn.classList.remove("mic-recording");
       document.getElementById("mic-label").textContent = "Speak";
-      document.getElementById("reflection-input").placeholder = "Speak or type your thought, or simply smile...";
+      document.getElementById("reflection-input").placeholder = "Speak, type, or smile...";
     }
 
     document.getElementById("btn-voice-input").addEventListener("click", () => {
       if (!recognition) {
+        AuraLogger.log("SYSTEM", "FALLBACK", "Web Speech API not supported in this browser.");
         showToast("Speech recognition not supported in this browser — type or tap a chip");
         return;
       }
@@ -865,7 +1203,7 @@ Generate the next coaching step as JSON.`;
         try {
           recognition.start();
         } catch (err) {
-          console.warn("Speech start error:", err);
+          AuraLogger.log("SYSTEM", "ERROR", "Failed to start Web Speech API", err.message);
         }
       }
     });
@@ -900,7 +1238,6 @@ Generate the next coaching step as JSON.`;
         this.filter.connect(this.masterGain);
         this.masterGain.connect(this.ctx.destination);
 
-        // Warm Lydian / Major 9th harmonic pad frequencies (Hz)
         const baseFreqs = [130.81, 196.00, 246.94, 293.66, 329.63];
         baseFreqs.forEach((freq, idx) => {
           const osc = this.ctx.createOscillator();
@@ -917,6 +1254,7 @@ Generate the next coaching step as JSON.`;
         });
 
         this.isInitialized = true;
+        AuraLogger.log("AUDIO", "REAL", `Web Audio API 5-oscillator harmonic synthesizer initialized (${this.ctx.sampleRate}Hz).`);
       }
 
       setEnabled(enabled) {
@@ -929,6 +1267,7 @@ Generate the next coaching step as JSON.`;
         }
         const targetGain = enabled ? 0.25 : 0.0001;
         this.masterGain.gain.setTargetAtTime(targetGain, this.ctx.currentTime, 0.4);
+        AuraLogger.log("AUDIO", "INFO", `Generative soundscape ${enabled ? "enabled" : "muted"} (AudioContext state: ${this.ctx.state}).`);
       }
 
       updateMoodModulation(moodNormalized) {
@@ -971,10 +1310,6 @@ Generate the next coaching step as JSON.`;
      * 5. HYPERREALISTIC 4K WEBGL LIQUID GLASS ORB & PARTICLE FIELD (THREE.JS)
      * ============================================================================
      */
-    const isMobileDevice =
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-      window.innerWidth < 768;
-
     const canvas = document.getElementById("webgl-canvas");
     const renderer = new THREE.WebGLRenderer({
       canvas,
@@ -1060,7 +1395,7 @@ Generate the next coaching step as JSON.`;
           float g = texture2D(tDiffuse, vUv).g;
           float b = texture2D(tDiffuse, vUv - offset).b;
 
-          vec3 col = clamp(vec3(r, g, b), 0.0, 4.0);
+          vec3 col = clamp(vec3(r, g, b), 0.0, 2.5);
           float grain = (hash(vUv * 1200.0 + fract(uTime)) - 0.5) * 0.014;
           col += grain;
 
@@ -1220,7 +1555,7 @@ Generate the next coaching step as JSON.`;
       vec3 thinFilmIridescence(float cosTheta, float filmThickness) {
         vec3 phase = vec3(0.0, 0.33, 0.67);
         vec3 interference = 0.5 + 0.5 * cos(6.28318 * (cosTheta * filmThickness + phase));
-        return interference;
+        return clamp(interference, 0.0, 1.0);
       }
 
       void main() {
@@ -1252,9 +1587,9 @@ Generate the next coaching step as JSON.`;
         vec3 H1 = normalize(keyLightDir + V);
         vec3 H2 = normalize(fillLightDir + V);
 
-        float specKey = pow(clamp(dot(N, H1), 0.0, 1.0), 72.0);
-        float specFill = pow(clamp(dot(N, H2), 0.0, 1.0), 36.0);
-        float rimGlow = pow(clamp(dot(N, rimLightDir) * 0.5 + 0.5, 0.0, 1.0), 2.5) * fresnel;
+        float specKey = clamp(pow(clamp(dot(N, H1), 0.0, 1.0), 72.0), 0.0, 1.5);
+        float specFill = clamp(pow(clamp(dot(N, H2), 0.0, 1.0), 36.0), 0.0, 1.2);
+        float rimGlow = clamp(pow(clamp(dot(N, rimLightDir) * 0.5 + 0.5, 0.0, 1.0), 2.5) * fresnel, 0.0, 1.5);
 
         float coreGlow = smoothstep(0.2, 1.0, NdotV) * (0.25 + uMood * 0.65 + uBurst * 0.4);
         vec3 innerRadiance = mix(vec3(0.15, 0.35, 0.85), vec3(1.0, 0.82, 0.42), midToHigh) * coreGlow;
@@ -1265,7 +1600,7 @@ Generate the next coaching step as JSON.`;
                         + baseB * specFill * 0.58
                         + mix(baseB, vec3(1.0, 0.88, 0.6), midToHigh) * rimGlow * (1.0 + uBurst * 0.6);
 
-        finalColor = clamp(finalColor, 0.0, 3.2);
+        finalColor = clamp(finalColor, 0.0, 2.5);
         gl_FragColor = vec4(finalColor, 1.0);
       }
     `;
@@ -1422,11 +1757,11 @@ Generate the next coaching step as JSON.`;
 
       camera.aspect = aspect;
       if (aspect < 1.0) {
-        // Portrait mobile: pull camera back so full orb + halo ring fit horizontally and vertically between HUD cards
-        const clampedAspect = Math.max(aspect, 0.48);
-        camera.position.z = Math.min(9.2, 5.2 / clampedAspect);
-        camera.position.y = 0.1;
-        auraOrb.position.y = 0.35;
+        // Portrait mobile: pull camera back so full orb + halo ring fit between top & bottom HUD cards
+        const clampedAspect = Math.max(aspect, 0.45);
+        camera.position.z = Math.min(9.2, Math.max(7.6, 5.2 / clampedAspect));
+        camera.position.y = 0.05;
+        auraOrb.position.y = 0.28;
       } else {
         camera.position.z = 5.4;
         camera.position.y = 0.15;
@@ -1448,7 +1783,7 @@ Generate the next coaching step as JSON.`;
 
     /**
      * ============================================================================
-     * 6. CONTINUOUS 60FPS FACIAL EXPRESSION VISION (MEDIAPIPE GPU/CPU + OPTICAL + DEMO)
+     * 6. CONTINUOUS 60FPS FACIAL EXPRESSION VISION (MEDIAPIPE CPU/GPU + OPTICAL + DEMO)
      * ============================================================================
      */
     const videoEl = document.getElementById("webcam-video");
@@ -1487,11 +1822,12 @@ Generate the next coaching step as JSON.`;
 
     async function initMediaPipeLandmarker(forceCpuOnly = false) {
       if (!FaceLandmarker || !FilesetResolver) {
-        AuraLogger.log("VISION", "FALLBACK", "MediaPipe classes missing; engaging Optical Biometric Motion Analyzer.");
+        AuraLogger.log("VISION", "FALLBACK", "MediaPipe classes missing; engaging Optical Pixel-Motion Analyzer.");
         activeVisionTier = "optical";
         return "optical";
       }
 
+      // On mobile (including Galaxy S25 Ultra / Adreno 830), try CPU first to avoid known WebGL delegate crash
       const delegatesToTry = forceCpuOnly || isMobileDevice ? ["CPU", "GPU"] : ["GPU", "CPU"];
 
       for (const delegate of delegatesToTry) {
@@ -1719,7 +2055,6 @@ Generate the next coaching step as JSON.`;
       }
 
       const nowMs = performance.now();
-      // Guard against duplicate video frames or non-monotonic timestamps (critical on iOS Safari)
       if (videoEl.currentTime === lastVideoTime || nowMs <= lastDetectTimestamp) return;
       lastVideoTime = videoEl.currentTime;
       lastDetectTimestamp = nowMs;
@@ -1902,7 +2237,7 @@ Generate the next coaching step as JSON.`;
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className =
-          "glass-pill px-3 py-1.5 rounded-full text-xs text-slate-200 hover:text-amber-200 cursor-pointer";
+          "glass-pill px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs text-slate-200 hover:text-amber-200 cursor-pointer text-left";
         btn.textContent = chipText;
         btn.addEventListener("click", () => {
           if (state.isGeneratingAI) return;
@@ -1911,6 +2246,7 @@ Generate the next coaching step as JSON.`;
             const slider = document.getElementById("demo-mood-slider");
             const boosted = Math.min(98, parseInt(slider.value, 10) + 16);
             slider.value = boosted;
+            AuraLogger.log("VISION", "FALLBACK", `Demo Mode chip clicked: boosted simulated slider by +16% -> ${boosted}%.`);
             applySimulatedExpression(boosted);
           }
           handleReflectionSubmit(chipText);
@@ -1977,12 +2313,12 @@ Generate the next coaching step as JSON.`;
 
       const inputVal = (customText ?? document.getElementById("reflection-input").value).trim();
 
-      // Step 0: Complete Baseline Calibration -> Launch First Gemini AI Prompt
       if (state.stepIndex === 0) {
         state.baselineMood = Math.round(state.currentMood);
         state.peakMood = state.baselineMood;
         document.getElementById("baseline-readout").innerHTML = `Start: <strong class="text-slate-200 mono">${state.baselineMood}%</strong>`;
         state.stepIndex = 1;
+        AuraLogger.log("SYSTEM", "INFO", `Baseline mood locked at ${state.baselineMood}% (Vision source: ${AuraLogger.visionTruth}).`);
 
         setAIThinkingState(true);
         const firstPrompt = await fetchGeminiCoachingTurn("", 0);
@@ -1991,10 +2327,16 @@ Generate the next coaching step as JSON.`;
         return;
       }
 
-      // Measure mood delta before vs after reflecting on the question
       const nowMood = Math.round(state.currentMood);
       const delta = nowMood - state.preQuestionMood;
       const displayAnswer = inputVal || (isAutoFacialLift ? "✨ Genuine Smile Lift" : "(Reflected visually)");
+
+      AuraLogger.log("SYSTEM", isAutoFacialLift ? "REAL" : "INFO", `Step ${state.stepIndex} completed (${isAutoFacialLift ? "Auto-Lift Triggered" : "User Submitted"}).`, {
+        moodBefore: state.preQuestionMood,
+        moodAfter: nowMood,
+        delta,
+        answer: displayAnswer
+      });
 
       state.reflectionsLog.push({
         step: state.stepIndex,
@@ -2023,16 +2365,15 @@ Generate the next coaching step as JSON.`;
         );
       }
 
-      // Check if user reached the Radiant Target Threshold (85%+)
       if (nowMood >= TARGET_MOOD_THRESHOLD && !state.completedTarget) {
         state.completedTarget = true;
+        AuraLogger.log("SYSTEM", "REAL", `Target resonance threshold (${TARGET_MOOD_THRESHOLD}%) reached! Peak mood: ${state.peakMood}%.`);
         setTimeout(() => {
           openSummaryModal();
         }, 900);
         return;
       }
 
-      // Request next personalized Gemini AI coaching turn based on words + facial telemetry
       state.stepIndex += 1;
       setAIThinkingState(true);
       const nextPrompt = await fetchGeminiCoachingTurn(displayAnswer, delta);
@@ -2081,6 +2422,7 @@ Generate the next coaching step as JSON.`;
       state.conversationHistory = [];
       askedFallbackQuestions.clear();
       updateJourneyDrawer();
+      AuraLogger.log("SYSTEM", "INFO", "Session reset to Calibration step.");
 
       document.getElementById("summary-modal").classList.add("hidden");
       document.getElementById("baseline-readout").innerHTML = `Start: <strong class="text-slate-200 mono">--%</strong>`;
@@ -2092,7 +2434,7 @@ Generate the next coaching step as JSON.`;
       document.getElementById("question-subtext").textContent =
         "Relax your shoulders. AURA is calibrating to your natural facial expression right now.";
       document.getElementById("quick-replies-container").innerHTML = "";
-      document.getElementById("submit-btn-label").textContent = "Lock Baseline & Begin";
+      document.getElementById("submit-btn-label").textContent = "Lock & Begin";
       document.getElementById("feedback-banner").classList.add("hidden");
     }
 
@@ -2130,23 +2472,22 @@ Generate the next coaching step as JSON.`;
 
       if (score < 36) {
         stateLabel.textContent = "Tense / Reflective";
-        stateLabel.className = "text-sm sm:text-base font-semibold text-indigo-300 leading-tight";
+        stateLabel.className = "text-xs sm:text-base font-semibold text-indigo-300 leading-tight truncate";
         statusDot.className = "w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-[0_0_12px_#818cf8]";
       } else if (score < 60) {
         stateLabel.textContent = "Calm / Grounded";
-        stateLabel.className = "text-sm sm:text-base font-semibold text-teal-200 leading-tight";
+        stateLabel.className = "text-xs sm:text-base font-semibold text-teal-200 leading-tight truncate";
         statusDot.className = "w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_12px_#2dd4bf]";
       } else if (score < 85) {
         stateLabel.textContent = "Warming / Uplifted";
-        stateLabel.className = "text-sm sm:text-base font-semibold text-amber-200 leading-tight";
+        stateLabel.className = "text-xs sm:text-base font-semibold text-amber-200 leading-tight truncate";
         statusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-300 shadow-[0_0_12px_#fcd34d]";
       } else {
         stateLabel.textContent = "Radiant / Joyful ✨";
-        stateLabel.className = "text-sm sm:text-base font-semibold text-amber-300 leading-tight";
+        stateLabel.className = "text-xs sm:text-base font-semibold text-amber-300 leading-tight truncate";
         statusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_16px_#fbbf24]";
       }
 
-      // Live delta vs session baseline
       const deltaBadge = document.getElementById("mood-delta-badge");
       if (state.baselineMood !== null) {
         const diff = score - state.baselineMood;
@@ -2162,7 +2503,6 @@ Generate the next coaching step as JSON.`;
         }
       }
 
-      // Live delta on current AI question step
       if (state.stepIndex >= 1 && !state.isGeneratingAI) {
         const stepDelta = score - state.preQuestionMood;
         const stepPill = document.getElementById("step-delta-pill");
@@ -2176,7 +2516,6 @@ Generate the next coaching step as JSON.`;
             "mono text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-200 border border-teal-400/30";
         }
 
-        // Closed-loop auto-advancement when user's facial expression lifts by >= +12% or crosses 85%
         const elapsedOnStep = performance.now() - state.lastPromptTime;
         if (
           state.isRunning &&
@@ -2190,7 +2529,6 @@ Generate the next coaching step as JSON.`;
         }
       }
 
-      // Micro-expression bars
       const smilePct = Math.round(state.rawSmile * 100);
       const serenityPct = Math.round(state.rawSerenity * 100);
       const energyPct = Math.round(state.rawEnergy * 100);
@@ -2203,6 +2541,8 @@ Generate the next coaching step as JSON.`;
 
       document.getElementById("metric-energy-val").textContent = `${energyPct}%`;
       document.getElementById("metric-energy-bar").style.width = `${energyPct}%`;
+
+      AuraLogger.updateLiveTelemetryBanner();
     }
 
     /**
@@ -2225,7 +2565,12 @@ Generate the next coaching step as JSON.`;
       document.getElementById("icon-audio-off").classList.add("hidden");
       document.getElementById("audio-label").textContent = "Sound On";
 
-      document.getElementById("submit-btn-label").textContent = "Lock Baseline & Begin";
+      document.getElementById("submit-btn-label").textContent = "Lock & Begin";
+
+      // Immediately synchronize HUD indicators on launch so they never stick at static HTML defaults
+      updateHUDMetrics();
+
+      AuraLogger.log("SYSTEM", "INFO", `Launching experience (Requested mode: ${useCamera ? "Real Webcam + MediaPipe" : "Simulated Demo Mode"}).`);
 
       if (useCamera) {
         startCameraVision();
@@ -2233,6 +2578,34 @@ Generate the next coaching step as JSON.`;
         activateDemoMode();
       }
     }
+
+    // Restore and persist the Gemini API key in this browser's local storage.
+    const GEMINI_API_KEY_STORAGE_KEY = "aura_gemini_api_key";
+    const geminiApiKeyInput = document.getElementById("gemini-api-key");
+    const toggleApiVisibilityButton = document.getElementById("toggle-api-visibility");
+
+    try {
+      geminiApiKeyInput.value = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY) || "";
+      if (geminiApiKeyInput.value.trim()) {
+        AuraLogger.log("AI", "INFO", "Restored saved Gemini API key from localStorage.");
+      }
+    } catch (err) {
+      AuraLogger.log("SYSTEM", "WARN", "Could not read saved Gemini API key from localStorage.");
+    }
+
+    geminiApiKeyInput.addEventListener("input", () => {
+      try {
+        localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, geminiApiKeyInput.value.trim());
+      } catch (err) {
+        // Ignore storage errors
+      }
+    });
+
+    toggleApiVisibilityButton.addEventListener("click", () => {
+      const showKey = geminiApiKeyInput.type === "password";
+      geminiApiKeyInput.type = showKey ? "text" : "password";
+      toggleApiVisibilityButton.textContent = showKey ? "Hide" : "Show";
+    });
 
     document.getElementById("btn-start-camera").addEventListener("click", () => launchExperience(true));
     document.getElementById("btn-start-demo").addEventListener("click", () => launchExperience(false));
@@ -2262,17 +2635,74 @@ Generate the next coaching step as JSON.`;
     });
 
     document.getElementById("btn-journey-toggle").addEventListener("click", () => {
+      document.getElementById("logs-drawer").classList.add("hidden");
       document.getElementById("journey-drawer").classList.toggle("hidden");
     });
 
+    // Diagnostic Logs Drawer Interactions
+    document.getElementById("btn-logs-toggle").addEventListener("click", () => {
+      document.getElementById("journey-drawer").classList.add("hidden");
+      const drawer = document.getElementById("logs-drawer");
+      drawer.classList.toggle("hidden");
+      if (!drawer.classList.contains("hidden")) {
+        AuraLogger.rerenderAll();
+      }
+    });
+
+    document.querySelectorAll(".log-filter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".log-filter-btn").forEach((b) => {
+          b.className = "log-filter-btn px-2 py-1 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer";
+        });
+        btn.className = "log-filter-btn px-2 py-1 rounded-lg bg-white/15 text-white font-semibold cursor-pointer";
+        AuraLogger.filter = btn.getAttribute("data-log-filter");
+        AuraLogger.rerenderAll();
+      });
+    });
+
+    document.getElementById("btn-copy-logs").addEventListener("click", () => {
+      const report = AuraLogger.exportAsText();
+      const tempArea = document.createElement("textarea");
+      tempArea.value = report;
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      try {
+        document.execCommand("copy");
+        showToast("Diagnostic logs copied to clipboard");
+      } catch (err) {
+        showToast("Could not copy logs");
+      }
+      document.body.removeChild(tempArea);
+    });
+
+    document.getElementById("btn-download-logs").addEventListener("click", () => {
+      const report = AuraLogger.exportAsText();
+      const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `aura-telemetry-logs-${new Date().toISOString().replace(/[:.]/g, "-")}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Downloaded diagnostic .TXT log file");
+    });
+
+    document.getElementById("btn-clear-logs").addEventListener("click", () => {
+      AuraLogger.clear();
+    });
+
     document.getElementById("demo-mood-slider").addEventListener("input", (e) => {
-      applySimulatedExpression(parseInt(e.target.value, 10));
+      const val = parseInt(e.target.value, 10);
+      applySimulatedExpression(val);
     });
 
     document.querySelectorAll(".demo-preset-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const val = parseInt(btn.getAttribute("data-preset"), 10);
         document.getElementById("demo-mood-slider").value = val;
+        AuraLogger.log("VISION", "FALLBACK", `Demo preset clicked: set synthetic mood to ${val}%.`);
         applySimulatedExpression(val);
       });
     });
@@ -2335,7 +2765,7 @@ Generate the next coaching step as JSON.`;
 
       chromaticPass.uniforms.uTime.value = elapsed;
       chromaticPass.uniforms.uAberration.value = 0.0014 + state.burstIntensity * 0.0035;
-      bloomPass.strength = 0.78 + moodNorm * 0.35 + state.burstIntensity * 0.65;
+      bloomPass.strength = (isMobileDevice ? 0.55 : 0.78) + moodNorm * 0.3 + state.burstIntensity * 0.5;
 
       const coolRing = new THREE.Color(0x6366f1);
       const midRing = new THREE.Color(0x2dd4bf);
@@ -2371,6 +2801,7 @@ Generate the next coaching step as JSON.`;
       const effectiveW = Math.round(window.innerWidth * dpr);
       const effectiveH = Math.round(window.innerHeight * dpr);
       document.getElementById("resolution-badge").textContent = `${effectiveW}×${effectiveH} • UHD`;
+      AuraLogger.log("SYSTEM", "INFO", `WebGL Renderer ready (${effectiveW}x${effectiveH} effective pixels, DPR ${dpr}).`);
       animate();
     });
   </script>
