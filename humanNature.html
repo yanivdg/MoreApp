@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BIO-SYNTHESIS // Hyper-Realistic 3D Anatomical Particle Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #03060c;
+            font-family: 'Inter', sans-serif;
+            color: #e2e8f0;
+        }
+        #webgl-container {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .glass-panel {
+            background: rgba(7, 13, 24, 0.72);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(56, 189, 248, 0.18);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(51, 65, 85, 0.7);
+            border-radius: 999px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+            -webkit-appearance: none;
+            margin-top: -5px;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #7dd3fc;
+        }
+        .hud-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .hud-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .hud-scroll::-webkit-scrollbar-thumb {
+            background: rgba(56, 189, 248, 0.25);
+            border-radius: 999px;
+        }
+        .scan-grid {
+            background-image: radial-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .live-dot {
+            animation: pulseGlow 1.6s infinite ease-in-out;
+        }
+    </style>
+
+    <!-- Import Map for Reliable Three.js & Post-Processing ES Modules -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body class="antialiased selection:bg-sky-500/30">
+
+    <!-- 3D WebGL Viewport -->
+    <div id="webgl-container"></div>
+
+    <!-- Subtle Ambient Grid Overlay -->
+    <div class="fixed inset-0 scan-grid z-10 pointer-events-none"></div>
+
+    <!-- Loading Screen Overlay -->
+    <div id="loader-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#03060c] transition-opacity duration-700">
+        <div class="relative w-20 h-20 mb-6 flex items-center justify-center">
+            <div class="absolute inset-0 rounded-full border-2 border-sky-500/20"></div>
+            <div class="absolute inset-0 rounded-full border-t-2 border-sky-400 animate-spin"></div>
+            <div class="w-10 h-10 rounded-full bg-sky-500/10 border border-sky-400/40 flex items-center justify-center">
+                <div class="w-2.5 h-2.5 rounded-full bg-sky-400 animate-ping"></div>
+            </div>
+        </div>
+        <div class="mono text-xs tracking-[0.28em] text-sky-400 uppercase mb-2">Synthesizing Volumetric Anatomy</div>
+        <div id="loader-status" class="text-slate-400 text-xs mono">Generating Subsurface Epidermis & Cellular Matrices...</div>
+    </div>
+
+    <!-- Top Header & Telemetry Bar -->
+    <header class="fixed top-3 left-3 right-3 sm:top-5 sm:left-5 sm:right-5 z-20 flex flex-wrap items-center justify-between gap-3 pointer-events-none">
+        <div class="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3 pointer-events-auto">
+            <div class="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15M6.343 6.343l11.314 11.314m0-11.314L6.343 17.657"/>
+                </svg>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-sm tracking-wide text-white">HOMO SAPIENS // HOLO-BIO</span>
+                    <span class="px-1.5 py-0.5 text-[10px] mono rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 live-dot"></span> LIVE
+                    </span>
+                </div>
+                <p class="text-[11px] text-slate-400 hidden sm:block">Scroll or pinch to dissolve epidermis into volumetric cellular particles</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 pointer-events-auto">
+            <div class="glass-panel rounded-2xl px-3.5 py-2 flex items-center gap-4">
+                <div>
+                    <div class="text-[10px] mono uppercase tracking-wider text-slate-400">Optical Depth</div>
+                    <div id="hud-depth-mode" class="text-xs font-semibold text-sky-300 mono">EPIDERMAL SURFACE</div>
+                </div>
+                <div class="h-6 w-px bg-slate-700/70"></div>
+                <div>
+                    <div class="text-[10px] mono uppercase tracking-wider text-slate-400">Active Particles</div>
+                    <div id="hud-particle-count" class="text-xs font-semibold text-cyan-300 mono">56,800 PTS</div>
+                </div>
+            </div>
+
+            <button id="toggle-hud-btn" title="Toggle Controls Panel" class="glass-panel hover:bg-sky-500/15 active:scale-95 transition rounded-2xl p-3 text-sky-300 border border-sky-400/25">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Left / Collapsible Anatomical Control & Layer Studio -->
+    <aside id="control-panel" class="fixed top-20 left-3 sm:left-5 bottom-20 w-[calc(100vw-1.5rem)] sm:w-80 z-20 glass-panel rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 overflow-hidden">
+        <div class="hud-scroll overflow-y-auto pr-1 space-y-4">
+            <div class="bg-slate-900/60 border border-sky-500/20 rounded-xl p-3">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-semibold text-sky-300 uppercase tracking-wider mono">Zoom / X-Ray Peel</span>
+                    <span id="peel-percent" class="text-xs mono text-slate-300">0%</span>
+                </div>
+                <input id="peel-slider" type="range" min="0" max="100" value="0" step="1">
+                <div class="flex justify-between text-[10px] text-slate-400 mt-1 mono">
+                    <span>Skin Solid</span>
+                    <span>Particle Matrix</span>
+                    <span>Deep Core</span>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mono">Anatomical Layers</span>
+                    <button id="reset-layers-btn" class="text-[10px] mono text-sky-400 hover:text-sky-300 underline">Reset</button>
+                </div>
+
+                <div class="space-y-2 text-xs">
+                    <div class="bg-slate-900/45 border border-slate-800 rounded-xl p-2.5">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="toggle-skin" checked class="accent-sky-400 rounded">
+                            <span class="w-2 h-2 rounded-full bg-amber-200/80"></span>
+                            <span class="font-medium text-slate-200">Epidermis & Subsurface</span>
+                        </label>
+                    </div>
+                    <div class="bg-slate-900/45 border border-slate-800 rounded-xl p-2.5">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="toggle-muscles" checked class="accent-rose-400 rounded">
+                            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                            <span class="font-medium text-slate-200">Myofibril Musculature</span>
+                        </label>
+                    </div>
+                    <div class="bg-slate-900/45 border border-slate-800 rounded-xl p-2.5">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="toggle-skeleton" checked class="accent-slate-200 rounded">
+                            <span class="w-2 h-2 rounded-full bg-stone-200"></span>
+                            <span class="font-medium text-slate-200">Skeletal Structure</span>
+                        </label>
+                    </div>
+                    <div class="bg-slate-900/45 border border-slate-800 rounded-xl p-2.5">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="toggle-vascular" checked class="accent-red-500 rounded">
+                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                            <span class="font-medium text-slate-200">Cardiovascular & Blood</span>
+                        </label>
+                    </div>
+                    <div class="bg-slate-900/45 border border-slate-800 rounded-xl p-2.5">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="toggle-nervous" checked class="accent-cyan-400 rounded">
+                            <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                            <span class="font-medium text-slate-200">Central & Peripheral Nerves</span>
+                        </label>
+                    </div>
+                    <div class="bg-slate-900/45 border border-slate-800 rounded-xl p-2.5">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="toggle-organs" checked class="accent-violet-400 rounded">
+                            <span class="w-2 h-2 rounded-full bg-violet-400"></span>
+                            <span class="font-medium text-slate-200">Thoracic & Visceral Organs</span>
+                        </label>
+                    </div>
+                    <div class="bg-slate-900/45 border border-slate-800 rounded-xl p-2.5">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="toggle-particles" checked class="accent-cyan-300 rounded">
+                            <span class="w-2 h-2 rounded-full bg-cyan-300"></span>
+                            <span class="font-medium text-slate-200">Volumetric Cellular Points</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/60 border border-sky-500/20 rounded-xl p-3 space-y-3">
+                <div class="text-xs font-semibold text-sky-300 uppercase tracking-wider mono">Physiological Controls</div>
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-400">Heart Rate (BPM)</span>
+                        <span id="bpm-display" class="mono text-sky-300">72 BPM</span>
+                    </div>
+                    <input id="bpm-slider" type="range" min="40" max="160" value="72" step="1">
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-400">Particle Flow Velocity</span>
+                        <span id="flow-display" class="mono text-cyan-300">1.0x</span>
+                    </div>
+                    <input id="flow-slider" type="range" min="0.2" max="3.0" value="1.0" step="0.1">
+                </div>
+                <div class="flex items-center justify-between pt-1">
+                    <span class="text-xs text-slate-400">Pulmonary Respiration</span>
+                    <button id="breathing-toggle" class="px-2.5 py-1 rounded-lg text-[11px] mono bg-sky-500/20 text-sky-300 border border-sky-400/30 hover:bg-sky-500/30 transition">ACTIVE (14/m)</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+            <span>WebGL 2.0 PBR Engine</span>
+            <span class="mono text-sky-400">v3.4 PRO</span>
+        </div>
+    </aside>
+
+    <!-- Bottom Camera Preset Dock -->
+    <footer class="fixed bottom-3 left-1/2 -translate-x-1/2 z-20 glass-panel rounded-2xl px-3 py-2 flex items-center gap-1.5 sm:gap-2 shadow-2xl pointer-events-auto">
+        <button data-preset="full" class="preset-btn active px-3 py-1.5 rounded-xl text-xs font-medium mono bg-sky-500/25 text-sky-200 border border-sky-400/40 transition">Full Body</button>
+        <button data-preset="brain" class="preset-btn px-3 py-1.5 rounded-xl text-xs font-medium mono text-slate-300 border border-transparent hover:bg-sky-500/15 transition">CNS/Brain</button>
+        <button data-preset="thorax" class="preset-btn px-3 py-1.5 rounded-xl text-xs font-medium mono text-slate-300 border border-transparent hover:bg-sky-500/15 transition">Thorax</button>
+        <button data-preset="viscera" class="preset-btn px-3 py-1.5 rounded-xl text-xs font-medium mono text-slate-300 border border-transparent hover:bg-sky-500/15 transition">Viscera</button>
+        <button data-preset="micro" class="preset-btn px-3 py-1.5 rounded-xl text-xs font-medium mono text-slate-300 border border-transparent hover:bg-sky-500/15 transition">Cellular</button>
+    </footer>
+
+    <!-- Interactive Organ Telemetry Inspection Card -->
+    <div id="organ-card" class="fixed top-20 right-3 sm:right-5 w-[calc(100vw-1.5rem)] sm:w-80 z-30 glass-panel rounded-2xl p-5 shadow-2xl transition-all duration-300 opacity-0 translate-x-6 pointer-events-none">
+        <div class="flex items-start justify-between mb-3">
+            <div>
+                <span id="organ-category" class="text-[10px] mono uppercase tracking-widest text-sky-400 font-semibold">CARDIOVASCULAR</span>
+                <h3 id="organ-title" class="text-base font-bold text-white mt-0.5">Myocardium Heart</h3>
+            </div>
+            <button id="close-organ-card" class="text-slate-400 hover:text-white p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <p id="organ-desc" class="text-xs text-slate-300 leading-relaxed mb-4">Four-chambered muscular pump driving oxygenated blood through systemic arterial pathways synchronized to real-time sinus rhythm.</p>
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-2.5">
+                <div id="metric-1-label" class="text-[10px] mono text-slate-400 uppercase">CARDIAC OUTPUT</div>
+                <div id="metric-1-val" class="text-sm font-bold text-sky-300 mono mt-0.5">5.2 L/min</div>
+            </div>
+            <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-2.5">
+                <div id="metric-2-label" class="text-[10px] mono text-slate-400 uppercase">EJECTION FRAC</div>
+                <div id="metric-2-val" class="text-sm font-bold text-cyan-300 mono mt-0.5">64.0%</div>
+            </div>
+        </div>
+        <button id="focus-organ-btn" class="w-full py-2 px-4 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs tracking-wide transition shadow-lg shadow-sky-500/25">Focus Camera & Peel X-Ray</button>
+    </div>
+
+    <!-- Hover Tooltip -->
+    <div id="hover-tooltip" class="fixed z-30 pointer-events-none px-3 py-1.5 rounded-lg bg-slate-900/90 border border-sky-400/40 text-xs text-sky-200 mono backdrop-blur-md opacity-0 transition-opacity duration-150 shadow-xl">
+        <span id="hover-tooltip-text">Anatomical System</span>
+    </div>
+
+    <!-- Application Script Module -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // Scene, Camera & Renderer
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x03060c, 0.08);
+
+        const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 0.15, 4.35);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 0.85;
+        controls.maxDistance = 6.0;
+        controls.target.set(0, 0.05, 0);
+
+        // Post-Processing Bloom
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.58, 0.48, 0.82);
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // Studio Lighting
+        const ambientLight = new THREE.AmbientLight(0x283244, 1.35);
+        scene.add(ambientLight);
+
+        const hemiLight = new THREE.HemisphereLight(0xf8fafc, 0x1e1b24, 0.85);
+        scene.add(hemiLight);
+
+        const keyLight = new THREE.DirectionalLight(0xfff5eb, 2.4);
+        keyLight.position.set(2.4, 3.2, 3.4);
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0xbae6fd, 1.15);
+        fillLight.position.set(-2.8, 1.4, 2.6);
+        scene.add(fillLight);
+
+        const rimLightCool = new THREE.DirectionalLight(0x38bdf8, 2.1);
+        rimLightCool.position.set(-2.8, 2.2, -2.8);
+        scene.add(rimLightCool);
+
+        const coreGlowLight = new THREE.PointLight(0xef4444, 2.2, 2.5);
+        coreGlowLight.position.set(0.06, 0.35, 0.08);
+        scene.add(coreGlowLight);
+
+        const brainGlowLight = new THREE.PointLight(0x22d3ee, 1.8, 1.8);
+        brainGlowLight.position.set(0, 1.38, 0);
+        scene.add(brainGlowLight);
+
+        // Procedural Textures
+        function generateHumanSkinTextures() {
+            const w = 512, h = 512;
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            const ctx = c.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0.0, '#d89b7e');
+            grad.addColorStop(0.5, '#d69779');
+            grad.addColorStop(1.0, '#cc8b6d');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            for (let i = 0; i < 15000; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? 'rgba(95, 52, 38, 0.05)' : 'rgba(255, 225, 205, 0.04)';
+                ctx.fillRect(Math.random() * w, Math.random() * h, 1.2, 1.2);
+            }
+            const tex = new THREE.CanvasTexture(c);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
+        const skinTex = generateHumanSkinTextures();
+
+        const humanRoot = new THREE.Group();
+        scene.add(humanRoot);
+
+        const skinGroup = new THREE.Group();
+        const muscleGroup = new THREE.Group();
+        const skeletonGroup = new THREE.Group();
+        const vascularGroup = new THREE.Group();
+        const nervousGroup = new THREE.Group();
+        const organGroup = new THREE.Group();
+        const particleGroup = new THREE.Group();
+
+        humanRoot.add(skeletonGroup, organGroup, vascularGroup, nervousGroup, muscleGroup, particleGroup, skinGroup);
+        const interactiveMeshes = [];
+
+        // Main Sculpted Torso & Limbs
+        const skinUniforms = {
+            uTime: { value: 0 },
+            uPeel: { value: 0.0 },
+            uAlbedoMap: { value: skinTex },
+            uSubsurfaceColor: { value: new THREE.Color(0xe84838) },
+            uRimColor: { value: new THREE.Color(0x38bdf8) },
+            uHoloWireColor: { value: new THREE.Color(0x22d3ee) }
+        };
+
+        const skinMaterial = new THREE.ShaderMaterial({
+            uniforms: skinUniforms,
+            transparent: true,
+            depthWrite: true,
+            side: THREE.FrontSide,
+            vertexShader: `
+                varying vec3 vNormal;
+                varying vec3 vViewPosition;
+                varying vec3 vWorldPos;
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    vec4 worldPos = modelMatrix * vec4(position, 1.0);
+                    vWorldPos = worldPos.xyz;
+                    vViewPosition = -(modelViewMatrix * vec4(position, 1.0)).xyz;
+                    vNormal = normalize(normalMatrix * normal);
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float uTime;
+                uniform float uPeel;
+                uniform sampler2D uAlbedoMap;
+                uniform vec3 uSubsurfaceColor;
+                uniform vec3 uRimColor;
+                uniform vec3 uHoloWireColor;
+                varying vec3 vNormal;
+                varying vec3 vViewPosition;
+                varying vec3 vWorldPos;
+                varying vec2 vUv;
+
+                float cellularPattern(vec3 p) {
+                    vec3 g = abs(fract(p * 28.0) - 0.5);
+                    float line = min(min(g.x, g.y), g.z);
+                    return 1.0 - smoothstep(0.0, 0.05, line);
+                }
+
+                void main() {
+                    vec3 albedo = texture2D(uAlbedoMap, vUv).rgb;
+                    vec3 normal = normalize(vNormal);
+                    vec3 viewDir = normalize(vViewPosition);
+                    vec3 keyDir = normalize(vec3(0.55, 0.72, 0.85));
+
+                    float diff = max(dot(normal, keyDir), 0.0);
+                    float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 3.0);
+
+                    vec3 col = albedo * (0.3 + diff * 0.7);
+                    col += uSubsurfaceColor * pow(diff, 2.0) * 0.3;
+
+                    float cellGrid = cellularPattern(vWorldPos + vec3(0.0, uTime * 0.01, 0.0));
+                    float dissolveEdge = smoothstep(uPeel - 0.1, uPeel + 0.1, 0.9 - vWorldPos.y * 0.2);
+                    vec3 holoGlow = uHoloWireColor * (cellGrid * 0.9);
+
+                    col = mix(holoGlow + uRimColor * fresnel * 0.6, col, dissolveEdge);
+                    float alpha = mix(0.05 + cellGrid * uPeel * 0.2, 1.0, dissolveEdge);
+
+                    gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0));
+                }
+            `
+        });
+
+        const torsoGeo = new THREE.CylinderGeometry(0.18, 0.13, 1.4, 32, 64);
+        const torsoMesh = new THREE.Mesh(torsoGeo, skinMaterial);
+        torsoMesh.position.set(0, 0.2, 0);
+        skinGroup.add(torsoMesh);
+
+        const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.12, 24, 24), skinMaterial);
+        headMesh.position.set(0, 1.25, 0);
+        skinGroup.add(headMesh);
+
+        // Heart
+        const heartMat = new THREE.MeshPhysicalMaterial({ color: 0xef4444, emissive: 0x991b1b, roughness: 0.2, clearcoat: 0.8 });
+        const heartMesh = new THREE.Mesh(new THREE.SphereGeometry(0.06, 24, 24), heartMat);
+        heartMesh.position.set(0.03, 0.75, 0.04);
+        heartMesh.userData = {
+            id: 'heart',
+            category: 'CARDIOVASCULAR',
+            title: 'Human Myocardium Heart',
+            desc: 'Central muscular pump circulating oxygenated blood.',
+            m1Label: 'OUTPUT', m1Val: '5.2 L/min',
+            m2Label: 'EJECTION', m2Val: '64%',
+            camPos: new THREE.Vector3(0.2, 0.78, 0.8), targetPos: new THREE.Vector3(0.03, 0.75, 0.04), peelTarget: 0.9
+        };
+        interactiveMeshes.push(heartMesh);
+        organGroup.add(heartMesh);
+
+        // Brain
+        const brainMat = new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, emissive: 0x0284c7, roughness: 0.3, transparent: true, opacity: 0.8 });
+        const brainMesh = new THREE.Mesh(new THREE.SphereGeometry(0.1, 24, 24), brainMat);
+        brainMesh.position.set(0, 1.28, 0);
+        brainMesh.scale.set(1.1, 0.8, 1.3);
+        brainMesh.userData = {
+            id: 'brain',
+            category: 'NEUROLOGY',
+            title: 'Cerebral Cortex',
+            desc: 'Central nervous system command center.',
+            m1Label: 'ACTIVITY', m1Val: '42 Hz',
+            m2Label: 'SPEED', m2Val: '118 m/s',
+            camPos: new THREE.Vector3(0.2, 1.32, 0.7), targetPos: new THREE.Vector3(0, 1.28, 0), peelTarget: 0.95
+        };
+        interactiveMeshes.push(brainMesh);
+        organGroup.add(brainMesh);
+
+        // Skeleton & Bones
+        const boneMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 });
+        const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 12), boneMat);
+        spine.position.set(0, 0.3, -0.05);
+        skeletonGroup.add(spine);
+
+        // Volumetric Particles
+        const particleCount = 35000;
+        const pGeo = new THREE.BufferGeometry();
+        const pPos = new Float32Array(particleCount * 3);
+        const pColors = new Float32Array(particleCount * 3);
+        const pSizes = new Float32Array(particleCount);
+        const pPhases = new Float32Array(particleCount);
+
+        const col1 = new THREE.Color(0x38bdf8);
+        const col2 = new THREE.Color(0xfb7185);
+
+        for(let i=0; i<particleCount; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const y = (Math.random() - 0.5) * 1.6;
+            const r = 0.15 + Math.random() * 0.12;
+            pPos[i*3] = Math.cos(theta) * r;
+            pPos[i*3+1] = y;
+            pPos[i*3+2] = Math.sin(theta) * r;
+
+            const c = Math.random() > 0.5 ? col1 : col2;
+            pColors[i*3] = c.r; pColors[i*3+1] = c.g; pColors[i*3+2] = c.b;
+            pSizes[i] = 1.0 + Math.random() * 2.0;
+            pPhases[i] = Math.random() * Math.PI * 2;
+        }
+
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        pGeo.setAttribute('aColor', new THREE.BufferAttribute(pColors, 3));
+        pGeo.setAttribute('aSize', new THREE.BufferAttribute(pSizes, 1));
+        pGeo.setAttribute('aPhase', new THREE.BufferAttribute(pPhases, 1));
+
+        const pMat = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uPeel: { value: 0 },
+                uPixelRatio: { value: renderer.getPixelRatio() }
+            },
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            vertexShader: `
+                attribute vec3 aColor;
+                attribute float aSize;
+                attribute float aPhase;
+                uniform float uTime;
+                uniform float uPeel;
+                uniform float uPixelRatio;
+                varying vec3 vColor;
+                varying float vAlpha;
+                void main() {
+                    vColor = aColor;
+                    vec3 pos = position;
+                    float t = uTime + aPhase;
+                    pos.x += sin(t * 2.0) * 0.01;
+                    pos.y += cos(t * 1.5) * 0.01;
+                    vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
+                    vAlpha = mix(0.2, 0.9, uPeel);
+                    gl_PointSize = (aSize * (8.0 / -mvPos.z)) * uPixelRatio * mix(0.5, 1.2, uPeel);
+                    gl_Position = projectionMatrix * mvPos;
+                }
+            `,
+            fragmentShader: `
+                varying vec3 vColor;
+                varying float vAlpha;
+                void main() {
+                    vec2 uv = gl_PointCoord - 0.5;
+                    float r = length(uv) * 2.0;
+                    if (r > 1.0) discard;
+                    float glow = exp(-r * r * 4.0);
+                    gl_FragColor = vec4(vColor * glow, glow * vAlpha);
+                }
+            `
+        });
+
+        const particleCloud = new THREE.Points(pGeo, pMat);
+        particleGroup.add(particleCloud);
+
+        // UI & State Controls
+        const state = { bpm: 72, flowSpeed: 1.0, breathing: true, manualPeel: null, currentPeel: 0.0, selectedOrgan: null, targetCamPos: null, targetLookAt: null };
+        const peelSlider = document.getElementById('peel-slider');
+        const peelPercent = document.getElementById('peel-percent');
+        const hudDepthMode = document.getElementById('hud-depth-mode');
+        const organCard = document.getElementById('organ-card');
+        const hoverTooltip = document.getElementById('hover-tooltip');
+        const hoverTooltipText = document.getElementById('hover-tooltip-text');
+
+        peelSlider.addEventListener('input', e => { state.manualPeel = parseFloat(e.target.value) / 100.0; });
+
+        document.getElementById('toggle-skin').addEventListener('change', e => skinGroup.visible = e.target.checked);
+        document.getElementById('toggle-muscles').addEventListener('change', e => muscleGroup.visible = e.target.checked);
+        document.getElementById('toggle-skeleton').addEventListener('change', e => skeletonGroup.visible = e.target.checked);
+        document.getElementById('toggle-vascular').addEventListener('change', e => vascularGroup.visible = e.target.checked);
+        document.getElementById('toggle-nervous').addEventListener('change', e => nervousGroup.visible = e.target.checked);
+        document.getElementById('toggle-organs').addEventListener('change', e => organGroup.visible = e.target.checked);
+        document.getElementById('toggle-particles').addEventListener('change', e => particleGroup.visible = e.target.checked);
+
+        document.getElementById('bpm-slider').addEventListener('input', e => {
+            state.bpm = parseInt(e.target.value);
+            document.getElementById('bpm-display').textContent = `${state.bpm} BPM`;
+        });
+        document.getElementById('flow-slider').addEventListener('input', e => {
+            state.flowSpeed = parseFloat(e.target.value);
+            document.getElementById('flow-display').textContent = `${state.flowSpeed.toFixed(1)}x`;
+        });
+
+        // Presets
+        const presets = {
+            full: { pos: new THREE.Vector3(0, 0.15, 4.35), target: new THREE.Vector3(0, 0.05, 0), peel: null },
+            brain: { pos: new THREE.Vector3(0.2, 1.32, 0.7), target: new THREE.Vector3(0, 1.28, 0), peel: 0.95 },
+            thorax: { pos: new THREE.Vector3(0.2, 0.78, 0.8), target: new THREE.Vector3(0.03, 0.75, 0.04), peel: 0.9 },
+            viscera: { pos: new THREE.Vector3(0.2, 0.4, 0.9), target: new THREE.Vector3(0, 0.3, 0), peel: 0.85 },
+            micro: { pos: new THREE.Vector3(0.1, 0.75, 0.5), target: new THREE.Vector3(0.03, 0.75, 0.04), peel: 1.0 }
+        };
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active', 'bg-sky-500/25', 'text-sky-200', 'border-sky-400/40'));
+                btn.classList.add('active', 'bg-sky-500/25', 'text-sky-200', 'border-sky-400/40');
+                const p = presets[btn.dataset.preset];
+                if (p) {
+                    state.targetCamPos = p.pos.clone();
+                    state.targetLookAt = p.target.clone();
+                    state.manualPeel = p.peel;
+                }
+            });
+        });
+
+        // Raycasting
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2(-99, -99);
+
+        window.addEventListener('pointermove', e => {
+            pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+            const hits = raycaster.intersectObjects(interactiveMeshes, false);
+            if (hits.length > 0 && hits[0].object.userData.title) {
+                document.body.style.cursor = 'pointer';
+                hoverTooltipText.textContent = hits[0].object.userData.title;
+                hoverTooltip.style.left = `${Math.min(window.innerWidth - 200, e.clientX + 12)}px`;
+                hoverTooltip.style.top = `${Math.max(16, e.clientY - 30)}px`;
+                hoverTooltip.classList.remove('opacity-0');
+            } else {
+                document.body.style.cursor = 'default';
+                hoverTooltip.classList.add('opacity-0');
+            }
+        });
+
+        window.addEventListener('click', () => {
+            raycaster.setFromCamera(pointer, camera);
+            const hits = raycaster.intersectObjects(interactiveMeshes, false);
+            if (hits.length > 0 && hits[0].object.userData.title) {
+                const data = hits[0].object.userData;
+                state.selectedOrgan = data;
+                document.getElementById('organ-category').textContent = data.category;
+                document.getElementById('organ-title').textContent = data.title;
+                document.getElementById('organ-desc').textContent = data.desc;
+                document.getElementById('metric-1-val').textContent = data.m1Val;
+                document.getElementById('metric-2-val').textContent = data.m2Val;
+                organCard.classList.remove('opacity-0', 'translate-x-6', 'pointer-events-none');
+                state.targetCamPos = data.camPos.clone();
+                state.targetLookAt = data.targetPos.clone();
+                state.manualPeel = data.peelTarget;
+            }
+        });
+
+        document.getElementById('close-organ-card').addEventListener('click', () => {
+            organCard.classList.add('opacity-0', 'translate-x-6', 'pointer-events-none');
+        });
+        document.getElementById('focus-organ-btn').addEventListener('click', () => {
+            if (state.selectedOrgan) {
+                state.targetCamPos = state.selectedOrgan.camPos.clone();
+                state.targetLookAt = state.selectedOrgan.targetPos.clone();
+                state.manualPeel = state.selectedOrgan.peelTarget;
+            }
+        });
+
+        // Animation Loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const elapsed = clock.getElapsedTime();
+
+            if (state.targetCamPos && state.targetLookAt) {
+                camera.position.lerp(state.targetCamPos, 0.07);
+                controls.target.lerp(state.targetLookAt, 0.07);
+                if (camera.position.distanceTo(state.targetCamPos) < 0.01) {
+                    state.targetCamPos = null;
+                    state.targetLookAt = null;
+                }
+            }
+            controls.update();
+
+            const camDist = camera.position.distanceTo(controls.target);
+            const autoPeel = 1.0 - Math.max(0, Math.min(1, (camDist - 1.2) / 2.5));
+            const targetPeel = state.manualPeel !== null ? state.manualPeel : autoPeel;
+            state.currentPeel += (targetPeel - state.currentPeel) * 0.1;
+
+            skinUniforms.uTime.value = elapsed;
+            skinUniforms.uPeel.value = state.currentPeel;
+            pMat.uniforms.uTime.value = elapsed * state.flowSpeed;
+            pMat.uniforms.uPeel.value = state.currentPeel;
+
+            const pct = Math.round(state.currentPeel * 100);
+            if (state.manualPeel === null) peelSlider.value = pct;
+            peelPercent.textContent = `${pct}%`;
+
+            // Heartbeat
+            const beat = Math.sin(elapsed * (state.bpm / 60) * Math.PI * 2) * 0.5 + 0.5;
+            const hScale = 1.0 + beat * 0.1;
+            heartMesh.scale.set(hScale, hScale, hScale);
+
+            composer.render();
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('loader-overlay');
+            loader.classList.add('opacity-0');
+            setTimeout(() => loader.remove(), 600);
+            animate();
+        });
+    </script>
+</body>
+</html>
