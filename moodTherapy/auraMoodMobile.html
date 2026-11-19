@@ -1,0 +1,2378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AURA 4K — AI Biometric Mood Elevation Engine</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Three.js (r128) + Post-Processing Addons -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #04060c;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #f8fafc;
+      user-select: none;
+    }
+
+    #webgl-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100dvh;
+      display: block;
+      z-index: 0;
+      touch-action: none;
+    }
+
+    /* Glassmorphism System */
+    .glass-panel {
+      background: rgba(9, 13, 24, 0.62);
+      backdrop-filter: blur(26px) saturate(165%);
+      -webkit-backdrop-filter: blur(26px) saturate(165%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+
+    .glass-pill {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .glass-pill:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.28);
+      transform: translateY(-1px);
+    }
+
+    .glass-pill:active {
+      transform: translateY(0px) scale(0.98);
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 0; transform: translateY(14px) scale(0.97); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .animate-float-up {
+      animation: floatUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes micPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.55); }
+      50% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+    }
+
+    .mic-recording {
+      animation: micPulse 1.5s infinite;
+      background: rgba(244, 63, 94, 0.24) !important;
+      border-color: rgba(251, 113, 133, 0.65) !important;
+      color: #fecdd3 !important;
+    }
+
+    @keyframes shimmerDot {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1.1); opacity: 1; }
+    }
+
+    .ai-dot:nth-child(1) { animation: shimmerDot 1.2s infinite 0s; }
+    .ai-dot:nth-child(2) { animation: shimmerDot 1.2s infinite 0.2s; }
+    .ai-dot:nth-child(3) { animation: shimmerDot 1.2s infinite 0.4s; }
+
+    /* Custom Range Slider for Demo Mode */
+    input[type="range"].aura-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      outline: none;
+    }
+
+    input[type="range"].aura-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fde68a, #f59e0b);
+      box-shadow: 0 0 14px rgba(251, 191, 36, 0.8);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    input[type="range"].aura-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.18);
+    }
+
+    /* Mirrored Webcam Video */
+    #webcam-video, #mesh-canvas {
+      transform: scaleX(-1);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fullscreen 4K High-DPI WebGL Canvas -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Subtle Vignette Overlay for Cinematic Depth -->
+  <div class="pointer-events-none fixed inset-0 z-10 bg-[radial-gradient(circle_at_center,transparent_40%,rgba(2,4,10,0.75)_100%)]"></div>
+
+  <!-- ========================================================= -->
+  <!-- ONBOARDING / CALIBRATION OVERLAY                          -->
+  <!-- ========================================================= -->
+  <div id="onboarding-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/75 backdrop-blur-xl transition-opacity duration-700">
+    <div class="glass-panel max-w-xl w-full rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden">
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-1 bg-gradient-to-r from-transparent via-amber-300/80 to-transparent"></div>
+
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium tracking-wider uppercase text-amber-200/90 mb-5">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        4K WebGL + Live Gemini AI Coach
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight bg-gradient-to-br from-white via-slate-100 to-amber-200/90 bg-clip-text text-transparent mb-3">
+        AURA Biometric Mirror
+      </h1>
+
+      <p class="text-slate-300/90 text-sm sm:text-base leading-relaxed max-w-md mx-auto mb-7">
+        Continuous 60fps facial expression vision paired with a live Gemini AI coach that listens to your voice or text, senses your micro-expressions, and guides you into radiant positivity.
+      </p>
+
+      <div class="grid grid-cols-3 gap-2.5 sm:gap-3 text-left mb-7">
+        <div class="rounded-2xl bg-white/[0.04] border border-white/10 p-3 sm:p-3.5">
+          <div class="text-amber-300 text-xs font-semibold mb-1">01. Sense 60fps</div>
+          <div class="text-[11px] sm:text-xs text-slate-400 leading-snug">52 facial blendshapes tracked continuously in real time</div>
+        </div>
+        <div class="rounded-2xl bg-white/[0.04] border border-white/10 p-3 sm:p-3.5">
+          <div class="text-teal-300 text-xs font-semibold mb-1">02. AI Dialogue</div>
+          <div class="text-[11px] sm:text-xs text-slate-400 leading-snug">Gemini tailors follow-up prompts to your words & face</div>
+        </div>
+        <div class="rounded-2xl bg-white/[0.04] border border-white/10 p-3 sm:p-3.5">
+          <div class="text-rose-300 text-xs font-semibold mb-1">03. Elevate</div>
+          <div class="text-[11px] sm:text-xs text-slate-400 leading-snug">Watch liquid glass bloom into gold as your mood lifts</div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <button id="btn-start-camera" class="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-2xl font-semibold text-sm text-slate-950 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 hover:from-amber-100 hover:to-amber-200 shadow-[0_0_30px_rgba(251,191,36,0.35)] transition-all cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <span>Start Camera & AI Coach</span>
+        </button>
+
+        <button id="btn-start-demo" class="w-full sm:w-auto py-3.5 px-5 rounded-2xl font-medium text-sm text-slate-200 glass-pill cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-4 h-4 text-teal-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          </svg>
+          <span>Simulated Face Mode</span>
+        </button>
+      </div>
+
+      <p class="text-[11px] text-slate-400/80 mt-4">
+        Facial landmarks run locally at 60fps in your browser; Gemini AI personalizes your coaching reflections.
+      </p>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MAIN GLASSMORPHIC HUD (TOP & BOTTOM OVERLAYS)             -->
+  <!-- ========================================================= -->
+  <div id="main-hud" class="fixed inset-0 z-20 pointer-events-none flex flex-col justify-between p-3 sm:p-5 md:p-6 opacity-0 transition-opacity duration-700">
+
+    <!-- TOP BAR: Brand / Controls / Session Journey + Live Biometric Camera Card -->
+    <div class="flex flex-wrap items-start justify-between gap-3">
+
+      <!-- Left: System Title, Utility Controls & Biometric Session Journey -->
+      <div class="pointer-events-auto flex flex-col gap-2 max-w-xs sm:max-w-sm">
+        <div class="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3">
+          <div class="relative flex items-center justify-center w-3 h-3">
+            <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_12px_#2dd4bf]"></span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-semibold text-sm tracking-wide text-white">AURA AI</span>
+              <span id="resolution-badge" class="mono text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-amber-200/90 border border-white/10">4K UHD • 60FPS</span>
+            </div>
+            <div id="vision-mode-label" class="text-[11px] text-slate-400">Initializing Neural Vision...</div>
+          </div>
+        </div>
+
+        <!-- Quick Utility Controls -->
+        <div class="flex flex-wrap items-center gap-1.5">
+          <!-- Soundscape Toggle -->
+          <button id="btn-audio-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer" title="Toggle Generative Harmonic Soundscape">
+            <svg id="icon-audio-on" class="w-3.5 h-3.5 text-amber-300 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            </svg>
+            <svg id="icon-audio-off" class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+            </svg>
+            <span id="audio-label">Sound Off</span>
+          </button>
+
+          <!-- Mesh Overlay Toggle -->
+          <button id="btn-mesh-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer" title="Toggle Facial Biometric Mesh">
+            <span>Mesh: <strong id="mesh-state-text" class="font-medium text-teal-300">ON</strong></span>
+          </button>
+
+          <!-- Mode Switcher (Camera vs Simulated) -->
+          <button id="btn-switch-mode" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer">
+            <span id="switch-mode-text">Demo Mode</span>
+          </button>
+
+          <!-- Session Journey Log Toggle -->
+          <button id="btn-journey-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-amber-200 flex items-center gap-1.5 cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span>Journey (<span id="journey-count">0</span>)</span>
+          </button>
+        </div>
+
+        <!-- Live Biometric Session Journey Drawer -->
+        <div id="journey-drawer" class="hidden glass-panel rounded-2xl p-3.5 w-72 sm:w-80 animate-float-up">
+          <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-white/10">
+            <span class="text-xs font-semibold text-amber-200">Biometric Session Journey</span>
+            <span id="journey-net-badge" class="mono text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Net +0%</span>
+          </div>
+          <div id="journey-list" class="space-y-2 max-h-40 overflow-y-auto text-xs text-slate-300">
+            <div class="text-slate-400 text-[11px] italic">Complete your first AI prompt to record biometric mood shifts.</div>
+          </div>
+        </div>
+
+        <!-- Simulated Mode Controls (Visible only in Demo/Simulated Mode) -->
+        <div id="demo-controls-panel" class="hidden glass-panel rounded-2xl p-3.5 w-64 sm:w-72 animate-float-up">
+          <div class="flex items-center justify-between text-xs mb-2">
+            <span class="text-amber-200 font-medium">Simulated Expression</span>
+            <span id="demo-slider-val" class="mono text-slate-300">38%</span>
+          </div>
+          <input id="demo-mood-slider" type="range" min="5" max="100" value="38" class="aura-slider mb-2.5" />
+          <div class="grid grid-cols-3 gap-1.5">
+            <button data-preset="22" class="demo-preset-btn py-1.5 px-2 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/35 border border-indigo-400/30 text-[11px] text-indigo-200 cursor-pointer">Tense</button>
+            <button data-preset="52" class="demo-preset-btn py-1.5 px-2 rounded-lg bg-teal-500/20 hover:bg-teal-500/35 border border-teal-400/30 text-[11px] text-teal-200 cursor-pointer">Calm</button>
+            <button data-preset="90" class="demo-preset-btn py-1.5 px-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/30 text-[11px] text-amber-200 cursor-pointer">Radiant</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Live Biometric Scanner & Mood Elevation Progress Ring -->
+      <div class="pointer-events-auto glass-panel rounded-3xl p-3 sm:p-3.5 flex items-center gap-3 sm:gap-4 ml-auto">
+
+        <!-- Webcam Feed + Biometric Landmark Canvas -->
+        <div class="relative w-20 h-20 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-slate-900/90 border border-white/15 shrink-0">
+          <video id="webcam-video" autoplay playsinline webkit-playsinline muted class="w-full h-full object-cover"></video>
+          <canvas id="mesh-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+
+          <!-- Fallback Avatar when in Demo Mode -->
+          <div id="demo-avatar-box" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-800/90 to-slate-950/95 p-2 text-center">
+            <div id="demo-face-emoji" class="text-3xl mb-1 transition-transform duration-300">😌</div>
+            <span class="mono text-[9px] uppercase tracking-wider text-teal-300/90">Sim Sensor</span>
+          </div>
+
+          <!-- Corner Reticle Marks -->
+          <div class="pointer-events-none absolute inset-1.5 border border-white/10 rounded-xl"></div>
+          <div id="face-detected-badge" class="absolute bottom-1.5 left-1.5 right-1.5 text-center py-0.5 rounded bg-black/60 backdrop-blur-sm text-[9px] mono text-emerald-300 tracking-tight">
+            FACE LOCKED
+          </div>
+        </div>
+
+        <!-- Mood Ring & Real-Time Metrics -->
+        <div class="flex flex-col justify-between pr-1">
+          <div class="flex items-center gap-3">
+            <!-- Circular Progress Ring targeting 85%+ Radiant Threshold -->
+            <div class="relative w-16 h-16 flex items-center justify-center">
+              <svg class="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                <circle cx="32" cy="32" r="26" stroke="rgba(255,255,255,0.1)" stroke-width="5" fill="none" />
+                <circle id="mood-progress-ring" cx="32" cy="32" r="26" stroke="url(#auraRingGrad)" stroke-width="5" stroke-linecap="round" fill="none" stroke-dasharray="163.36" stroke-dashoffset="110" style="transition: stroke-dashoffset 0.45s ease-out;" />
+                <defs>
+                  <linearGradient id="auraRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#38bdf8" />
+                    <stop offset="50%" stop-color="#2dd4bf" />
+                    <stop offset="100%" stop-color="#fbbf24" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span id="mood-score-text" class="mono text-sm sm:text-base font-bold text-white leading-none">42%</span>
+                <span class="text-[8px] uppercase tracking-wider text-slate-400 mt-0.5">Mood</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-slate-400 font-medium">60fps Biometric State</div>
+              <div id="mood-state-label" class="text-sm sm:text-base font-semibold text-teal-200 leading-tight">Neutral / Calm</div>
+              <div class="flex items-center gap-1.5 mt-1">
+                <span class="text-[10px] text-slate-400">Target: <strong class="text-amber-300">85%</strong></span>
+                <span id="mood-delta-badge" class="hidden mono text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">+0%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Micro Expression Bars -->
+          <div class="grid grid-cols-3 gap-2 mt-2.5 pt-2 border-t border-white/10">
+            <div>
+              <div class="flex justify-between text-[9px] text-slate-400 mb-0.5">
+                <span>Smile</span>
+                <span id="metric-smile-val" class="mono text-slate-200">20%</span>
+              </div>
+              <div class="h-1 rounded-full bg-white/10 overflow-hidden">
+                <div id="metric-smile-bar" class="h-full bg-amber-300 rounded-full transition-all duration-200" style="width: 20%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[9px] text-slate-400 mb-0.5">
+                <span>Serenity</span>
+                <span id="metric-serenity-val" class="mono text-slate-200">55%</span>
+              </div>
+              <div class="h-1 rounded-full bg-white/10 overflow-hidden">
+                <div id="metric-serenity-bar" class="h-full bg-teal-300 rounded-full transition-all duration-200" style="width: 55%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[9px] text-slate-400 mb-0.5">
+                <span>Energy</span>
+                <span id="metric-energy-val" class="mono text-slate-200">45%</span>
+              </div>
+              <div class="h-1 rounded-full bg-white/10 overflow-hidden">
+                <div id="metric-energy-bar" class="h-full bg-rose-300 rounded-full transition-all duration-200" style="width: 45%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- BOTTOM CONVERSATIONAL GEMINI AI MOOD-ELEVATION CARD       -->
+    <!-- ========================================================= -->
+    <div class="w-full max-w-2xl mx-auto pointer-events-auto">
+      <div id="dialogue-card" class="glass-panel rounded-3xl p-4 sm:p-6 transition-all duration-500">
+
+        <!-- Step Header, Baseline Snapshot & Live Delta Indicator -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div class="flex items-center gap-2">
+            <span id="step-pill" class="mono text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/10 text-amber-200 border border-white/10">
+              Calibration
+            </span>
+            <span id="baseline-readout" class="text-xs text-slate-400">
+              Start: <strong class="text-slate-200 mono">--%</strong>
+            </span>
+            <span id="step-delta-pill" class="hidden mono text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-200 border border-teal-400/30">
+              Step Δ +0%
+            </span>
+          </div>
+
+          <div id="live-reaction-hint" class="text-[11px] text-teal-300/90 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-teal-300 animate-ping"></span>
+            <span id="ai-engine-badge">Gemini AI Coach Ready</span>
+          </div>
+        </div>
+
+        <!-- Personalized AI Reflection Callout (Appears after user speaks/types) -->
+        <div id="ai-empathy-box" class="hidden mb-3 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400/12 via-teal-400/10 to-transparent border border-amber-300/25 text-xs sm:text-sm text-amber-100/95 leading-relaxed">
+          <span class="font-semibold text-amber-300 mr-1">AURA:</span>
+          <span id="ai-empathy-text"></span>
+        </div>
+
+        <!-- AI Loading Indicator -->
+        <div id="ai-thinking-indicator" class="hidden items-center gap-2.5 py-4 text-xs sm:text-sm text-amber-200">
+          <div class="flex items-center gap-1">
+            <span class="ai-dot w-2 h-2 rounded-full bg-amber-300"></span>
+            <span class="ai-dot w-2 h-2 rounded-full bg-teal-300"></span>
+            <span class="ai-dot w-2 h-2 rounded-full bg-rose-300"></span>
+          </div>
+          <span>Gemini AI is reading your facial expression & crafting your next reflection...</span>
+        </div>
+
+        <!-- Adaptive Question Display -->
+        <div id="question-content-wrapper">
+          <h2 id="question-text" class="text-lg sm:text-xl md:text-2xl font-medium text-white leading-snug mb-1.5">
+            Take a gentle breath and look at the light. Let’s sense your baseline mood...
+          </h2>
+
+          <p id="question-subtext" class="text-xs sm:text-sm text-slate-300/80 mb-3.5">
+            Relax your shoulders. AURA is calibrating to your natural facial expression right now.
+          </p>
+
+          <!-- Quick Reflection Chips -->
+          <div id="quick-replies-container" class="flex flex-wrap gap-2 mb-3.5">
+            <!-- Populated dynamically per question -->
+          </div>
+        </div>
+
+        <!-- Voice Input + Text Response Form -->
+        <form id="reflection-form" class="flex items-center gap-2">
+          <!-- Microphone Voice Input Button (Web Speech API) -->
+          <button
+            type="button"
+            id="btn-voice-input"
+            title="Speak your answer out loud"
+            class="p-3 rounded-2xl glass-pill text-slate-200 hover:text-amber-200 cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
+          >
+            <svg id="mic-icon" class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
+            </svg>
+            <span id="mic-label" class="hidden sm:inline text-xs font-medium">Speak</span>
+          </button>
+
+          <input
+            id="reflection-input"
+            type="text"
+            placeholder="Speak or type your thought, or simply smile..."
+            autocomplete="off"
+            class="flex-1 bg-white/[0.06] border border-white/12 focus:border-amber-300/60 rounded-2xl px-4 py-3 text-xs sm:text-sm text-white placeholder-slate-400 outline-none transition-colors"
+          />
+
+          <button
+            type="submit"
+            id="btn-submit-reflection"
+            class="px-5 py-3 rounded-2xl font-semibold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-200 to-amber-300 hover:from-amber-100 hover:to-amber-200 shadow-[0_0_20px_rgba(251,191,36,0.25)] transition-all cursor-pointer shrink-0 flex items-center gap-1.5"
+          >
+            <span id="submit-btn-label">Lock Baseline & Begin</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
+        </form>
+
+        <!-- Live Facial Elevation Feedback Bar -->
+        <div id="feedback-banner" class="hidden mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
+          <span id="feedback-message" class="text-amber-200 font-medium">✨ Beautiful shift detected!</span>
+          <span id="feedback-delta" class="mono font-semibold text-emerald-300">+12% Mood Lift</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- TARGET ACHIEVED: MOOD ELEVATED SUMMARY MODAL              -->
+  <!-- ========================================================= -->
+  <div id="summary-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-xl">
+    <div class="glass-panel max-w-lg w-full rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden animate-float-up">
+      <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-300 via-amber-300 to-rose-400"></div>
+
+      <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-300/25 to-rose-400/25 border border-amber-300/40 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(251,191,36,0.3)]">
+        ✨
+      </div>
+
+      <div class="mono text-[11px] uppercase tracking-widest text-amber-300 mb-1">Target Resonance Reached</div>
+      <h2 class="text-2xl sm:text-3xl font-semibold text-white mb-2">Your Aura is Radiant</h2>
+      <p class="text-sm text-slate-300 mb-6">
+        Your facial micro-expressions and reflections elevated your emotional resonance into golden harmony.
+      </p>
+
+      <!-- Before vs After Comparison -->
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5">
+          <div class="text-[11px] text-slate-400 mb-1">Starting Mood</div>
+          <div id="summary-start-score" class="mono text-xl font-bold text-slate-200">38%</div>
+        </div>
+        <div class="rounded-2xl bg-amber-400/10 border border-amber-300/30 p-3.5">
+          <div class="text-[11px] text-amber-200 mb-1">Net Elevation</div>
+          <div id="summary-delta-score" class="mono text-xl font-bold text-emerald-300">+49%</div>
+        </div>
+        <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5">
+          <div class="text-[11px] text-slate-400 mb-1">Peak Resonance</div>
+          <div id="summary-peak-score" class="mono text-xl font-bold text-amber-300">87%</div>
+        </div>
+      </div>
+
+      <!-- Journey Highlights -->
+      <div id="summary-highlights" class="text-left rounded-2xl bg-white/[0.04] border border-white/10 p-4 mb-6 space-y-2 max-h-40 overflow-y-auto text-xs text-slate-300">
+        <!-- Populated dynamically -->
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button id="btn-continue-basking" class="flex-1 py-3 px-5 rounded-2xl font-medium text-sm text-slate-200 glass-pill cursor-pointer">
+          Continue AI Session
+        </button>
+        <button id="btn-restart-session" class="flex-1 py-3 px-5 rounded-2xl font-semibold text-sm text-slate-950 bg-gradient-to-r from-amber-200 to-amber-300 hover:from-amber-100 hover:to-amber-200 cursor-pointer">
+          New Session
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Message Box -->
+  <div id="toast-box" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 glass-panel px-4 py-2.5 rounded-full text-xs font-medium text-amber-200 border border-amber-300/30">
+    Notification
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MAIN APPLICATION SCRIPT (4K WEBGL + MEDIAPIPE + GEMINI)   -->
+  <!-- ========================================================= -->
+  <script type="module">
+    // Attempt dynamic import of MediaPipe Tasks Vision for real-time facial blendshapes
+    let FaceLandmarker = null;
+    let FilesetResolver = null;
+    try {
+      const mp = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm");
+      FaceLandmarker = mp.FaceLandmarker;
+      FilesetResolver = mp.FilesetResolver;
+    } catch (err) {
+      console.warn("MediaPipe CDN unavailable, will use graceful fallback if needed:", err);
+    }
+
+    /**
+     * ============================================================================
+     * 1. APPLICATION STATE & SPRING PHYSICS ENGINE
+     * ============================================================================
+     */
+    const TARGET_MOOD_THRESHOLD = 85; // 85% = Radiant / Elevated Target
+    const AUTO_LIFT_TRIGGER_DELTA = 12; // +12% facial smile lift auto-celebrates
+
+    const state = {
+      isRunning: false,
+      mode: "camera", // "camera" | "demo"
+      showMesh: true,
+      audioEnabled: false,
+      faceDetected: false,
+      isGeneratingAI: false,
+      isListeningVoice: false,
+
+      // Biometric expression metrics (0.0 to 1.0)
+      rawSmile: 0.25,
+      rawSerenity: 0.55,
+      rawEnergy: 0.45,
+
+      // Critically-damped spring mood score (0 to 100)
+      currentMood: 42,
+      moodVelocity: 0,
+      targetMood: 42,
+
+      // Session tracking
+      baselineMood: null,
+      preQuestionMood: 42,
+      peakMood: 42,
+      stepIndex: 0, // 0 = Calibration, 1..N = AI Prompts
+      completedTarget: false,
+      reflectionsLog: [],
+      conversationHistory: [], // Stores { role, question, userReply, moodBefore, moodAfter }
+      burstIntensity: 0,
+      lastPromptTime: 0,
+      autoLiftCooldown: false
+    };
+
+    // Offline / Fallback Question Bank (if Gemini API network is unreachable)
+    const FALLBACK_QUESTION_BANK = {
+      low: [
+        {
+          tag: "Gentle Grounding",
+          empathy: "I see a bit of tension around your brow—let’s take the pressure off completely.",
+          question: "What is one tiny, comforting thing in your life right now that you’re quietly grateful for?",
+          subtext: "A warm drink, a quiet room, or simply giving yourself this pause.",
+          chips: ["Taking a slow deep breath", "A cozy quiet moment", "Music that calms me", "My resilience today"]
+        },
+        {
+          tag: "Micro-Joy Spark",
+          empathy: "Even a small shift in focus can soften a heavy moment.",
+          question: "Think of a memory that effortlessly makes the corners of your mouth lift—what comes to mind?",
+          subtext: "Notice how your face subtly softens just picturing that scene.",
+          chips: ["Laughing with a friend", "Warm sunlight outdoors", "A playful pet or animal", "A favorite trip"]
+        }
+      ],
+      mid: [
+        {
+          tag: "Warmth & Connection",
+          empathy: "Your expression looks calm and grounded—let’s invite a little more warmth in.",
+          question: "Think of someone who truly appreciates you—what is one kind thing they would say about you?",
+          subtext: "Let that recognition land for a second while looking into the aura.",
+          chips: ["That I care deeply", "That I always show up", "My sense of humor", "My creativity & heart"]
+        },
+        {
+          tag: "Sanctuary Visualization",
+          empathy: "You’re centered right now—let’s elevate that calm into bright curiosity.",
+          question: "If we could teleport anywhere peaceful for 10 minutes right now, where would we go?",
+          subtext: "Picture the colors, breeze, and light of that place.",
+          chips: ["Golden sunset beach", "Misty mountain cabin", "Starlit desert sky", "Lush botanical garden"]
+        }
+      ],
+      high: [
+        {
+          tag: "Radiant Amplification",
+          empathy: "Your smile is lighting up the aura! Let’s amplify that momentum.",
+          question: "What is something exciting you’re looking forward to in the coming days or weeks?",
+          subtext: "Hold that warm expression—watch the golden light respond in real time.",
+          chips: ["A personal milestone", "Time with loved ones", "A creative project", "Simply enjoying today"]
+        },
+        {
+          tag: "Joy Resonance",
+          empathy: "You’re radiating genuine warmth right now!",
+          question: "If you could bottle this exact feeling of lightness and send it to someone, who gets it first?",
+          subtext: "Let that generosity shine through your expression.",
+          chips: ["My closest friend", "My family", "Someone needing a lift", "My future self"]
+        }
+      ]
+    };
+
+    let currentQuestionObj = null;
+    const askedFallbackQuestions = new Set();
+
+    /**
+     * ============================================================================
+     * 2. LIVE GEMINI AI BIOMETRIC COACH ENGINE (STRUCTURED JSON + EXPONENTIAL BACKOFF)
+     * ============================================================================
+     */
+    async function fetchGeminiCoachingTurn(userReplyText = "", moodDelta = 0) {
+      const apiKey = ""; // Provided automatically by runtime environment
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const moodScore = Math.round(state.currentMood);
+      const smilePct = Math.round(state.rawSmile * 100);
+      const serenityPct = Math.round(state.rawSerenity * 100);
+      const energyPct = Math.round(state.rawEnergy * 100);
+
+      const recentContext = state.conversationHistory
+        .slice(-3)
+        .map(
+          (turn, i) =>
+            `Turn ${i + 1}: AI asked "${turn.question}" | User answered "${turn.userReply}" | Mood shifted ${turn.moodBefore}% -> ${turn.moodAfter}%`
+        )
+        .join("\n");
+
+      const systemInstruction = `You are AURA, an empathetic, emotionally intelligent biometric mood-elevation coach inside a 4K WebGL light sanctuary.
+Your goal is to gently and naturally raise the user's mood toward 85%+ (Radiant Joy) through warm, concise, uplifting conversational questions.
+You receive real-time 60fps facial expression telemetry (Overall Mood 0-100%, Smile %, Serenity %, Energy %, and Net Delta Lift %) plus what the user just spoke or typed.
+Rules:
+1. Acknowledge both what the user said (if anything) AND their live facial expression shift in 1 short, warm sentence ("empathyResponse").
+2. Ask ONE fresh, engaging, uplifting follow-up question ("question") tailored to their current mood level (grounding & comforting if <45%, warm & appreciative if 45-70%, celebratory & forward-looking if >70%).
+3. Keep "question" concise (under 22 words), natural, and conversational.
+4. Provide 4 short, inviting quick-reply options ("chips", each 2-5 words) that help them answer effortlessly.`;
+
+      const userPrompt = `Live Facial Telemetry:
+- Overall Mood Score: ${moodScore}% (Baseline at start: ${state.baselineMood ?? moodScore}%, Target: ${TARGET_MOOD_THRESHOLD}%)
+- Facial Smile: ${smilePct}% | Serenity (relaxed brow): ${serenityPct}% | Energy: ${energyPct}%
+- Mood Change on Last Step: ${moodDelta >= 0 ? "+" : ""}${moodDelta}%
+- Latest User Input (voice/text): ${userReplyText ? `"${userReplyText}"` : "(User responded purely with their facial expression / smile)"}
+
+Recent Session History:
+${recentContext || "Just completed initial facial baseline calibration."}
+
+Generate the next coaching step as JSON.`;
+
+      const payload = {
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        systemInstruction: {
+          parts: [{ text: systemInstruction }]
+        },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              tag: { type: "STRING", description: "2-word theme tag, e.g., 'Gentle Grounding' or 'Joy Spark'" },
+              empathyResponse: {
+                type: "STRING",
+                description: "1 short, warm sentence reflecting on what the user said and their facial shift."
+              },
+              question: {
+                type: "STRING",
+                description: "1 concise, uplifting question tailored to raise their mood."
+              },
+              subtext: {
+                type: "STRING",
+                description: "1 short encouraging hint on how to reflect or relax their expression."
+              },
+              chips: {
+                type: "ARRAY",
+                items: { type: "STRING" },
+                description: "4 short quick-reply options (2-5 words each)."
+              }
+            },
+            required: ["tag", "empathyResponse", "question", "subtext", "chips"]
+          }
+        }
+      };
+
+      // Exponential backoff retry (1s, 2s, 4s)
+      const delays = [1000, 2000, 4000];
+      for (let attempt = 0; attempt <= delays.length; attempt++) {
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const result = await response.json();
+          const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!rawText) throw new Error("Empty Gemini response");
+
+          const parsed = JSON.parse(rawText);
+          document.getElementById("ai-engine-badge").textContent = "Gemini AI Live";
+          return {
+            tag: parsed.tag || "AI Reflection",
+            empathy: parsed.empathyResponse || "",
+            question: parsed.question,
+            subtext: parsed.subtext || "Speak, type, or let your smile answer.",
+            chips: Array.isArray(parsed.chips) && parsed.chips.length > 0 ? parsed.chips.slice(0, 4) : ["Feeling lighter", "Grateful right now", "Smiling inside", "Ready for more"]
+          };
+        } catch (err) {
+          if (attempt < delays.length) {
+            await new Promise((res) => setTimeout(res, delays[attempt]));
+          } else {
+            // Graceful fallback to intelligent local adaptive engine
+            document.getElementById("ai-engine-badge").textContent = "Adaptive Engine Active";
+            return selectLocalFallbackQuestion(userReplyText, moodDelta);
+          }
+        }
+      }
+    }
+
+    function selectLocalFallbackQuestion(userReplyText = "", moodDelta = 0) {
+      const m = state.currentMood;
+      let poolKey = "mid";
+      if (m < 46) poolKey = "low";
+      else if (m >= 68) poolKey = "high";
+
+      let candidates = FALLBACK_QUESTION_BANK[poolKey].filter((q) => !askedFallbackQuestions.has(q.question));
+      if (candidates.length === 0) {
+        const all = [...FALLBACK_QUESTION_BANK.low, ...FALLBACK_QUESTION_BANK.mid, ...FALLBACK_QUESTION_BANK.high];
+        candidates = all.filter((q) => !askedFallbackQuestions.has(q.question));
+        if (candidates.length === 0) {
+          askedFallbackQuestions.clear();
+          candidates = all;
+        }
+      }
+
+      const chosen = { ...candidates[Math.floor(Math.random() * candidates.length)] };
+      askedFallbackQuestions.add(chosen.question);
+
+      if (userReplyText) {
+        chosen.empathy = `Hearing "${userReplyText}" ${moodDelta > 0 ? `and seeing your +${moodDelta}% facial lift` : "is a meaningful step"}—let’s build on that.`;
+      }
+      return chosen;
+    }
+
+    /**
+     * ============================================================================
+     * 3. WEB SPEECH API VOICE RECOGNITION ("SPEAK ANSWER")
+     * ============================================================================
+     */
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onstart = () => {
+        state.isListeningVoice = true;
+        const btn = document.getElementById("btn-voice-input");
+        btn.classList.add("mic-recording");
+        document.getElementById("mic-label").textContent = "Listening...";
+        document.getElementById("reflection-input").placeholder = "Listening to your voice...";
+      };
+
+      recognition.onresult = (event) => {
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        document.getElementById("reflection-input").value = transcript;
+
+        if (event.results[event.results.length - 1].isFinal && transcript.trim().length > 0) {
+          setTimeout(() => {
+            if (!state.isGeneratingAI) {
+              handleReflectionSubmit(transcript.trim());
+            }
+          }, 450);
+        }
+      };
+
+      recognition.onerror = (e) => {
+        stopVoiceListening();
+        if (e.error !== "no-speech" && e.error !== "aborted") {
+          showToast("Voice input unavailable — you can type or click a prompt chip");
+        }
+      };
+
+      recognition.onend = () => {
+        stopVoiceListening();
+      };
+    }
+
+    function stopVoiceListening() {
+      state.isListeningVoice = false;
+      const btn = document.getElementById("btn-voice-input");
+      btn.classList.remove("mic-recording");
+      document.getElementById("mic-label").textContent = "Speak";
+      document.getElementById("reflection-input").placeholder = "Speak or type your thought, or simply smile...";
+    }
+
+    document.getElementById("btn-voice-input").addEventListener("click", () => {
+      if (!recognition) {
+        showToast("Speech recognition not supported in this browser — type or tap a chip");
+        return;
+      }
+      if (state.isListeningVoice) {
+        recognition.stop();
+      } else {
+        try {
+          recognition.start();
+        } catch (err) {
+          console.warn("Speech start error:", err);
+        }
+      }
+    });
+
+    /**
+     * ============================================================================
+     * 4. GENERATIVE WEB AUDIO API HARMONIC SOUNDSCAPE
+     * ============================================================================
+     */
+    class AuraAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.oscillators = [];
+        this.filter = null;
+        this.isInitialized = false;
+      }
+
+      init() {
+        if (this.isInitialized) return;
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioCtx();
+
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+
+        this.filter = this.ctx.createBiquadFilter();
+        this.filter.type = "lowpass";
+        this.filter.frequency.setValueAtTime(420, this.ctx.currentTime);
+        this.filter.Q.setValueAtTime(1.5, this.ctx.currentTime);
+
+        this.filter.connect(this.masterGain);
+        this.masterGain.connect(this.ctx.destination);
+
+        // Warm Lydian / Major 9th harmonic pad frequencies (Hz)
+        const baseFreqs = [130.81, 196.00, 246.94, 293.66, 329.63];
+        baseFreqs.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const oscGain = this.ctx.createGain();
+          osc.type = idx % 2 === 0 ? "sine" : "triangle";
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          osc.detune.setValueAtTime((idx - 2) * 5, this.ctx.currentTime);
+
+          oscGain.gain.setValueAtTime(idx === 0 ? 0.14 : 0.06, this.ctx.currentTime);
+          osc.connect(oscGain);
+          oscGain.connect(this.filter);
+          osc.start();
+          this.oscillators.push({ osc, oscGain, baseFreq: freq });
+        });
+
+        this.isInitialized = true;
+      }
+
+      setEnabled(enabled) {
+        if (!this.isInitialized && enabled) {
+          this.init();
+        }
+        if (!this.ctx) return;
+        if (this.ctx.state === "suspended" && enabled) {
+          this.ctx.resume();
+        }
+        const targetGain = enabled ? 0.25 : 0.0001;
+        this.masterGain.gain.setTargetAtTime(targetGain, this.ctx.currentTime, 0.4);
+      }
+
+      updateMoodModulation(moodNormalized) {
+        if (!this.isInitialized || !state.audioEnabled) return;
+        const cutoff = 320 + moodNormalized * 1100;
+        this.filter.frequency.setTargetAtTime(cutoff, this.ctx.currentTime, 0.3);
+
+        const pitchMultiplier = 1.0 + moodNormalized * 0.06;
+        this.oscillators.forEach((item) => {
+          item.osc.frequency.setTargetAtTime(item.baseFreq * pitchMultiplier, this.ctx.currentTime, 0.5);
+        });
+      }
+
+      playElevationChime() {
+        if (!this.isInitialized || !state.audioEnabled) return;
+        const now = this.ctx.currentTime;
+        const notes = [523.25, 659.25, 783.99, 987.77, 1174.66];
+        notes.forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, now + i * 0.08);
+
+          gain.gain.setValueAtTime(0.0001, now + i * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.09, now + i * 0.08 + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.08 + 1.4);
+
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now + i * 0.08);
+          osc.stop(now + i * 0.08 + 1.5);
+        });
+      }
+    }
+
+    const audioEngine = new AuraAudioEngine();
+
+    /**
+     * ============================================================================
+     * 5. HYPERREALISTIC 4K WEBGL LIQUID GLASS ORB & PARTICLE FIELD (THREE.JS)
+     * ============================================================================
+     */
+    const isMobileDevice =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      window.innerWidth < 768;
+
+    const canvas = document.getElementById("webgl-canvas");
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: !isMobileDevice,
+      powerPreference: "high-performance",
+      alpha: false
+    });
+
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, isMobileDevice ? 2.0 : 2.5);
+    renderer.setPixelRatio(pixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+
+    canvas.addEventListener("webglcontextlost", (e) => {
+      e.preventDefault();
+      AuraLogger.log("SYSTEM", "WARN", "WebGL context lost on GPU — awaiting automatic restoration.");
+    }, false);
+
+    canvas.addEventListener("webglcontextrestored", () => {
+      AuraLogger.log("SYSTEM", "REAL", "WebGL context restored successfully.");
+      handleResize();
+    }, false);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x04060c);
+    scene.fog = new THREE.FogExp2(0x04060c, 0.065);
+
+    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0.15, 5.4);
+
+    const renderTarget = new THREE.WebGLRenderTarget(
+      Math.max(1, Math.floor(window.innerWidth * pixelRatio)),
+      Math.max(1, Math.floor(window.innerHeight * pixelRatio)),
+      { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat }
+    );
+
+    const composer = new THREE.EffectComposer(renderer, renderTarget);
+    const renderPass = new THREE.RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    const bloomPass = new THREE.UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      isMobileDevice ? 0.55 : 0.78,
+      0.58,
+      0.32
+    );
+    composer.addPass(bloomPass);
+
+    const chromaticShader = {
+      uniforms: {
+        tDiffuse: { value: null },
+        uAberration: { value: 0.0018 },
+        uTime: { value: 0 }
+      },
+      vertexShader: `
+        precision highp float;
+        precision highp int;
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        precision highp float;
+        precision highp int;
+        uniform sampler2D tDiffuse;
+        uniform float uAberration;
+        uniform float uTime;
+        varying vec2 vUv;
+
+        float hash(vec2 p) {
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+        }
+
+        void main() {
+          vec2 dir = vUv - 0.5;
+          float dist = length(dir);
+          vec2 offset = dir * dist * uAberration;
+
+          float r = texture2D(tDiffuse, vUv + offset).r;
+          float g = texture2D(tDiffuse, vUv).g;
+          float b = texture2D(tDiffuse, vUv - offset).b;
+
+          vec3 col = clamp(vec3(r, g, b), 0.0, 4.0);
+          float grain = (hash(vUv * 1200.0 + fract(uTime)) - 0.5) * 0.014;
+          col += grain;
+
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
+    };
+    const chromaticPass = new THREE.ShaderPass(chromaticShader);
+    composer.addPass(chromaticPass);
+
+    const orbUniforms = {
+      uTime: { value: 0 },
+      uMood: { value: 0.42 },
+      uSmile: { value: 0.25 },
+      uEnergy: { value: 0.45 },
+      uBurst: { value: 0.0 },
+      uPointer: { value: new THREE.Vector2(0, 0) },
+      uColorLowA: { value: new THREE.Color("#1e1b4b") },
+      uColorLowB: { value: new THREE.Color("#3b82f6") },
+      uColorMidA: { value: new THREE.Color("#0f766e") },
+      uColorMidB: { value: new THREE.Color("#38bdf8") },
+      uColorHighA: { value: new THREE.Color("#f59e0b") },
+      uColorHighB: { value: new THREE.Color("#fb7185") }
+    };
+
+    const orbVertexShader = `
+      precision highp float;
+      precision highp int;
+
+      uniform float uTime;
+      uniform float uMood;
+      uniform float uSmile;
+      uniform float uEnergy;
+      uniform float uBurst;
+      uniform vec2 uPointer;
+
+      varying vec3 vNormal;
+      varying vec3 vWorldPos;
+      varying vec3 vViewDir;
+      varying float vDisplacement;
+      varying vec2 vUv;
+
+      vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
+      vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
+
+      float snoise(vec3 v){
+        const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
+        const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
+        vec3 i  = floor(v + dot(v, C.yyy) );
+        vec3 x0 =   v - i + dot(i, C.xxx) ;
+        vec3 g = step(x0.yzx, x0.xyz);
+        vec3 l = 1.0 - g;
+        vec3 i1 = min( g.xyz, l.zxy );
+        vec3 i2 = max( g.xyz, l.zxy );
+        vec3 x1 = x0 - i1 + 1.0 * C.xxx;
+        vec3 x2 = x0 - i2 + 2.0 * C.xxx;
+        vec3 x3 = x0 - 1.0 + 3.0 * C.xxx;
+        i = mod(i, 289.0 );
+        vec4 p = permute( permute( permute(
+                  i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
+                + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
+                + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+        float n_ = 1.0/7.0;
+        vec3  ns = n_ * D.wyz - D.xzx;
+        vec4 j = p - 49.0 * floor(p * ns.z *ns.z);
+        vec4 x_ = floor(j * ns.z);
+        vec4 y_ = floor(j - 7.0 * x_ );
+        vec4 x = x_ *ns.x + ns.yyyy;
+        vec4 y = y_ *ns.x + ns.yyyy;
+        vec4 h = 1.0 - abs(x) - abs(y);
+        vec4 b0 = vec4( x.xy, y.xy );
+        vec4 b1 = vec4( x.zw, y.zw );
+        vec4 s0 = floor(b0)*2.0 + 1.0;
+        vec4 s1 = floor(b1)*2.0 + 1.0;
+        vec4 sh = -step(h, vec4(0.0));
+        vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
+        vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
+        vec3 p0 = vec3(a0.xy,h.x);
+        vec3 p1 = vec3(a0.zw,h.y);
+        vec3 p2 = vec3(a1.xy,h.z);
+        vec3 p3 = vec3(a1.zw,h.w);
+        vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+        p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+        vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+        m = m * m;
+        return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
+      }
+
+      float fbm(vec3 p) {
+        float val = 0.0;
+        float amp = 0.5;
+        float freq = 1.0;
+        for (int i = 0; i < 4; i++) {
+          val += amp * snoise(p * freq);
+          freq *= 2.05;
+          amp *= 0.5;
+        }
+        return val;
+      }
+
+      void main() {
+        vUv = uv;
+        float turbulence = mix(2.3, 1.05, uMood);
+        float amplitude = mix(0.26, 0.16, uMood) + uBurst * 0.14 + uSmile * 0.05;
+        float speed = mix(0.55, 0.34, uMood) + uEnergy * 0.25;
+
+        vec3 samplePos = position * turbulence + vec3(uTime * speed, uTime * speed * 0.7, -uTime * speed * 0.5);
+        float disp = fbm(samplePos);
+
+        float breathe = sin(uTime * 1.4) * 0.035 + uSmile * 0.08 + uBurst * 0.12;
+        vDisplacement = disp;
+
+        vec3 newPos = position + normal * (disp * amplitude + breathe);
+
+        float eps = 0.015;
+        vec3 tangent = normalize(cross(normal, abs(normal.y) < 0.99 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0)));
+        vec3 bitangent = cross(normal, tangent);
+
+        vec3 p1 = position + tangent * eps;
+        vec3 p2 = position + bitangent * eps;
+        float d1 = fbm(p1 * turbulence + vec3(uTime * speed, uTime * speed * 0.7, -uTime * speed * 0.5));
+        float d2 = fbm(p2 * turbulence + vec3(uTime * speed, uTime * speed * 0.7, -uTime * speed * 0.5));
+
+        vec3 np1 = p1 + normal * (d1 * amplitude + breathe);
+        vec3 np2 = p2 + normal * (d2 * amplitude + breathe);
+        vec3 computedNormal = normalize(cross(np1 - newPos, np2 - newPos));
+
+        vec4 worldPosition = modelMatrix * vec4(newPos, 1.0);
+        vWorldPos = worldPosition.xyz;
+        vNormal = normalize(mat3(modelMatrix) * computedNormal);
+        vViewDir = normalize(cameraPosition - worldPosition.xyz);
+
+        gl_Position = projectionMatrix * viewMatrix * worldPosition;
+      }
+    `;
+
+    const orbFragmentShader = `
+      precision highp float;
+      precision highp int;
+
+      uniform float uTime;
+      uniform float uMood;
+      uniform float uSmile;
+      uniform float uBurst;
+      uniform vec3 uColorLowA;
+      uniform vec3 uColorLowB;
+      uniform vec3 uColorMidA;
+      uniform vec3 uColorMidB;
+      uniform vec3 uColorHighA;
+      uniform vec3 uColorHighB;
+
+      varying vec3 vNormal;
+      varying vec3 vWorldPos;
+      varying vec3 vViewDir;
+      varying float vDisplacement;
+
+      vec3 thinFilmIridescence(float cosTheta, float filmThickness) {
+        vec3 phase = vec3(0.0, 0.33, 0.67);
+        vec3 interference = 0.5 + 0.5 * cos(6.28318 * (cosTheta * filmThickness + phase));
+        return interference;
+      }
+
+      void main() {
+        vec3 N = normalize(vNormal);
+        vec3 V = normalize(vViewDir);
+        float NdotV = clamp(dot(N, V), 0.0, 1.0);
+
+        float fresnel = pow(clamp(1.0 - NdotV, 0.0001, 1.0), 3.2);
+
+        float lowToMid = smoothstep(0.0, 0.55, uMood);
+        float midToHigh = smoothstep(0.45, 1.0, uMood);
+
+        vec3 baseA = mix(uColorLowA, uColorMidA, lowToMid);
+        baseA = mix(baseA, uColorHighA, midToHigh);
+
+        vec3 baseB = mix(uColorLowB, uColorMidB, lowToMid);
+        baseB = mix(baseB, uColorHighB, midToHigh);
+
+        float waveMix = smoothstep(-0.35, 0.45, vDisplacement + sin(uTime * 0.6 + vWorldPos.y * 2.0) * 0.15);
+        vec3 bodyColor = mix(baseA, baseB, waveMix);
+
+        vec3 iridescence = thinFilmIridescence(NdotV, 1.8 + uMood * 1.4 + vDisplacement);
+        bodyColor = mix(bodyColor, iridescence * 1.15, fresnel * (0.42 + uMood * 0.28));
+
+        vec3 keyLightDir = normalize(vec3(2.2, 3.0, 3.5));
+        vec3 rimLightDir = normalize(vec3(-3.0, -1.5, -2.0));
+        vec3 fillLightDir = normalize(vec3(-1.8, 2.2, 2.0));
+
+        vec3 H1 = normalize(keyLightDir + V);
+        vec3 H2 = normalize(fillLightDir + V);
+
+        float specKey = pow(clamp(dot(N, H1), 0.0, 1.0), 72.0);
+        float specFill = pow(clamp(dot(N, H2), 0.0, 1.0), 36.0);
+        float rimGlow = pow(clamp(dot(N, rimLightDir) * 0.5 + 0.5, 0.0, 1.0), 2.5) * fresnel;
+
+        float coreGlow = smoothstep(0.2, 1.0, NdotV) * (0.25 + uMood * 0.65 + uBurst * 0.4);
+        vec3 innerRadiance = mix(vec3(0.15, 0.35, 0.85), vec3(1.0, 0.82, 0.42), midToHigh) * coreGlow;
+
+        vec3 finalColor = bodyColor * 0.72
+                        + innerRadiance
+                        + vec3(1.0, 0.97, 0.92) * specKey * 1.15
+                        + baseB * specFill * 0.58
+                        + mix(baseB, vec3(1.0, 0.88, 0.6), midToHigh) * rimGlow * (1.0 + uBurst * 0.6);
+
+        finalColor = clamp(finalColor, 0.0, 3.2);
+        gl_FragColor = vec4(finalColor, 1.0);
+      }
+    `;
+
+    const orbGeometry = new THREE.IcosahedronGeometry(1.38, isMobileDevice ? 40 : 64);
+    const orbMaterial = new THREE.ShaderMaterial({
+      uniforms: orbUniforms,
+      vertexShader: orbVertexShader,
+      fragmentShader: orbFragmentShader
+    });
+
+    const auraOrb = new THREE.Mesh(orbGeometry, orbMaterial);
+    auraOrb.position.set(0, 0.22, 0);
+    scene.add(auraOrb);
+
+    const ringGeo = new THREE.TorusGeometry(2.05, 0.008, 16, isMobileDevice ? 140 : 220);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x5eead4,
+      transparent: true,
+      opacity: 0.28
+    });
+    const haloRing = new THREE.Mesh(ringGeo, ringMat);
+    haloRing.position.copy(auraOrb.position);
+    haloRing.rotation.x = Math.PI * 0.38;
+    haloRing.rotation.y = Math.PI * 0.12;
+    scene.add(haloRing);
+
+    const particleCount = isMobileDevice ? 1200 : 2000;
+    const pPositions = new Float32Array(particleCount * 3);
+    const pScales = new Float32Array(particleCount);
+    const pPhases = new Float32Array(particleCount);
+
+    for (let i = 0; i < particleCount; i++) {
+      const r = 1.85 + Math.pow(Math.random(), 1.6) * 4.5;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+
+      pPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      pPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.75 + 0.2;
+      pPositions[i * 3 + 2] = r * Math.cos(phi);
+
+      pScales[i] = 0.4 + Math.random() * 1.4;
+      pPhases[i] = Math.random() * Math.PI * 2;
+    }
+
+    const particleGeo = new THREE.BufferGeometry();
+    particleGeo.setAttribute("position", new THREE.BufferAttribute(pPositions, 3));
+    particleGeo.setAttribute("aScale", new THREE.BufferAttribute(pScales, 1));
+    particleGeo.setAttribute("aPhase", new THREE.BufferAttribute(pPhases, 1));
+
+    const particleUniforms = {
+      uTime: { value: 0 },
+      uMood: { value: 0.42 },
+      uBurst: { value: 0.0 },
+      uPixelRatio: { value: pixelRatio }
+    };
+
+    const particleMat = new THREE.ShaderMaterial({
+      uniforms: particleUniforms,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      vertexShader: `
+        precision highp float;
+        precision highp int;
+        attribute float aScale;
+        attribute float aPhase;
+        uniform float uTime;
+        uniform float uMood;
+        uniform float uBurst;
+        uniform float uPixelRatio;
+        varying float vAlpha;
+        varying float vMix;
+
+        void main() {
+          vec3 pos = position;
+          float angle = uTime * (0.08 + uMood * 0.14) + aPhase;
+          float radiusOffset = sin(uTime * 0.7 + aPhase) * 0.15 + uBurst * 0.45;
+
+          pos.y += sin(uTime * 0.5 + aPhase) * 0.18 + uMood * 0.25;
+          pos.x += cos(angle) * radiusOffset;
+          pos.z += sin(angle) * radiusOffset;
+
+          vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+          gl_PointSize = clamp((aScale * (14.0 + uBurst * 10.0) * uPixelRatio) / max(-mvPosition.z, 0.1), 1.0, 48.0);
+          gl_Position = projectionMatrix * mvPosition;
+
+          vAlpha = (0.28 + 0.45 * sin(uTime * 1.8 + aPhase)) * (0.6 + uMood * 0.4);
+          vMix = fract(aPhase * 0.3183);
+        }
+      `,
+      fragmentShader: `
+        precision highp float;
+        precision highp int;
+        uniform float uMood;
+        varying float vAlpha;
+        varying float vMix;
+
+        void main() {
+          vec2 uv = gl_PointCoord - 0.5;
+          float d = length(uv);
+          if (d > 0.5) discard;
+          float soft = smoothstep(0.5, 0.05, d);
+
+          vec3 coolCol = mix(vec3(0.35, 0.55, 1.0), vec3(0.2, 0.9, 0.85), vMix);
+          vec3 warmCol = mix(vec3(1.0, 0.82, 0.35), vec3(1.0, 0.48, 0.65), vMix);
+          vec3 col = mix(coolCol, warmCol, smoothstep(0.25, 0.9, uMood));
+
+          gl_FragColor = vec4(col, clamp(soft * vAlpha, 0.0, 1.0));
+        }
+      `
+    });
+
+    const particleField = new THREE.Points(particleGeo, particleMat);
+    scene.add(particleField);
+
+    let pointerX = 0;
+    let pointerY = 0;
+    let isDraggingOrb = false;
+    let prevMouseX = 0;
+    let prevMouseY = 0;
+    let targetRotY = 0;
+    let targetRotX = 0;
+
+    window.addEventListener("pointermove", (e) => {
+      pointerX = (e.clientX / window.innerWidth) * 2 - 1;
+      pointerY = -(e.clientY / window.innerHeight) * 2 + 1;
+      orbUniforms.uPointer.value.set(pointerX, pointerY);
+
+      if (isDraggingOrb) {
+        const dx = e.clientX - prevMouseX;
+        const dy = e.clientY - prevMouseY;
+        targetRotY += dx * 0.006;
+        targetRotX += dy * 0.006;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+      }
+    });
+
+    canvas.addEventListener("pointerdown", (e) => {
+      isDraggingOrb = true;
+      prevMouseX = e.clientX;
+      prevMouseY = e.clientY;
+    });
+
+    window.addEventListener("pointerup", () => {
+      isDraggingOrb = false;
+    });
+
+    function updateCameraFraming() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const aspect = w / Math.max(h, 1);
+
+      camera.aspect = aspect;
+      if (aspect < 1.0) {
+        // Portrait mobile: pull camera back so full orb + halo ring fit horizontally and vertically between HUD cards
+        const clampedAspect = Math.max(aspect, 0.48);
+        camera.position.z = Math.min(9.2, 5.2 / clampedAspect);
+        camera.position.y = 0.1;
+        auraOrb.position.y = 0.35;
+      } else {
+        camera.position.z = 5.4;
+        camera.position.y = 0.15;
+        auraOrb.position.y = 0.22;
+      }
+      haloRing.position.copy(auraOrb.position);
+      camera.updateProjectionMatrix();
+    }
+
+    function handleResize() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      updateCameraFraming();
+      renderer.setSize(w, h);
+      composer.setSize(w, h);
+    }
+    updateCameraFraming();
+    window.addEventListener("resize", handleResize);
+
+    /**
+     * ============================================================================
+     * 6. CONTINUOUS 60FPS FACIAL EXPRESSION VISION (MEDIAPIPE GPU/CPU + OPTICAL + DEMO)
+     * ============================================================================
+     */
+    const videoEl = document.getElementById("webcam-video");
+    const meshCanvas = document.getElementById("mesh-canvas");
+    const meshCtx = meshCanvas.getContext("2d");
+
+    // Offscreen optical analyzer canvas for fallback when MediaPipe WASM/GPU is blocked on mobile
+    const opticalCanvas = document.createElement("canvas");
+    opticalCanvas.width = 64;
+    opticalCanvas.height = 48;
+    const opticalCtx = opticalCanvas.getContext("2d", { willReadFrequently: true });
+    let prevOpticalFrame = null;
+
+    let faceLandmarker = null;
+    let activeVisionTier = "none"; // "mediapipe-gpu" | "mediapipe-cpu" | "optical" | "none"
+    let lastVideoTime = -1;
+    let lastDetectTimestamp = 0;
+    let wasFaceLocked = false;
+    let runtimeGpuFailCount = 0;
+
+    async function createLandmarkerWithDelegate(delegate) {
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+      );
+      return await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath:
+            "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+          delegate
+        },
+        outputFaceBlendshapes: true,
+        runningMode: "VIDEO",
+        numFaces: 1
+      });
+    }
+
+    async function initMediaPipeLandmarker(forceCpuOnly = false) {
+      if (!FaceLandmarker || !FilesetResolver) {
+        AuraLogger.log("VISION", "FALLBACK", "MediaPipe classes missing; engaging Optical Biometric Motion Analyzer.");
+        activeVisionTier = "optical";
+        return "optical";
+      }
+
+      const delegatesToTry = forceCpuOnly || isMobileDevice ? ["CPU", "GPU"] : ["GPU", "CPU"];
+
+      for (const delegate of delegatesToTry) {
+        const initStart = performance.now();
+        try {
+          AuraLogger.log("VISION", "INFO", `Initializing MediaPipe FaceLandmarker (${delegate} delegate)...`);
+          if (faceLandmarker && typeof faceLandmarker.close === "function") {
+            try { faceLandmarker.close(); } catch (_) {}
+          }
+          faceLandmarker = await createLandmarkerWithDelegate(delegate);
+          const initMs = Math.round(performance.now() - initStart);
+          activeVisionTier = delegate === "GPU" ? "mediapipe-gpu" : "mediapipe-cpu";
+          AuraLogger.log("VISION", "REAL", `FaceLandmarker (${delegate}) ready in ${initMs}ms. 52 blendshapes active.`);
+          return activeVisionTier;
+        } catch (e) {
+          AuraLogger.log("VISION", "WARN", `MediaPipe ${delegate} delegate unavailable (${e.message || String(e)}). Trying next tier...`);
+        }
+      }
+
+      AuraLogger.log("VISION", "FALLBACK", "All MediaPipe delegates failed; engaging live Optical Micro-Expression Analyzer.");
+      activeVisionTier = "optical";
+      return "optical";
+    }
+
+    function waitForVideoReady(video, timeoutMs = 4000) {
+      return new Promise((resolve) => {
+        if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+          resolve(true);
+          return;
+        }
+        let settled = false;
+        const done = (ok) => {
+          if (settled) return;
+          settled = true;
+          video.removeEventListener("loadedmetadata", onReady);
+          video.removeEventListener("loadeddata", onReady);
+          video.removeEventListener("canplay", onReady);
+          clearTimeout(timer);
+          resolve(ok);
+        };
+        const onReady = () => {
+          if (video.videoWidth > 0 && video.videoHeight > 0) {
+            done(true);
+          }
+        };
+        const timer = setTimeout(() => done(video.videoWidth > 0), timeoutMs);
+        video.addEventListener("loadedmetadata", onReady);
+        video.addEventListener("loadeddata", onReady);
+        video.addEventListener("canplay", onReady);
+      });
+    }
+
+    async function startCameraVision() {
+      const statusLabel = document.getElementById("vision-mode-label");
+      const faceBadge = document.getElementById("face-detected-badge");
+      statusLabel.textContent = "Requesting camera access...";
+      AuraLogger.log("VISION", "INFO", "Requesting front camera stream (getUserMedia)...");
+
+      try {
+        videoEl.setAttribute("playsinline", "");
+        videoEl.setAttribute("webkit-playsinline", "");
+        videoEl.muted = true;
+
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: isMobileDevice ? 480 : 640 },
+              height: { ideal: isMobileDevice ? 360 : 480 },
+              facingMode: "user"
+            },
+            audio: false
+          });
+        } catch (constraintErr) {
+          AuraLogger.log("VISION", "WARN", `Ideal camera constraints rejected (${constraintErr.name}); retrying generic user camera...`);
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user" },
+            audio: false
+          });
+        }
+
+        const videoTrack = stream.getVideoTracks()[0];
+        const trackSettings = videoTrack ? videoTrack.getSettings() : {};
+        AuraLogger.log("VISION", "REAL", `Camera stream active: "${videoTrack?.label || "Front Camera"}"`, {
+          width: trackSettings.width,
+          height: trackSettings.height,
+          frameRate: trackSettings.frameRate
+        });
+
+        videoEl.srcObject = stream;
+        await videoEl.play();
+        const hasDimensions = await waitForVideoReady(videoEl, 4000);
+        AuraLogger.log("VISION", hasDimensions ? "REAL" : "WARN", `Video metadata ready (${videoEl.videoWidth}x${videoEl.videoHeight}, readyState=${videoEl.readyState}).`);
+
+        state.mode = "camera";
+        wasFaceLocked = false;
+        lastVideoTime = -1;
+        runtimeGpuFailCount = 0;
+        prevOpticalFrame = null;
+
+        document.getElementById("demo-avatar-box").classList.add("hidden");
+        document.getElementById("demo-controls-panel").classList.add("hidden");
+        document.getElementById("switch-mode-text").textContent = "Demo Mode";
+
+        statusLabel.textContent = "Loading 60fps Neural Landmark Model...";
+        const tier = await initMediaPipeLandmarker(false);
+
+        if (tier === "mediapipe-gpu" || tier === "mediapipe-cpu") {
+          const modeTag = tier === "mediapipe-gpu" ? "GPU" : "CPU";
+          statusLabel.textContent = `Biometric Vision Active (${modeTag})`;
+          faceBadge.textContent = "SCANNING FACE";
+          AuraLogger.setVisionTruth(`REAL (MediaPipe ${modeTag})`, "real");
+        } else {
+          statusLabel.textContent = "Optical Biometric Sensor Active";
+          faceBadge.textContent = "OPTICAL SCAN";
+          AuraLogger.setVisionTruth("OPTICAL FALLBACK", "fallback");
+        }
+        return true;
+      } catch (err) {
+        AuraLogger.log("VISION", "FALLBACK", `Camera access denied or unavailable (${err.name}: ${err.message}). Falling back to Demo Mode.`);
+        showToast("Camera unavailable — switched to Interactive Demo Mode");
+        activateDemoMode();
+        return false;
+      }
+    }
+
+    function activateDemoMode() {
+      state.mode = "demo";
+      state.faceDetected = true;
+      wasFaceLocked = false;
+      AuraLogger.setVisionTruth("FAKE (Demo Slider)", "fake");
+
+      if (videoEl.srcObject) {
+        videoEl.srcObject.getTracks().forEach((t) => t.stop());
+        videoEl.srcObject = null;
+        AuraLogger.log("VISION", "INFO", "Stopped physical webcam tracks.");
+      }
+
+      document.getElementById("demo-avatar-box").classList.remove("hidden");
+      document.getElementById("demo-controls-panel").classList.remove("hidden");
+      document.getElementById("vision-mode-label").textContent = "Simulated Biometric Sensor";
+      document.getElementById("face-detected-badge").textContent = "SIMULATED FACE";
+      document.getElementById("switch-mode-text").textContent = "Use Webcam";
+
+      const sliderVal = parseInt(document.getElementById("demo-mood-slider").value, 10);
+      AuraLogger.log("VISION", "FALLBACK", `Activated Simulated Face Mode (synthetic slider value: ${sliderVal}%).`);
+      applySimulatedExpression(sliderVal);
+    }
+
+    function applySimulatedExpression(val) {
+      const norm = val / 100;
+      state.rawSmile = Math.min(1, Math.max(0.05, norm * 1.05));
+      state.rawSerenity = Math.min(1, Math.max(0.2, 0.35 + norm * 0.65));
+      state.rawEnergy = Math.min(1, Math.max(0.25, 0.3 + norm * 0.7));
+      state.targetMood = val;
+
+      document.getElementById("demo-slider-val").textContent = `${val}%`;
+      const emojiEl = document.getElementById("demo-face-emoji");
+      if (val < 35) emojiEl.textContent = "😔";
+      else if (val < 60) emojiEl.textContent = "😌";
+      else if (val < 82) emojiEl.textContent = "🙂";
+      else emojiEl.textContent = "😄";
+    }
+
+    function runOpticalPixelAnalysis() {
+      try {
+        opticalCtx.drawImage(videoEl, 0, 0, opticalCanvas.width, opticalCanvas.height);
+        const frame = opticalCtx.getImageData(0, 0, opticalCanvas.width, opticalCanvas.height).data;
+        AuraLogger.recordInferenceTick();
+
+        if (!prevOpticalFrame) {
+          prevOpticalFrame = new Uint8ClampedArray(frame);
+          return;
+        }
+
+        let centerMotion = 0;
+        let centerLuma = 0;
+        let sampleCount = 0;
+
+        for (let y = 10; y < 38; y++) {
+          for (let x = 16; x < 48; x++) {
+            const idx = (y * opticalCanvas.width + x) * 4;
+            const luma = 0.299 * frame[idx] + 0.587 * frame[idx + 1] + 0.114 * frame[idx + 2];
+            const prevLuma = 0.299 * prevOpticalFrame[idx] + 0.587 * prevOpticalFrame[idx + 1] + 0.114 * prevOpticalFrame[idx + 2];
+            centerMotion += Math.abs(luma - prevLuma);
+            centerLuma += luma;
+            sampleCount++;
+          }
+        }
+
+        prevOpticalFrame.set(frame);
+
+        const avgMotion = centerMotion / Math.max(sampleCount, 1);
+        const avgLuma = centerLuma / Math.max(sampleCount, 1);
+        const presence = avgLuma > 18;
+
+        state.faceDetected = presence;
+        const badge = document.getElementById("face-detected-badge");
+        badge.textContent = presence ? "OPTICAL LOCK" : "LOW LIGHT";
+
+        if (presence) {
+          const expressiveness = Math.min(1, avgMotion / 14.0);
+          state.rawEnergy = state.rawEnergy * 0.88 + (0.35 + expressiveness * 0.6) * 0.12;
+          state.rawSmile = state.rawSmile * 0.9 + (0.28 + expressiveness * 0.65) * 0.1;
+          state.rawSerenity = state.rawSerenity * 0.9 + (0.65 - expressiveness * 0.15) * 0.1;
+          const computed = 42 + state.rawSmile * 42 + state.rawEnergy * 12;
+          state.targetMood = Math.max(15, Math.min(96, computed));
+        }
+      } catch (e) {
+        // Ignore transient frame read issues
+      }
+    }
+
+    function processWebcamFrame() {
+      if (state.mode !== "camera" || videoEl.readyState < 2 || videoEl.videoWidth === 0) return;
+
+      if (meshCanvas.width !== videoEl.videoWidth || meshCanvas.height !== videoEl.videoHeight) {
+        meshCanvas.width = videoEl.videoWidth || 320;
+        meshCanvas.height = videoEl.videoHeight || 240;
+      }
+
+      if (activeVisionTier === "optical" || !faceLandmarker) {
+        runOpticalPixelAnalysis();
+        return;
+      }
+
+      const nowMs = performance.now();
+      // Guard against duplicate video frames or non-monotonic timestamps (critical on iOS Safari)
+      if (videoEl.currentTime === lastVideoTime || nowMs <= lastDetectTimestamp) return;
+      lastVideoTime = videoEl.currentTime;
+      lastDetectTimestamp = nowMs;
+
+      let results;
+      try {
+        results = faceLandmarker.detectForVideo(videoEl, nowMs);
+      } catch (inferErr) {
+        runtimeGpuFailCount += 1;
+        AuraLogger.log("VISION", "WARN", `Runtime detectForVideo error on ${activeVisionTier}: ${inferErr.message || String(inferErr)}`);
+        if (activeVisionTier === "mediapipe-gpu" && runtimeGpuFailCount >= 1) {
+          activeVisionTier = "switching";
+          initMediaPipeLandmarker(true).then((newTier) => {
+            if (newTier === "mediapipe-cpu") {
+              document.getElementById("vision-mode-label").textContent = "Biometric Vision Active (CPU)";
+              AuraLogger.setVisionTruth("REAL (MediaPipe CPU)", "real");
+            } else {
+              document.getElementById("vision-mode-label").textContent = "Optical Biometric Sensor Active";
+              AuraLogger.setVisionTruth("OPTICAL FALLBACK", "fallback");
+            }
+          });
+        } else if (runtimeGpuFailCount >= 3) {
+          activeVisionTier = "optical";
+          AuraLogger.setVisionTruth("OPTICAL FALLBACK", "fallback");
+        }
+        return;
+      }
+
+      meshCtx.clearRect(0, 0, meshCanvas.width, meshCanvas.height);
+      AuraLogger.recordInferenceTick();
+
+      if (results && results.faceBlendshapes && results.faceBlendshapes.length > 0) {
+        state.faceDetected = true;
+        if (!wasFaceLocked) {
+          wasFaceLocked = true;
+          AuraLogger.log("VISION", "REAL", `Face locked (${activeVisionTier})! Live 52-blendshape extraction active.`);
+        }
+
+        const badge = document.getElementById("face-detected-badge");
+        badge.textContent = "FACE LOCKED";
+        badge.className =
+          "absolute bottom-1 left-1 right-1 text-center py-0.5 rounded bg-black/60 backdrop-blur-sm text-[8px] sm:text-[9px] mono text-emerald-300 tracking-tight truncate";
+
+        const categories = results.faceBlendshapes[0].categories;
+        const map = {};
+        for (const c of categories) {
+          map[c.categoryName] = c.score;
+        }
+
+        const smile = Math.min(1, ((map["mouthSmileLeft"] || 0) + (map["mouthSmileRight"] || 0)) * 0.72);
+        const cheekRaise = ((map["cheekSquintLeft"] || 0) + (map["cheekSquintRight"] || 0)) * 0.5;
+        const browFurrow = ((map["browDownLeft"] || 0) + (map["browDownRight"] || 0)) * 0.5;
+        const browLift =
+          (map["browInnerUp"] || 0) * 0.4 +
+          ((map["browOuterUpLeft"] || 0) + (map["browOuterUpRight"] || 0)) * 0.3;
+        const frown = ((map["mouthFrownLeft"] || 0) + (map["mouthFrownRight"] || 0)) * 0.5;
+        const eyeWide = ((map["eyeWideLeft"] || 0) + (map["eyeWideRight"] || 0)) * 0.4;
+
+        const serenity = Math.max(0.1, Math.min(1, 1.0 - browFurrow * 1.15 - frown * 0.85));
+        const energy = Math.max(0.15, Math.min(1, 0.35 + smile * 0.42 + browLift * 0.3 + cheekRaise * 0.28 + eyeWide * 0.2));
+
+        state.rawSmile = smile;
+        state.rawSerenity = serenity;
+        state.rawEnergy = energy;
+
+        const rawScore = 34 + smile * 46 + serenity * 14 + cheekRaise * 12 - browFurrow * 18 - frown * 15;
+        state.targetMood = Math.max(8, Math.min(99, rawScore));
+
+        if (nowMs - AuraLogger.lastTelemetryLogTime > 2500) {
+          AuraLogger.lastTelemetryLogTime = nowMs;
+          AuraLogger.log("VISION", "REAL", `Live blendshape sample (${AuraLogger.inferenceFps.toFixed(1)} fps)`, {
+            smileL: +(map["mouthSmileLeft"] || 0).toFixed(3),
+            smileR: +(map["mouthSmileRight"] || 0).toFixed(3),
+            browDownL: +(map["browDownLeft"] || 0).toFixed(3),
+            cheekSquintL: +(map["cheekSquintLeft"] || 0).toFixed(3),
+            targetMood: `${Math.round(state.targetMood)}%`
+          });
+        }
+
+        if (state.showMesh && results.faceLandmarks && results.faceLandmarks[0]) {
+          drawBiometricOverlay(results.faceLandmarks[0], meshCanvas.width, meshCanvas.height);
+        }
+      } else {
+        if (wasFaceLocked) {
+          wasFaceLocked = false;
+          AuraLogger.log("VISION", "WARN", "Face lost from camera frame (ALIGN FACE). Holding last mood target.");
+        }
+        state.faceDetected = false;
+        const badge = document.getElementById("face-detected-badge");
+        badge.textContent = "ALIGN FACE";
+        badge.className =
+          "absolute bottom-1 left-1 right-1 text-center py-0.5 rounded bg-black/60 backdrop-blur-sm text-[8px] sm:text-[9px] mono text-amber-300 tracking-tight truncate";
+      }
+    }
+
+    function drawBiometricOverlay(landmarks, w, h) {
+      meshCtx.save();
+      const moodNorm = state.currentMood / 100;
+      const strokeCol =
+        moodNorm > 0.72
+          ? "rgba(251, 191, 36, 0.65)"
+          : moodNorm > 0.42
+          ? "rgba(45, 212, 191, 0.6)"
+          : "rgba(129, 140, 248, 0.6)";
+
+      meshCtx.fillStyle = strokeCol;
+      for (let i = 0; i < landmarks.length; i += 4) {
+        const pt = landmarks[i];
+        meshCtx.beginPath();
+        meshCtx.arc(pt.x * w, pt.y * h, 1.35, 0, Math.PI * 2);
+        meshCtx.fill();
+      }
+
+      const keyIndices = [61, 291, 0, 17, 33, 133, 362, 263, 105, 334];
+      meshCtx.fillStyle = "#ffffff";
+      for (const idx of keyIndices) {
+        const pt = landmarks[idx];
+        if (!pt) continue;
+        meshCtx.beginPath();
+        meshCtx.arc(pt.x * w, pt.y * h, 2.1, 0, Math.PI * 2);
+        meshCtx.fill();
+      }
+      meshCtx.restore();
+    }
+
+    /**
+     * ============================================================================
+     * 7. CLOSED-LOOP CONVERSATIONAL WORKFLOW & UI RENDERER
+     * ============================================================================
+     */
+    function setAIThinkingState(isThinking) {
+      state.isGeneratingAI = isThinking;
+      const thinkingEl = document.getElementById("ai-thinking-indicator");
+      const contentEl = document.getElementById("question-content-wrapper");
+      const submitBtn = document.getElementById("btn-submit-reflection");
+
+      if (isThinking) {
+        thinkingEl.classList.remove("hidden");
+        thinkingEl.classList.add("flex");
+        contentEl.classList.add("opacity-30", "pointer-events-none");
+        submitBtn.disabled = true;
+        submitBtn.classList.add("opacity-60");
+      } else {
+        thinkingEl.classList.add("hidden");
+        thinkingEl.classList.remove("flex");
+        contentEl.classList.remove("opacity-30", "pointer-events-none");
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("opacity-60");
+      }
+    }
+
+    function renderQuestionStep(qObj) {
+      currentQuestionObj = qObj;
+      state.preQuestionMood = Math.round(state.currentMood);
+      state.lastPromptTime = performance.now();
+      state.autoLiftCooldown = false;
+
+      const card = document.getElementById("dialogue-card");
+      card.classList.remove("animate-float-up");
+      void card.offsetWidth;
+      card.classList.add("animate-float-up");
+
+      document.getElementById("step-pill").textContent = `AI Step ${state.stepIndex} • ${qObj.tag}`;
+      document.getElementById("question-text").textContent = qObj.question;
+      document.getElementById("question-subtext").textContent = qObj.subtext;
+      document.getElementById("submit-btn-label").textContent = "Reflect & Next";
+      document.getElementById("reflection-input").value = "";
+
+      const empathyBox = document.getElementById("ai-empathy-box");
+      if (qObj.empathy && qObj.empathy.trim().length > 0) {
+        document.getElementById("ai-empathy-text").textContent = qObj.empathy;
+        empathyBox.classList.remove("hidden");
+      } else {
+        empathyBox.classList.add("hidden");
+      }
+
+      const chipsContainer = document.getElementById("quick-replies-container");
+      chipsContainer.innerHTML = "";
+      qObj.chips.forEach((chipText) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className =
+          "glass-pill px-3 py-1.5 rounded-full text-xs text-slate-200 hover:text-amber-200 cursor-pointer";
+        btn.textContent = chipText;
+        btn.addEventListener("click", () => {
+          if (state.isGeneratingAI) return;
+          document.getElementById("reflection-input").value = chipText;
+          if (state.mode === "demo") {
+            const slider = document.getElementById("demo-mood-slider");
+            const boosted = Math.min(98, parseInt(slider.value, 10) + 16);
+            slider.value = boosted;
+            applySimulatedExpression(boosted);
+          }
+          handleReflectionSubmit(chipText);
+        });
+        chipsContainer.appendChild(btn);
+      });
+    }
+
+    function triggerElevationCelebration(delta, reasonText) {
+      state.burstIntensity = 1.05;
+      audioEngine.playElevationChime();
+
+      const banner = document.getElementById("feedback-banner");
+      const msg = document.getElementById("feedback-message");
+      const deltaEl = document.getElementById("feedback-delta");
+
+      banner.classList.remove("hidden");
+      if (reasonText) {
+        msg.textContent = reasonText;
+      } else if (delta >= 8) {
+        msg.textContent = "✨ Radiant facial shift! Your aura just bloomed warmer.";
+      } else if (delta > 0) {
+        msg.textContent = "🌿 Positive micro-expression lift detected.";
+      } else {
+        msg.textContent = "💫 Reflection logged — Gemini is adapting your next prompt.";
+      }
+
+      deltaEl.textContent = delta >= 0 ? `+${delta}% Mood Lift` : `${delta}% Shift`;
+    }
+
+    function updateJourneyDrawer() {
+      const countEl = document.getElementById("journey-count");
+      const listEl = document.getElementById("journey-list");
+      const netBadge = document.getElementById("journey-net-badge");
+
+      countEl.textContent = state.reflectionsLog.length;
+      const startScore = state.baselineMood ?? Math.round(state.currentMood);
+      const net = Math.round(state.currentMood) - startScore;
+      netBadge.textContent = `Net ${net >= 0 ? "+" : ""}${net}%`;
+
+      if (state.reflectionsLog.length === 0) return;
+      listEl.innerHTML = "";
+      state.reflectionsLog.forEach((entry) => {
+        const div = document.createElement("div");
+        div.className = "p-2 rounded-xl bg-white/5 border border-white/10";
+        div.innerHTML = `
+          <div class="flex justify-between items-center mb-0.5">
+            <span class="mono text-[10px] text-amber-200">Step ${entry.step}</span>
+            <span class="mono text-[10px] ${entry.delta >= 0 ? "text-emerald-300" : "text-slate-300"}">
+              ${entry.moodBefore}% → ${entry.moodAfter}% (${entry.delta >= 0 ? "+" : ""}${entry.delta}%)
+            </span>
+          </div>
+          <div class="text-slate-200 font-medium truncate">${entry.answer}</div>
+        `;
+        listEl.appendChild(div);
+      });
+    }
+
+    async function handleReflectionSubmit(customText, isAutoFacialLift = false) {
+      if (state.isGeneratingAI) return;
+      if (state.isListeningVoice && recognition) {
+        recognition.stop();
+      }
+
+      const inputVal = (customText ?? document.getElementById("reflection-input").value).trim();
+
+      // Step 0: Complete Baseline Calibration -> Launch First Gemini AI Prompt
+      if (state.stepIndex === 0) {
+        state.baselineMood = Math.round(state.currentMood);
+        state.peakMood = state.baselineMood;
+        document.getElementById("baseline-readout").innerHTML = `Start: <strong class="text-slate-200 mono">${state.baselineMood}%</strong>`;
+        state.stepIndex = 1;
+
+        setAIThinkingState(true);
+        const firstPrompt = await fetchGeminiCoachingTurn("", 0);
+        setAIThinkingState(false);
+        renderQuestionStep(firstPrompt);
+        return;
+      }
+
+      // Measure mood delta before vs after reflecting on the question
+      const nowMood = Math.round(state.currentMood);
+      const delta = nowMood - state.preQuestionMood;
+      const displayAnswer = inputVal || (isAutoFacialLift ? "✨ Genuine Smile Lift" : "(Reflected visually)");
+
+      state.reflectionsLog.push({
+        step: state.stepIndex,
+        question: currentQuestionObj ? currentQuestionObj.question : "AI Reflection",
+        answer: displayAnswer,
+        moodBefore: state.preQuestionMood,
+        moodAfter: nowMood,
+        delta
+      });
+
+      state.conversationHistory.push({
+        question: currentQuestionObj ? currentQuestionObj.question : "",
+        userReply: displayAnswer,
+        moodBefore: state.preQuestionMood,
+        moodAfter: nowMood
+      });
+
+      updateJourneyDrawer();
+
+      if (delta > 0 || isAutoFacialLift) {
+        triggerElevationCelebration(
+          Math.max(delta, 5),
+          isAutoFacialLift
+            ? `✨ Verified +${delta}% smile resonance lift! Advancing to next AI insight...`
+            : undefined
+        );
+      }
+
+      // Check if user reached the Radiant Target Threshold (85%+)
+      if (nowMood >= TARGET_MOOD_THRESHOLD && !state.completedTarget) {
+        state.completedTarget = true;
+        setTimeout(() => {
+          openSummaryModal();
+        }, 900);
+        return;
+      }
+
+      // Request next personalized Gemini AI coaching turn based on words + facial telemetry
+      state.stepIndex += 1;
+      setAIThinkingState(true);
+      const nextPrompt = await fetchGeminiCoachingTurn(displayAnswer, delta);
+      setAIThinkingState(false);
+      renderQuestionStep(nextPrompt);
+    }
+
+    function openSummaryModal() {
+      const startScore = state.baselineMood ?? 40;
+      const peakScore = Math.max(state.peakMood, Math.round(state.currentMood), TARGET_MOOD_THRESHOLD);
+      const netDelta = Math.max(0, peakScore - startScore);
+
+      document.getElementById("summary-start-score").textContent = `${startScore}%`;
+      document.getElementById("summary-delta-score").textContent = `+${netDelta}%`;
+      document.getElementById("summary-peak-score").textContent = `${peakScore}%`;
+
+      const list = document.getElementById("summary-highlights");
+      list.innerHTML = "";
+      if (state.reflectionsLog.length === 0) {
+        list.innerHTML = `<div class="text-slate-300">✨ Pure facial resonance elevation achieved through mindful presence and smiling!</div>`;
+      } else {
+        state.reflectionsLog.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "flex items-start justify-between gap-2 pb-2 border-b border-white/10 last:border-none";
+          row.innerHTML = `
+            <div>
+              <div class="text-amber-200/90 font-medium">${item.answer}</div>
+              <div class="text-[11px] text-slate-400 line-clamp-1">${item.question}</div>
+            </div>
+            <span class="mono text-emerald-300 shrink-0">${item.moodAfter}%</span>
+          `;
+          list.appendChild(row);
+        });
+      }
+
+      document.getElementById("summary-modal").classList.remove("hidden");
+      audioEngine.playElevationChime();
+      state.burstIntensity = 1.25;
+    }
+
+    function resetSession() {
+      state.stepIndex = 0;
+      state.baselineMood = null;
+      state.completedTarget = false;
+      state.reflectionsLog = [];
+      state.conversationHistory = [];
+      askedFallbackQuestions.clear();
+      updateJourneyDrawer();
+
+      document.getElementById("summary-modal").classList.add("hidden");
+      document.getElementById("baseline-readout").innerHTML = `Start: <strong class="text-slate-200 mono">--%</strong>`;
+      document.getElementById("step-delta-pill").classList.add("hidden");
+      document.getElementById("ai-empathy-box").classList.add("hidden");
+      document.getElementById("step-pill").textContent = "Calibration";
+      document.getElementById("question-text").textContent =
+        "Take a gentle breath and look at the light. Let’s sense your baseline mood...";
+      document.getElementById("question-subtext").textContent =
+        "Relax your shoulders. AURA is calibrating to your natural facial expression right now.";
+      document.getElementById("quick-replies-container").innerHTML = "";
+      document.getElementById("submit-btn-label").textContent = "Lock Baseline & Begin";
+      document.getElementById("feedback-banner").classList.add("hidden");
+    }
+
+    /**
+     * ============================================================================
+     * 8. CONTINUOUS 60FPS HUD UPDATER & AUTO-LIFT DETECTOR
+     * ============================================================================
+     */
+    function showToast(message) {
+      const toast = document.getElementById("toast-box");
+      toast.textContent = message;
+      toast.classList.remove("opacity-0", "-translate-y-2");
+      toast.classList.add("opacity-100", "translate-y-0");
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => {
+        toast.classList.remove("opacity-100", "translate-y-0");
+        toast.classList.add("opacity-0", "-translate-y-2");
+      }, 3000);
+    }
+
+    const RING_CIRCUMFERENCE = 2 * Math.PI * 26;
+
+    function updateHUDMetrics() {
+      const score = Math.round(state.currentMood);
+      if (score > state.peakMood) state.peakMood = score;
+
+      document.getElementById("mood-score-text").textContent = `${score}%`;
+
+      const progressRatio = Math.min(1, score / TARGET_MOOD_THRESHOLD);
+      const offset = RING_CIRCUMFERENCE * (1 - progressRatio);
+      document.getElementById("mood-progress-ring").style.strokeDashoffset = offset.toFixed(2);
+
+      const stateLabel = document.getElementById("mood-state-label");
+      const statusDot = document.getElementById("status-dot");
+
+      if (score < 36) {
+        stateLabel.textContent = "Tense / Reflective";
+        stateLabel.className = "text-sm sm:text-base font-semibold text-indigo-300 leading-tight";
+        statusDot.className = "w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-[0_0_12px_#818cf8]";
+      } else if (score < 60) {
+        stateLabel.textContent = "Calm / Grounded";
+        stateLabel.className = "text-sm sm:text-base font-semibold text-teal-200 leading-tight";
+        statusDot.className = "w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_12px_#2dd4bf]";
+      } else if (score < 85) {
+        stateLabel.textContent = "Warming / Uplifted";
+        stateLabel.className = "text-sm sm:text-base font-semibold text-amber-200 leading-tight";
+        statusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-300 shadow-[0_0_12px_#fcd34d]";
+      } else {
+        stateLabel.textContent = "Radiant / Joyful ✨";
+        stateLabel.className = "text-sm sm:text-base font-semibold text-amber-300 leading-tight";
+        statusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_16px_#fbbf24]";
+      }
+
+      // Live delta vs session baseline
+      const deltaBadge = document.getElementById("mood-delta-badge");
+      if (state.baselineMood !== null) {
+        const diff = score - state.baselineMood;
+        deltaBadge.classList.remove("hidden");
+        if (diff >= 0) {
+          deltaBadge.textContent = `+${diff}%`;
+          deltaBadge.className =
+            "mono text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30";
+        } else {
+          deltaBadge.textContent = `${diff}%`;
+          deltaBadge.className =
+            "mono text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-200 border border-indigo-400/30";
+        }
+      }
+
+      // Live delta on current AI question step
+      if (state.stepIndex >= 1 && !state.isGeneratingAI) {
+        const stepDelta = score - state.preQuestionMood;
+        const stepPill = document.getElementById("step-delta-pill");
+        stepPill.classList.remove("hidden");
+        stepPill.textContent = `Step Δ ${stepDelta >= 0 ? "+" : ""}${stepDelta}%`;
+        if (stepDelta >= 6) {
+          stepPill.className =
+            "mono text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/25 text-emerald-200 border border-emerald-400/40";
+        } else {
+          stepPill.className =
+            "mono text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-200 border border-teal-400/30";
+        }
+
+        // Closed-loop auto-advancement when user's facial expression lifts by >= +12% or crosses 85%
+        const elapsedOnStep = performance.now() - state.lastPromptTime;
+        if (
+          state.isRunning &&
+          !state.completedTarget &&
+          !state.autoLiftCooldown &&
+          elapsedOnStep > 2600 &&
+          (stepDelta >= AUTO_LIFT_TRIGGER_DELTA || score >= TARGET_MOOD_THRESHOLD)
+        ) {
+          state.autoLiftCooldown = true;
+          handleReflectionSubmit(document.getElementById("reflection-input").value, true);
+        }
+      }
+
+      // Micro-expression bars
+      const smilePct = Math.round(state.rawSmile * 100);
+      const serenityPct = Math.round(state.rawSerenity * 100);
+      const energyPct = Math.round(state.rawEnergy * 100);
+
+      document.getElementById("metric-smile-val").textContent = `${smilePct}%`;
+      document.getElementById("metric-smile-bar").style.width = `${smilePct}%`;
+
+      document.getElementById("metric-serenity-val").textContent = `${serenityPct}%`;
+      document.getElementById("metric-serenity-bar").style.width = `${serenityPct}%`;
+
+      document.getElementById("metric-energy-val").textContent = `${energyPct}%`;
+      document.getElementById("metric-energy-bar").style.width = `${energyPct}%`;
+    }
+
+    /**
+     * ============================================================================
+     * 9. EVENT LISTENERS & USER INTERACTIONS
+     * ============================================================================
+     */
+    function launchExperience(useCamera) {
+      const onboarding = document.getElementById("onboarding-overlay");
+      const hud = document.getElementById("main-hud");
+
+      onboarding.classList.add("opacity-0", "pointer-events-none");
+      hud.classList.remove("opacity-0");
+      state.isRunning = true;
+      state.burstIntensity = 0.75;
+
+      state.audioEnabled = true;
+      audioEngine.setEnabled(true);
+      document.getElementById("icon-audio-on").classList.remove("hidden");
+      document.getElementById("icon-audio-off").classList.add("hidden");
+      document.getElementById("audio-label").textContent = "Sound On";
+
+      document.getElementById("submit-btn-label").textContent = "Lock Baseline & Begin";
+
+      if (useCamera) {
+        startCameraVision();
+      } else {
+        activateDemoMode();
+      }
+    }
+
+    document.getElementById("btn-start-camera").addEventListener("click", () => launchExperience(true));
+    document.getElementById("btn-start-demo").addEventListener("click", () => launchExperience(false));
+
+    document.getElementById("btn-audio-toggle").addEventListener("click", () => {
+      state.audioEnabled = !state.audioEnabled;
+      audioEngine.setEnabled(state.audioEnabled);
+      document.getElementById("icon-audio-on").classList.toggle("hidden", !state.audioEnabled);
+      document.getElementById("icon-audio-off").classList.toggle("hidden", state.audioEnabled);
+      document.getElementById("audio-label").textContent = state.audioEnabled ? "Sound On" : "Sound Off";
+    });
+
+    document.getElementById("btn-mesh-toggle").addEventListener("click", () => {
+      state.showMesh = !state.showMesh;
+      document.getElementById("mesh-state-text").textContent = state.showMesh ? "ON" : "OFF";
+      if (!state.showMesh) {
+        meshCtx.clearRect(0, 0, meshCanvas.width, meshCanvas.height);
+      }
+    });
+
+    document.getElementById("btn-switch-mode").addEventListener("click", () => {
+      if (state.mode === "camera") {
+        activateDemoMode();
+      } else {
+        startCameraVision();
+      }
+    });
+
+    document.getElementById("btn-journey-toggle").addEventListener("click", () => {
+      document.getElementById("journey-drawer").classList.toggle("hidden");
+    });
+
+    document.getElementById("demo-mood-slider").addEventListener("input", (e) => {
+      applySimulatedExpression(parseInt(e.target.value, 10));
+    });
+
+    document.querySelectorAll(".demo-preset-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const val = parseInt(btn.getAttribute("data-preset"), 10);
+        document.getElementById("demo-mood-slider").value = val;
+        applySimulatedExpression(val);
+      });
+    });
+
+    document.getElementById("reflection-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      handleReflectionSubmit();
+    });
+
+    document.getElementById("btn-continue-basking").addEventListener("click", async () => {
+      document.getElementById("summary-modal").classList.add("hidden");
+      state.stepIndex += 1;
+      setAIThinkingState(true);
+      const nextPrompt = await fetchGeminiCoachingTurn("I want to keep exploring this elevated mood", 0);
+      setAIThinkingState(false);
+      renderQuestionStep(nextPrompt);
+    });
+
+    document.getElementById("btn-restart-session").addEventListener("click", () => {
+      resetSession();
+    });
+
+    /**
+     * ============================================================================
+     * 10. MAIN 60FPS+ RENDER & BIOMETRIC SPRING PHYSICS LOOP
+     * ============================================================================
+     */
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.getElapsedTime();
+
+      // 1. Continuous 60fps Webcam Facial Blendshape Analysis
+      processWebcamFrame();
+
+      // 2. Critically-Damped Spring Physics for Silky Mood Transitions
+      const stiffness = 14.0;
+      const damping = 6.5;
+      const force = (state.targetMood - state.currentMood) * stiffness;
+      state.moodVelocity = (state.moodVelocity + force * dt) * Math.exp(-damping * dt);
+      state.currentMood += state.moodVelocity * dt;
+
+      state.burstIntensity = Math.max(0, state.burstIntensity - dt * 0.75);
+
+      const moodNorm = Math.max(0, Math.min(1, state.currentMood / 100));
+
+      // 3. Update WebGL Shaders & Post-Processing Uniforms
+      orbUniforms.uTime.value = elapsed;
+      orbUniforms.uMood.value = moodNorm;
+      orbUniforms.uSmile.value = state.rawSmile;
+      orbUniforms.uEnergy.value = state.rawEnergy;
+      orbUniforms.uBurst.value = state.burstIntensity;
+
+      particleUniforms.uTime.value = elapsed;
+      particleUniforms.uMood.value = moodNorm;
+      particleUniforms.uBurst.value = state.burstIntensity;
+
+      chromaticPass.uniforms.uTime.value = elapsed;
+      chromaticPass.uniforms.uAberration.value = 0.0014 + state.burstIntensity * 0.0035;
+      bloomPass.strength = 0.78 + moodNorm * 0.35 + state.burstIntensity * 0.65;
+
+      const coolRing = new THREE.Color(0x6366f1);
+      const midRing = new THREE.Color(0x2dd4bf);
+      const warmRing = new THREE.Color(0xfbbf24);
+      const ringColor =
+        moodNorm < 0.5
+          ? coolRing.clone().lerp(midRing, moodNorm * 2.0)
+          : midRing.clone().lerp(warmRing, (moodNorm - 0.5) * 2.0);
+      haloRing.material.color.copy(ringColor);
+      haloRing.material.opacity = 0.22 + moodNorm * 0.28 + state.burstIntensity * 0.3;
+      haloRing.rotation.z = elapsed * 0.14;
+      haloRing.rotation.y = Math.sin(elapsed * 0.25) * 0.35;
+
+      if (!isDraggingOrb) {
+        targetRotY += dt * (0.12 + moodNorm * 0.12);
+      }
+      auraOrb.rotation.y += (targetRotY + pointerX * 0.28 - auraOrb.rotation.y) * 0.06;
+      auraOrb.rotation.x += (targetRotX - pointerY * 0.22 - auraOrb.rotation.x) * 0.06;
+
+      particleField.rotation.y = elapsed * 0.035 + pointerX * 0.08;
+      particleField.rotation.x = -pointerY * 0.06;
+
+      // 4. Update Generative Audio & Glassmorphic HUD continuously
+      audioEngine.updateMoodModulation(moodNorm);
+      updateHUDMetrics();
+
+      // 5. Render 4K Post-Processed Frame
+      composer.render();
+    }
+
+    window.addEventListener("load", () => {
+      const dpr = window.devicePixelRatio || 1;
+      const effectiveW = Math.round(window.innerWidth * dpr);
+      const effectiveH = Math.round(window.innerHeight * dpr);
+      document.getElementById("resolution-badge").textContent = `${effectiveW}×${effectiveH} • UHD`;
+      animate();
+    });
+  </script>
+</body>
+</html>
