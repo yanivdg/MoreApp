@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AURA 4K MV2011262000 — AI Biometric Mood Elevation Engine</title>
+  <title>AURA 4K MV — AI Biometric Mood Elevation Engine</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -317,12 +317,7 @@
         </div>
 
         <form id="reflection-form" class="flex items-center gap-1.5 sm:gap-2 w-full">
-          <button type="button" id="btn-voice-input" class="p-2.5 sm:p-3 rounded-2xl glass-pill text-slate-200 cursor-pointer shrink-0 flex items-center gap-1.5">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" x2="12" y1="19" y2="22" />
-            </svg>
+          <button type="button" id="btn-voice-input" class="p-2.5 sm:p-3 rounded-2xl glass-pill text-slate-200 cursor-pointer shrink-0">
             <span id="mic-label" class="text-xs font-medium">Speak</span>
           </button>
           <input id="reflection-input" type="text" placeholder="Speak, type, or smile..." autocomplete="off"
@@ -705,9 +700,10 @@
     };
 
     function createMouthCurveGeometry(smileFactor, width = 0.62, segments = 32) {
+      // smileFactor ranges roughly from -0.6 (frown) through 0 (neutral) to +1.0 (wide smile)
       const pts = [];
       for (let i = 0; i <= segments; i++) {
-        const t = (i / segments) * 2 - 1;
+        const t = (i / segments) * 2 - 1; // -1 to 1
         const x = t * (width * 0.5);
         const arch = (1 - t * t) * smileFactor * 0.16;
         const y = arch;
@@ -722,6 +718,7 @@
       const root = new THREE.Group();
       root.position.set(0, 0.18, 0);
 
+      // Sculpted luminous head contour
       const headMat = new THREE.MeshBasicMaterial({
         color: 0x38bdf8,
         wireframe: false,
@@ -729,6 +726,7 @@
         opacity: 0.18
       });
       const headGeo = new THREE.SphereGeometry(1.12, 36, 28);
+      // Gently shape cheekbones & jaw
       const posAttr = headGeo.attributes.position;
       for (let i = 0; i < posAttr.count; i++) {
         let x = posAttr.getX(i);
@@ -747,6 +745,7 @@
       const headMesh = new THREE.Mesh(headGeo, headMat);
       root.add(headMesh);
 
+      // Subtle wireframe contour shell for holographic AI face look
       const wireMesh = new THREE.Mesh(
         new THREE.IcosahedronGeometry(1.13, 2),
         new THREE.MeshBasicMaterial({
@@ -758,6 +757,7 @@
       );
       root.add(wireMesh);
 
+      // Eyes (left & right groups)
       const eyeSocketGeo = new THREE.SphereGeometry(0.16, 20, 16);
       const eyeSocketMat = new THREE.MeshBasicMaterial({ color: 0xe2e8f0 });
       const irisGeo = new THREE.SphereGeometry(0.085, 16, 14);
@@ -781,6 +781,7 @@
 
       root.add(leftEyeGroup, rightEyeGroup);
 
+      // Expressive Eyebrows
       const browMat = new THREE.MeshBasicMaterial({ color: 0x99f6e4 });
       const browGeo = new THREE.BoxGeometry(0.34, 0.045, 0.05);
 
@@ -792,6 +793,7 @@
 
       root.add(leftBrow, rightBrow);
 
+      // Subtle Nose Bridge accent
       const noseGeo = new THREE.ConeGeometry(0.06, 0.22, 6);
       const noseMat = new THREE.MeshBasicMaterial({
         color: 0x94a3b8,
@@ -803,6 +805,7 @@
       noseMesh.rotation.x = Math.PI * 0.12;
       root.add(noseMesh);
 
+      // Cheek warmth glows (responds to Smile & Mood)
       const cheekGeo = new THREE.CircleGeometry(0.22, 24);
       const cheekMat = new THREE.MeshBasicMaterial({
         color: 0xfb7185,
@@ -820,6 +823,7 @@
 
       root.add(leftCheekGlow, rightCheekGlow);
 
+      // Articulated Mouth Curve
       const mouthGroup = new THREE.Group();
       mouthGroup.position.set(0, -0.34, 0.98);
       const mouthMat = new THREE.MeshBasicMaterial({ color: 0xfde68a });
@@ -848,11 +852,11 @@
     }
 
     let lastMouthSmileParam = null;
-    let pointerX = 0, pointerY = 0;
 
     function updateAIFaceFromIndicators(elapsed, moodNorm, smileNorm, serenityNorm, energyNorm, burst) {
       if (!aiFace.root) return;
 
+      // Color progression driven by Mood indicator (cool indigo/teal -> warm gold/rose)
       const cLow = new THREE.Color(0x6366f1);
       const cMid = new THREE.Color(0x2dd4bf);
       const cHigh = new THREE.Color(0xfbbf24);
@@ -866,6 +870,7 @@
       aiFace.browMat.color.copy(accentColor).lerp(new THREE.Color(0xffffff), 0.35);
       aiFace.mouthMat.color.copy(new THREE.Color(0xfde68a)).lerp(new THREE.Color(0xfb7185), Math.max(0, (moodNorm - 0.5) * 1.4));
 
+      // Smile & Mood curve the mouth from subtle frown (-0.45) to joyful smile (+1.15)
       const smileCurveVal = -0.45 + smileNorm * 1.25 + (moodNorm - 0.4) * 0.45 + burst * 0.2;
       const quantizedSmile = Math.round(smileCurveVal * 40) / 40;
       if (quantizedSmile !== lastMouthSmileParam) {
@@ -875,3 +880,569 @@
         oldGeo.dispose();
       }
       const mouthScaleX = 0.9 + smileNorm * 0.28;
+      const mouthScaleY = 0.85 + energyNorm * 0.35 + burst * 0.25;
+      aiFace.mouthGroup.scale.set(mouthScaleX, mouthScaleY, 1);
+
+      // Serenity & Mood control eyebrow height and tilt
+      const browLiftY = 0.38 + serenityNorm * 0.08 + moodNorm * 0.05;
+      const furrowTilt = (1.0 - serenityNorm) * 0.28 - smileNorm * 0.08;
+      aiFace.leftBrow.position.y = browLiftY;
+      aiFace.rightBrow.position.y = browLiftY;
+      aiFace.leftBrow.rotation.z = -furrowTilt + smileNorm * 0.08;
+      aiFace.rightBrow.rotation.z = furrowTilt - smileNorm * 0.08;
+
+      // Energy & natural blink control eye openness and iris vitality
+      const blinkCycle = Math.sin(elapsed * 2.4) > 0.985 ? 0.12 : 1.0;
+      const eyeOpenScale = (0.72 + energyNorm * 0.42 + smileNorm * 0.12) * blinkCycle;
+      aiFace.leftEyeGroup.scale.y = Math.max(0.1, eyeOpenScale);
+      aiFace.rightEyeGroup.scale.y = Math.max(0.1, eyeOpenScale);
+
+      const lookX = pointerX * 0.035;
+      const lookY = pointerY * 0.025 + (moodNorm - 0.5) * 0.02;
+      aiFace.leftIris.position.x = lookX;
+      aiFace.leftIris.position.y = lookY;
+      aiFace.rightIris.position.x = lookX;
+      aiFace.rightIris.position.y = lookY;
+
+      // Cheek glow scales with Smile and Mood
+      const cheekOpacity = Math.max(0.03, Math.min(0.42, smileNorm * 0.28 + moodNorm * 0.14 + burst * 0.1));
+      aiFace.cheekMat.opacity = cheekOpacity;
+      const cheekScale = 0.8 + smileNorm * 0.45;
+      aiFace.leftCheekGlow.scale.setScalar(cheekScale);
+      aiFace.rightCheekGlow.scale.setScalar(cheekScale);
+
+      // Gentle breathing and head orientation driven by Energy, Mood & pointer
+      const breatheScale = 1.0 + Math.sin(elapsed * (1.3 + energyNorm * 1.4)) * (0.015 + energyNorm * 0.02) + burst * 0.04;
+      aiFace.root.scale.setScalar(breatheScale);
+      aiFace.root.rotation.y = pointerX * 0.32 + Math.sin(elapsed * 0.65) * 0.08;
+      aiFace.root.rotation.x = -pointerY * 0.22 + Math.cos(elapsed * 0.85) * 0.04;
+      aiFace.root.rotation.z = Math.sin(elapsed * 0.5) * (0.03 + smileNorm * 0.04);
+
+      if (haloRing) {
+        haloRing.material.color.copy(accentColor);
+        haloRing.material.opacity = 0.24 + moodNorm * 0.25 + burst * 0.25;
+        haloRing.rotation.z = elapsed * (0.12 + energyNorm * 0.12);
+      }
+    }
+
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "default" });
+      renderer.setPixelRatio(dpr);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x04060c);
+
+      camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0.15, 4.6);
+
+      scene.add(buildAIFaceRig());
+
+      haloRing = new THREE.Mesh(
+        new THREE.TorusGeometry(1.75, 0.008, 12, 140),
+        new THREE.MeshBasicMaterial({ color: 0x5eead4, transparent: true, opacity: 0.35 })
+      );
+      haloRing.position.set(0, 0.18, 0);
+      haloRing.rotation.x = Math.PI * 0.38;
+      scene.add(haloRing);
+
+      const pCount = 900;
+      const pPos = new Float32Array(pCount * 3);
+      const pPh = new Float32Array(pCount);
+      for (let i = 0; i < pCount; i++) {
+        const r = 1.75 + Math.random() * 3.4;
+        const th = Math.random() * Math.PI * 2;
+        const ph = Math.acos(2 * Math.random() - 1);
+        pPos[i * 3] = r * Math.sin(ph) * Math.cos(th);
+        pPos[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th) * 0.75 + 0.18;
+        pPos[i * 3 + 2] = r * Math.cos(ph);
+        pPh[i] = Math.random() * Math.PI * 2;
+      }
+      const pGeo = new THREE.BufferGeometry();
+      pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
+      pGeo.setAttribute("aPhase", new THREE.BufferAttribute(pPh, 1));
+      particleField = new THREE.Points(
+        pGeo,
+        new THREE.ShaderMaterial({
+          uniforms: particleUniforms,
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          vertexShader: `
+            attribute float aPhase; uniform float uTime; uniform float uMood; uniform float uDpr;
+            void main() {
+              vec3 p = position;
+              float ang = uTime * (0.08 + uMood * 0.12) + aPhase;
+              p.x += cos(ang) * 0.1;
+              p.y += sin(uTime * 0.6 + aPhase) * 0.14;
+              vec4 mv = modelViewMatrix * vec4(p, 1.0);
+              gl_PointSize = (15.0 * uDpr) / max(1.0, -mv.z);
+              gl_Position = projectionMatrix * mv;
+            }
+          `,
+          fragmentShader: `
+            uniform float uMood;
+            void main() {
+              float d = length(gl_PointCoord - 0.5);
+              if (d > 0.5) discard;
+              vec3 col = mix(vec3(0.25, 0.85, 0.85), vec3(1.0, 0.82, 0.35), uMood);
+              gl_FragColor = vec4(col, smoothstep(0.5, 0.05, d) * 0.7);
+            }
+          `
+        })
+      );
+      scene.add(particleField);
+
+      try {
+        if (THREE.EffectComposer && THREE.RenderPass && THREE.UnrealBloomPass) {
+          composer = new THREE.EffectComposer(renderer);
+          composer.addPass(new THREE.RenderPass(scene, camera));
+          bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.65, 0.5, 0.3);
+          composer.addPass(bloomPass);
+          directRenderOnly = false;
+        }
+      } catch (_) {
+        directRenderOnly = true;
+      }
+
+      canvas.addEventListener("webglcontextlost", (e) => {
+        e.preventDefault();
+        directRenderOnly = true;
+      });
+    } catch (err) {
+      AuraLogger.log("SYSTEM", "ERROR", `WebGL init error: ${err.message}`);
+    }
+
+    let pointerX = 0, pointerY = 0;
+    window.addEventListener("pointermove", (e) => {
+      pointerX = (e.clientX / Math.max(1, window.innerWidth)) * 2 - 1;
+      pointerY = -(e.clientY / Math.max(1, window.innerHeight)) * 2 + 1;
+    });
+    window.addEventListener("resize", () => {
+      if (!renderer || !camera) return;
+      camera.aspect = window.innerWidth / Math.max(1, window.innerHeight);
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      if (composer) composer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Camera + MediaPipe (GPU -> CPU with forgiving thresholds & 800ms grace period)
+    const videoEl = document.getElementById("webcam-video");
+    const meshCanvas = document.getElementById("mesh-canvas");
+    const meshCtx = meshCanvas.getContext("2d");
+    let faceLandmarker = null, lastVideoTime = -1;
+    let lastFaceSeenAt = performance.now();
+
+    async function initLandmarker() {
+      if (!FaceLandmarker || !FilesetResolver) return false;
+      const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+      const url = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+      for (const delegate of ["GPU", "CPU"]) {
+        try {
+          faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+            baseOptions: { modelAssetPath: url, delegate },
+            outputFaceBlendshapes: true,
+            runningMode: "VIDEO",
+            numFaces: 1,
+            minFaceDetectionConfidence: 0.35,
+            minFacePresenceConfidence: 0.35,
+            minTrackingConfidence: 0.35
+          });
+          AuraLogger.log("VISION", "REAL", `FaceLandmarker started on ${delegate}.`);
+          return true;
+        } catch (e) {
+          AuraLogger.log("VISION", "WARN", `${delegate} delegate failed: ${e.message}`);
+        }
+      }
+      return false;
+    }
+
+    async function startCamera() {
+      document.getElementById("vision-mode-label").textContent = "Requesting camera...";
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }, audio: false });
+        videoEl.srcObject = stream;
+        await videoEl.play();
+        state.mode = "camera";
+        lastFaceSeenAt = performance.now();
+        document.getElementById("demo-avatar-box").classList.add("hidden");
+        document.getElementById("demo-controls-panel").classList.add("hidden");
+        document.getElementById("switch-mode-text").textContent = "Demo Mode";
+        const ok = await initLandmarker();
+        if (ok) {
+          document.getElementById("vision-mode-label").textContent = "Biometric Vision Active";
+          document.getElementById("face-detected-badge").textContent = "SCANNING";
+          AuraLogger.setVisionTruth("REAL (MediaPipe)", "real");
+        } else {
+          document.getElementById("vision-mode-label").textContent = "Camera Active";
+          document.getElementById("face-detected-badge").textContent = "NO MODEL";
+          AuraLogger.setVisionTruth("FALLBACK", "fallback");
+        }
+      } catch (_) {
+        activateDemo();
+      }
+    }
+
+    function activateDemo() {
+      state.mode = "demo";
+      AuraLogger.setVisionTruth("FAKE (Demo)", "fake");
+      if (videoEl.srcObject) {
+        videoEl.srcObject.getTracks().forEach((t) => t.stop());
+        videoEl.srcObject = null;
+      }
+      document.getElementById("demo-avatar-box").classList.remove("hidden");
+      document.getElementById("demo-controls-panel").classList.remove("hidden");
+      document.getElementById("vision-mode-label").textContent = "Simulated Biometric Sensor";
+      document.getElementById("face-detected-badge").textContent = "SIMULATED";
+      document.getElementById("switch-mode-text").textContent = "Use Webcam";
+      applyDemo(parseInt(document.getElementById("demo-mood-slider").value, 10));
+    }
+
+    function applyDemo(val) {
+      const n = val / 100;
+      state.rawSmile = Math.min(1, Math.max(0.05, n * 1.05));
+      state.rawSerenity = Math.min(1, Math.max(0.2, 0.35 + n * 0.65));
+      state.rawEnergy = Math.min(1, Math.max(0.25, 0.3 + n * 0.7));
+      state.targetMood = val;
+      if (state.stepIndex === 0) state.currentMood = val;
+      document.getElementById("demo-slider-val").textContent = `${val}%`;
+      const em = document.getElementById("demo-face-emoji");
+      em.textContent = val < 35 ? "😔" : val < 60 ? "😌" : val < 82 ? "🙂" : "😄";
+      updateHUDMetrics();
+    }
+
+    function processFrame() {
+      if (state.mode !== "camera" || !faceLandmarker || videoEl.readyState < 2) return;
+      if (meshCanvas.width !== videoEl.videoWidth) {
+        meshCanvas.width = videoEl.videoWidth || 320;
+        meshCanvas.height = videoEl.videoHeight || 240;
+      }
+      if (videoEl.currentTime === lastVideoTime) return;
+      lastVideoTime = videoEl.currentTime;
+
+      const res = faceLandmarker.detectForVideo(videoEl, performance.now());
+      AuraLogger.recordTick();
+      const now = performance.now();
+
+      if (res.faceBlendshapes && res.faceBlendshapes.length > 0) {
+        lastFaceSeenAt = now;
+        meshCtx.clearRect(0, 0, meshCanvas.width, meshCanvas.height);
+        document.getElementById("face-detected-badge").textContent = "FACE LOCKED";
+
+        const m = {};
+        for (const c of res.faceBlendshapes[0].categories) m[c.categoryName] = c.score;
+        const smile = Math.min(1, ((m["mouthSmileLeft"] || 0) + (m["mouthSmileRight"] || 0)) * 0.72);
+        const browDown = ((m["browDownLeft"] || 0) + (m["browDownRight"] || 0)) * 0.5;
+        state.rawSmile = smile;
+        state.rawSerenity = Math.max(0.1, Math.min(1, 1 - browDown * 1.1));
+        state.rawEnergy = Math.max(0.15, Math.min(1, 0.35 + smile * 0.5));
+        state.targetMood = Math.max(8, Math.min(99, 36 + smile * 45 + state.rawSerenity * 15 - browDown * 16));
+
+        if (state.showMesh && res.faceLandmarks && res.faceLandmarks[0]) {
+          meshCtx.fillStyle = "rgba(45, 212, 191, 0.65)";
+          for (let i = 0; i < res.faceLandmarks[0].length; i += 4) {
+            const pt = res.faceLandmarks[0][i];
+            meshCtx.beginPath();
+            meshCtx.arc(pt.x * meshCanvas.width, pt.y * meshCanvas.height, 1.4, 0, Math.PI * 2);
+            meshCtx.fill();
+          }
+        }
+      } else if (now - lastFaceSeenAt > 800) {
+        meshCtx.clearRect(0, 0, meshCanvas.width, meshCanvas.height);
+        document.getElementById("face-detected-badge").textContent = "ALIGN FACE";
+      }
+    }
+
+    function setThinking(on) {
+      state.isGeneratingAI = on;
+      document.getElementById("ai-thinking-indicator").classList.toggle("hidden", !on);
+      document.getElementById("ai-thinking-indicator").classList.toggle("flex", on);
+      document.getElementById("question-content-wrapper").classList.toggle("opacity-30", on);
+      document.getElementById("btn-submit-reflection").disabled = on;
+    }
+
+    function renderQuestion(q) {
+      currentQuestionObj = q;
+      state.preQuestionMood = Math.round(state.currentMood);
+      state.lastPromptTime = performance.now();
+      state.autoLiftCooldown = false;
+      document.getElementById("step-pill").textContent = `Step ${state.stepIndex} • ${q.tag}`;
+      document.getElementById("question-text").textContent = q.question;
+      document.getElementById("question-subtext").textContent = q.subtext;
+      document.getElementById("submit-btn-label").textContent = "Reflect & Next";
+      document.getElementById("reflection-input").value = "";
+      const emp = document.getElementById("ai-empathy-box");
+      if (q.empathy) {
+        document.getElementById("ai-empathy-text").textContent = q.empathy;
+        emp.classList.remove("hidden");
+      } else {
+        emp.classList.add("hidden");
+      }
+      const chips = document.getElementById("quick-replies-container");
+      chips.innerHTML = "";
+      q.chips.forEach((label) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "glass-pill px-2.5 py-1.5 rounded-full text-[11px] sm:text-xs text-slate-200 cursor-pointer";
+        b.textContent = label;
+        b.addEventListener("click", () => {
+          if (state.isGeneratingAI) return;
+          document.getElementById("reflection-input").value = label;
+          if (state.mode === "demo") {
+            const sl = document.getElementById("demo-mood-slider");
+            const nextVal = Math.min(98, parseInt(sl.value, 10) + 16);
+            sl.value = nextVal;
+            applyDemo(nextVal);
+          }
+          handleReflectionSubmit(label);
+        });
+        chips.appendChild(b);
+      });
+    }
+
+    async function handleReflectionSubmit(customText, isAutoLift = false) {
+      if (state.isGeneratingAI) return;
+      if (state.isListeningVoice && recognition) recognition.stop();
+      const text = (customText ?? document.getElementById("reflection-input").value).trim();
+
+      if (state.stepIndex === 0) {
+        state.baselineMood = Math.round(state.currentMood);
+        state.peakMood = state.baselineMood;
+        document.getElementById("baseline-readout").innerHTML = `Start: <strong class="text-slate-200 mono">${state.baselineMood}%</strong>`;
+        state.stepIndex = 1;
+        setThinking(true);
+        const firstQ = await fetchGeminiCoachingTurn("", 0);
+        setThinking(false);
+        renderQuestion(firstQ);
+        return;
+      }
+
+      const nowM = Math.round(state.currentMood);
+      const delta = nowM - state.preQuestionMood;
+      const answer = text || (isAutoLift ? "✨ Smile Lift" : "(Reflected visually)");
+      state.reflectionsLog.push({ step: state.stepIndex, question: currentQuestionObj?.question || "", answer, moodBefore: state.preQuestionMood, moodAfter: nowM, delta });
+      document.getElementById("journey-count").textContent = state.reflectionsLog.length;
+      const startS = state.baselineMood ?? nowM;
+      document.getElementById("journey-net-badge").textContent = `Net ${nowM - startS >= 0 ? "+" : ""}${nowM - startS}%`;
+
+      const list = document.getElementById("journey-list");
+      list.innerHTML = "";
+      state.reflectionsLog.forEach((e) => {
+        const d = document.createElement("div");
+        d.className = "p-2 rounded-xl bg-white/5 border border-white/10";
+        d.innerHTML = `<div class="flex justify-between"><span class="mono text-[10px] text-amber-200">Step ${e.step}</span><span class="mono text-[10px] text-emerald-300">${e.moodBefore}% → ${e.moodAfter}%</span></div><div class="text-slate-200 truncate">${e.answer}</div>`;
+        list.appendChild(d);
+      });
+
+      if (delta > 0 || isAutoLift) {
+        state.burstIntensity = 1.0;
+        sound.chime();
+        const fb = document.getElementById("feedback-banner");
+        fb.classList.remove("hidden");
+        document.getElementById("feedback-message").textContent = isAutoLift ? `✨ +${delta}% smile lift detected!` : "✨ Mood shift recorded!";
+        document.getElementById("feedback-delta").textContent = `${delta >= 0 ? "+" : ""}${delta}%`;
+      }
+
+      if (nowM >= TARGET_MOOD_THRESHOLD && !state.completedTarget) {
+        state.completedTarget = true;
+        document.getElementById("summary-start-score").textContent = `${startS}%`;
+        document.getElementById("summary-delta-score").textContent = `+${Math.max(0, state.peakMood - startS)}%`;
+        document.getElementById("summary-peak-score").textContent = `${state.peakMood}%`;
+        document.getElementById("summary-modal").classList.remove("hidden");
+        return;
+      }
+
+      state.stepIndex += 1;
+      setThinking(true);
+      const nextQ = await fetchGeminiCoachingTurn(answer, delta);
+      setThinking(false);
+      renderQuestion(nextQ);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toast-box");
+      t.textContent = msg;
+      t.classList.remove("opacity-0");
+      t.classList.add("opacity-100");
+      clearTimeout(t._id);
+      t._id = setTimeout(() => { t.classList.remove("opacity-100"); t.classList.add("opacity-0"); }, 2600);
+    }
+
+    const CIRC = 2 * Math.PI * 26;
+    function updateHUDMetrics() {
+      const score = Math.round(state.currentMood);
+      if (score > state.peakMood) state.peakMood = score;
+      document.getElementById("mood-score-text").textContent = `${score}%`;
+      document.getElementById("mood-progress-ring").style.strokeDashoffset = (CIRC * (1 - Math.min(1, score / TARGET_MOOD_THRESHOLD))).toFixed(2);
+      document.getElementById("mood-state-label").textContent = score < 36 ? "Tense / Reflective" : score < 60 ? "Calm / Grounded" : score < 85 ? "Warming / Uplifted" : "Radiant / Joyful ✨";
+
+      if (state.baselineMood !== null) {
+        const diff = score - state.baselineMood;
+        const badge = document.getElementById("mood-delta-badge");
+        badge.classList.remove("hidden");
+        badge.textContent = `${diff >= 0 ? "+" : ""}${diff}%`;
+      }
+
+      if (state.stepIndex >= 1 && !state.isGeneratingAI) {
+        const stepDelta = score - state.preQuestionMood;
+        const sp = document.getElementById("step-delta-pill");
+        sp.classList.remove("hidden");
+        sp.textContent = `Step Δ ${stepDelta >= 0 ? "+" : ""}${stepDelta}%`;
+        if (
+          state.isRunning &&
+          !state.completedTarget &&
+          !state.autoLiftCooldown &&
+          performance.now() - state.lastPromptTime > 2600 &&
+          (stepDelta >= AUTO_LIFT_TRIGGER_DELTA || score >= TARGET_MOOD_THRESHOLD)
+        ) {
+          state.autoLiftCooldown = true;
+          handleReflectionSubmit(document.getElementById("reflection-input").value, true);
+        }
+      }
+
+      const sm = Math.round(state.rawSmile * 100);
+      const se = Math.round(state.rawSerenity * 100);
+      const en = Math.round(state.rawEnergy * 100);
+      document.getElementById("metric-smile-val").textContent = `${sm}%`;
+      document.getElementById("metric-smile-bar").style.width = `${sm}%`;
+      document.getElementById("metric-serenity-val").textContent = `${se}%`;
+      document.getElementById("metric-serenity-bar").style.width = `${se}%`;
+      document.getElementById("metric-energy-val").textContent = `${en}%`;
+      document.getElementById("metric-energy-bar").style.width = `${en}%`;
+      AuraLogger.updateFpsLabel();
+    }
+
+    function launchExperience(useCam) {
+      const ov = document.getElementById("onboarding-overlay");
+      ov.classList.add("opacity-0", "pointer-events-none");
+      setTimeout(() => ov.classList.add("hidden"), 250);
+      document.getElementById("main-hud").classList.remove("opacity-0");
+      state.isRunning = true;
+      state.burstIntensity = 0.7;
+      updateHUDMetrics();
+      if (useCam) startCamera();
+      else activateDemo();
+    }
+
+    const KEY_STORAGE = "aura_gemini_api_key";
+    const keyInput = document.getElementById("gemini-api-key");
+    try { keyInput.value = localStorage.getItem(KEY_STORAGE) || ""; } catch (_) {}
+    keyInput.addEventListener("input", () => { try { localStorage.setItem(KEY_STORAGE, keyInput.value.trim()); } catch (_) {} });
+    document.getElementById("toggle-api-visibility").addEventListener("click", (e) => {
+      const show = keyInput.type === "password";
+      keyInput.type = show ? "text" : "password";
+      e.currentTarget.textContent = show ? "Hide" : "Show";
+    });
+
+    document.getElementById("btn-start-camera").addEventListener("click", () => launchExperience(true));
+    document.getElementById("btn-start-demo").addEventListener("click", () => launchExperience(false));
+    document.getElementById("btn-audio-toggle").addEventListener("click", () => {
+      state.audioEnabled = !state.audioEnabled;
+      sound.setEnabled(state.audioEnabled);
+      document.getElementById("audio-label").textContent = state.audioEnabled ? "Sound On" : "Sound Off";
+    });
+    document.getElementById("btn-mesh-toggle").addEventListener("click", () => {
+      state.showMesh = !state.showMesh;
+      document.getElementById("mesh-state-text").textContent = state.showMesh ? "ON" : "OFF";
+      if (!state.showMesh) meshCtx.clearRect(0, 0, meshCanvas.width, meshCanvas.height);
+    });
+    document.getElementById("btn-switch-mode").addEventListener("click", () => {
+      if (state.mode === "camera") activateDemo();
+      else startCamera();
+    });
+    document.getElementById("btn-journey-toggle").addEventListener("click", () => {
+      document.getElementById("logs-drawer").classList.add("hidden");
+      document.getElementById("journey-drawer").classList.toggle("hidden");
+    });
+    document.getElementById("btn-logs-toggle").addEventListener("click", () => {
+      document.getElementById("journey-drawer").classList.add("hidden");
+      const dr = document.getElementById("logs-drawer");
+      dr.classList.toggle("hidden");
+      if (!dr.classList.contains("hidden")) AuraLogger.rerenderAll();
+    });
+    document.getElementById("btn-copy-logs").addEventListener("click", () => {
+      const ta = document.createElement("textarea");
+      ta.value = AuraLogger.exportText();
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); showToast("Logs copied"); } catch (_) {}
+      document.body.removeChild(ta);
+    });
+    document.getElementById("btn-download-logs").addEventListener("click", () => {
+      const blob = new Blob([AuraLogger.exportText()], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `aura-logs-${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+    document.getElementById("btn-clear-logs").addEventListener("click", () => AuraLogger.clear());
+    document.getElementById("demo-mood-slider").addEventListener("input", (e) => applyDemo(parseInt(e.target.value, 10)));
+    document.querySelectorAll(".demo-preset-btn").forEach((b) => {
+      b.addEventListener("click", () => {
+        const v = parseInt(b.getAttribute("data-preset"), 10);
+        document.getElementById("demo-mood-slider").value = v;
+        applyDemo(v);
+      });
+    });
+    document.getElementById("reflection-form").addEventListener("submit", (e) => { e.preventDefault(); handleReflectionSubmit(); });
+    document.getElementById("btn-continue-basking").addEventListener("click", async () => {
+      document.getElementById("summary-modal").classList.add("hidden");
+      state.stepIndex += 1;
+      setThinking(true);
+      const q = await fetchGeminiCoachingTurn("Continue", 0);
+      setThinking(false);
+      renderQuestion(q);
+    });
+    document.getElementById("btn-restart-session").addEventListener("click", () => location.reload());
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.getElapsedTime();
+
+      processFrame();
+
+      const force = (state.targetMood - state.currentMood) * 14.0;
+      state.moodVelocity = (state.moodVelocity + force * dt) * Math.exp(-6.5 * dt);
+      state.currentMood += state.moodVelocity * dt;
+      state.burstIntensity = Math.max(0, state.burstIntensity - dt * 0.75);
+
+      const moodNorm = Math.max(0, Math.min(1, state.currentMood / 100));
+      const smileNorm = Math.max(0, Math.min(1, state.rawSmile));
+      const serenityNorm = Math.max(0, Math.min(1, state.rawSerenity));
+      const energyNorm = Math.max(0, Math.min(1, state.rawEnergy));
+
+      updateAIFaceFromIndicators(elapsed, moodNorm, smileNorm, serenityNorm, energyNorm, state.burstIntensity);
+
+      particleUniforms.uTime.value = elapsed;
+      particleUniforms.uMood.value = moodNorm;
+      particleUniforms.uBurst.value = state.burstIntensity;
+
+      if (particleField) particleField.rotation.y = elapsed * 0.035;
+      if (bloomPass) bloomPass.strength = 0.65 + moodNorm * 0.25;
+
+      if (state.isRunning) updateHUDMetrics();
+
+      if (renderer && scene && camera) {
+        try {
+          if (!directRenderOnly && composer) composer.render();
+          else renderer.render(scene, camera);
+        } catch (_) {
+          directRenderOnly = true;
+          renderer.render(scene, camera);
+        }
+      }
+    }
+
+    document.getElementById("resolution-badge").textContent = `${Math.round(window.innerWidth * dpr)}×${Math.round(window.innerHeight * dpr)}`;
+    animate();
+  </script>
+</body>
+</html>
