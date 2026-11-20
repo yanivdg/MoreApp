@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>AURA 4K — AI Biometric Mood Elevation Engine</title>
 
   <!-- Tailwind CSS -->
@@ -32,8 +32,8 @@
       margin: 0;
       padding: 0;
       width: 100%;
-      min-height: 100dvh;
-      overflow-x: hidden;
+      height: 100%;
+      overflow: hidden;
       background-color: #04060c;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       color: #f8fafc;
@@ -44,15 +44,41 @@
       position: fixed;
       inset: 0;
       width: 100vw;
+      height: 100vh;
       height: 100dvh;
       display: block;
       z-index: 0;
-      touch-action: none;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      touch-action: pan-y;
+    }
+
+    /* Lightweight visual fallback if the device loses WebGL support. */
+    body.webgl-context-lost::before {
+      content: "";
+      position: fixed;
+      z-index: 0;
+      width: min(72vw, 420px);
+      aspect-ratio: 1;
+      left: 50%;
+      top: 48%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #a5f3fc 0, #38bdf8 12%, #6366f1 38%, #312e81 62%, transparent 72%);
+      filter: blur(3px) drop-shadow(0 0 38px rgba(99,102,241,.65));
+      animation: auraFallbackPulse 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+    body.webgl-context-lost #webgl-canvas { opacity: 0; }
+    @keyframes auraFallbackPulse {
+      0%,100% { scale: .92; opacity: .65; }
+      50% { scale: 1.05; opacity: 1; }
     }
 
     /* Glassmorphism System */
     .glass-panel {
-      background: rgba(9, 13, 24, 0.72);
+      background: rgba(9, 13, 24, 0.62);
       backdrop-filter: blur(26px) saturate(165%);
       -webkit-backdrop-filter: blur(26px) saturate(165%);
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -145,20 +171,343 @@
       transform: scaleX(-1);
     }
 
-    /* Allow text selection inside logs drawer */
-    #logs-feed-container {
-      user-select: text;
-    }
-
     /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 4px;
-      height: 4px;
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.2);
       border-radius: 999px;
     }
+
+
+    /* ================================================================
+       MOBILE RESPONSIVENESS LAYER
+       Desktop styling and application layout remain unchanged.
+       ================================================================ */
+    :root {
+      --aura-viewport-height: 100vh;
+    }
+
+    #webgl-canvas {
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    #onboarding-overlay {
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #onboarding-overlay > .glass-panel {
+      flex-shrink: 0;
+    }
+
+    #main-hud {
+      height: var(--aura-viewport-height, 100vh);
+      bottom: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+
+    #summary-modal {
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #summary-modal > .glass-panel {
+      max-height: calc(var(--aura-viewport-height, 100vh) - 32px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Prevent iOS Safari from zooming into form fields when they receive focus. */
+    #gemini-api-key,
+    #reflection-input {
+      font-size: 16px !important;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      touch-action: manipulation;
+    }
+
+    @media (max-width: 640px) {
+      #onboarding-overlay {
+        align-items: flex-start;
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        padding-left: max(12px, env(safe-area-inset-left));
+      }
+
+      #onboarding-overlay > .glass-panel {
+        width: 100%;
+        margin-top: auto;
+        margin-bottom: auto;
+        padding: clamp(18px, 5vw, 28px);
+        border-radius: 22px;
+      }
+
+      #onboarding-overlay .grid.grid-cols-3 {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+      }
+
+      #onboarding-overlay .grid.grid-cols-3 > div {
+        padding: 10px 12px;
+      }
+
+      #onboarding-overlay .api-key-wrapper {
+        margin-top: 12px !important;
+        margin-bottom: 12px !important;
+      }
+
+      #gemini-api-key {
+        min-width: 0;
+        min-height: 44px;
+      }
+
+      #toggle-api-visibility {
+        min-width: 58px;
+        min-height: 44px;
+      }
+
+      #btn-start-camera,
+      #btn-start-demo {
+        min-height: 46px;
+      }
+
+      #main-hud {
+        padding-top: max(10px, env(safe-area-inset-top));
+        padding-right: max(10px, env(safe-area-inset-right));
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+        padding-left: max(10px, env(safe-area-inset-left));
+        gap: 10px;
+        justify-content: flex-start;
+      }
+
+      /* Stack the brand/controls and the biometric status card on narrow screens. */
+      #main-hud > div:first-child {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        flex: 0 0 auto;
+      }
+
+      #main-hud > div:first-child > div:first-child {
+        width: 100%;
+        max-width: none;
+        gap: 8px;
+      }
+
+      #main-hud > div:first-child > div:first-child > div:first-child {
+        width: 100%;
+      }
+
+      #main-hud > div:first-child > div:first-child > div:nth-child(2) {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      #main-hud > div:first-child > div:first-child > div:nth-child(2) > button {
+        min-height: 40px;
+        padding: 8px 10px;
+      }
+
+      #main-hud > div:first-child > div:last-child {
+        width: 100%;
+        min-width: 0;
+        margin-left: 0;
+        padding: 9px;
+        gap: 10px;
+        justify-content: flex-start;
+      }
+
+      #main-hud > div:first-child > div:last-child > div:first-child {
+        width: 72px;
+        height: 72px;
+        flex: 0 0 72px;
+      }
+
+      #main-hud > div:first-child > div:last-child > div:nth-child(2) {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      #main-hud > div:first-child > div:last-child > div:nth-child(2) > div:first-child {
+        gap: 8px;
+      }
+
+      #main-hud > div:first-child > div:last-child > div:nth-child(2) > div:first-child > div:first-child {
+        width: 54px;
+        height: 54px;
+        flex: 0 0 54px;
+      }
+
+      #main-hud > div:first-child > div:last-child > div:nth-child(2) > div:first-child > div:first-child > svg {
+        width: 54px;
+        height: 54px;
+      }
+
+      #main-hud > div:first-child > div:last-child > div:nth-child(2) > div:first-child > div:nth-child(2) {
+        min-width: 0;
+      }
+
+      #main-hud > div:first-child > div:last-child > div:nth-child(2) > div:nth-child(2) {
+        gap: 7px;
+      }
+
+      #journey-drawer,
+      #demo-controls-panel {
+        width: 100%;
+        max-width: 100%;
+      }
+
+      #main-hud > div:last-child {
+        width: 100%;
+        max-width: none;
+        margin-top: 0;
+        flex: 0 0 auto;
+      }
+
+      #dialogue-card {
+        padding: 12px;
+        border-radius: 20px;
+      }
+
+      #question-text {
+        font-size: clamp(17px, 4.7vw, 22px);
+      }
+
+      #reflection-form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      #btn-voice-input {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        flex: 0 0 44px;
+        padding: 0;
+      }
+
+      #reflection-input {
+        min-width: 0;
+        min-height: 44px;
+        height: 44px;
+        flex: 1 1 calc(100% - 52px);
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      #btn-submit-reflection {
+        width: 100%;
+        min-height: 44px;
+        flex: 1 0 100%;
+        justify-content: center;
+        margin-left: 0;
+      }
+
+      #toast-box {
+        width: max-content;
+        max-width: calc(100vw - 24px);
+        text-align: center;
+        white-space: normal;
+      }
+
+      #summary-modal {
+        align-items: flex-start;
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        padding-left: max(12px, env(safe-area-inset-left));
+      }
+
+      #summary-modal > .glass-panel {
+        width: 100%;
+        margin-top: auto;
+        margin-bottom: auto;
+        padding: 20px 16px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      #main-hud > div:first-child > div:last-child > div:first-child {
+        width: 64px;
+        height: 64px;
+        flex-basis: 64px;
+      }
+
+      #main-hud > div:first-child > div:last-child > div:nth-child(2) > div:first-child > div:first-child,
+      #main-hud > div:first-child > div:last-child > div:nth-child(2) > div:first-child > div:first-child > svg {
+        width: 48px;
+        height: 48px;
+        flex-basis: 48px;
+      }
+
+      #main-hud > div:first-child > div:first-child > div:nth-child(2) > button {
+        padding-right: 8px;
+        padding-left: 8px;
+        font-size: 11px;
+      }
+
+      #dialogue-card {
+        padding: 10px;
+      }
+    }
+
+    @media (max-height: 600px) and (orientation: landscape) {
+      #onboarding-overlay {
+        align-items: flex-start;
+      }
+
+      #onboarding-overlay > .glass-panel {
+        margin-top: 8px;
+        margin-bottom: 8px;
+      }
+
+      #main-hud {
+        gap: 8px;
+      }
+
+      #main-hud > div:first-child > div:last-child > div:first-child {
+        width: 60px;
+        height: 60px;
+        flex-basis: 60px;
+      }
+
+      #dialogue-card {
+        padding: 10px 12px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .animate-float-up,
+      .mic-recording,
+      .ai-dot:nth-child(1),
+      .ai-dot:nth-child(2),
+      .ai-dot:nth-child(3) {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -172,72 +521,71 @@
   <!-- ========================================================= -->
   <!-- ONBOARDING / CALIBRATION OVERLAY                          -->
   <!-- ========================================================= -->
-  <div id="onboarding-overlay" class="fixed inset-0 z-50 overflow-y-auto flex items-start sm:items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xl transition-opacity duration-700">
-    <div class="glass-panel max-w-xl w-full my-auto rounded-3xl p-5 sm:p-10 text-center relative overflow-hidden">
+  <div id="onboarding-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/75 backdrop-blur-xl transition-opacity duration-700">
+    <div class="glass-panel max-w-xl w-full rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden">
       <div class="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-1 bg-gradient-to-r from-transparent via-amber-300/80 to-transparent"></div>
 
-      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] sm:text-xs font-medium tracking-wider uppercase text-amber-200/90 mb-4">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium tracking-wider uppercase text-amber-200/90 mb-5">
         <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
         4K WebGL + Live Gemini AI Coach
       </div>
 
-      <h1 class="text-2xl sm:text-4xl font-semibold tracking-tight bg-gradient-to-br from-white via-slate-100 to-amber-200/90 bg-clip-text text-transparent mb-2.5">
+      <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight bg-gradient-to-br from-white via-slate-100 to-amber-200/90 bg-clip-text text-transparent mb-3">
         AURA Biometric Mirror
       </h1>
 
-      <p class="text-slate-300/90 text-xs sm:text-base leading-relaxed max-w-md mx-auto mb-5 sm:mb-6">
+      <p class="text-slate-300/90 text-sm sm:text-base leading-relaxed max-w-md mx-auto mb-7">
         Continuous 60fps facial expression vision paired with a live Gemini AI coach that listens to your voice or text, senses your micro-expressions, and guides you into radiant positivity.
       </p>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-left mb-5 sm:mb-6">
+      <div class="grid grid-cols-3 gap-2.5 sm:gap-3 text-left mb-7">
         <div class="rounded-2xl bg-white/[0.04] border border-white/10 p-3 sm:p-3.5">
-          <div class="text-amber-300 text-xs font-semibold mb-0.5">01. Sense 60fps</div>
+          <div class="text-amber-300 text-xs font-semibold mb-1">01. Sense 60fps</div>
           <div class="text-[11px] sm:text-xs text-slate-400 leading-snug">52 facial blendshapes tracked continuously in real time</div>
         </div>
         <div class="rounded-2xl bg-white/[0.04] border border-white/10 p-3 sm:p-3.5">
-          <div class="text-teal-300 text-xs font-semibold mb-0.5">02. AI Dialogue</div>
+          <div class="text-teal-300 text-xs font-semibold mb-1">02. AI Dialogue</div>
           <div class="text-[11px] sm:text-xs text-slate-400 leading-snug">Gemini tailors follow-up prompts to your words & face</div>
         </div>
         <div class="rounded-2xl bg-white/[0.04] border border-white/10 p-3 sm:p-3.5">
-          <div class="text-rose-300 text-xs font-semibold mb-0.5">03. Elevate</div>
+          <div class="text-rose-300 text-xs font-semibold mb-1">03. Elevate</div>
           <div class="text-[11px] sm:text-xs text-slate-400 leading-snug">Watch liquid glass bloom into gold as your mood lifts</div>
         </div>
       </div>
 
-      <!-- Gemini API Key Rubric -->
-      <div class="api-key-wrapper w-full max-w-md mx-auto my-4 text-left">
-        <label for="gemini-api-key" class="block text-[11px] text-slate-400 mb-1.5 tracking-wider uppercase">
+      <div class="api-key-wrapper w-full max-w-md mx-auto" style="margin: 16px 0; text-align: left;">
+        <label for="gemini-api-key" style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; letter-spacing: 0.05em; text-transform: uppercase;">
           Gemini API Key
         </label>
-        <div class="flex gap-2">
+        <div style="display: flex; gap: 8px;">
           <input
             type="password"
             id="gemini-api-key"
             placeholder="AIzaSy..."
             autocomplete="off"
-            class="flex-1 min-w-0 px-3.5 py-2.5 rounded-xl border border-white/15 bg-slate-900/70 text-slate-100 text-sm outline-none focus:border-amber-300/60"
+            style="flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(15, 23, 42, 0.6); color: #f8fafc; font-size: 14px; outline: none;"
           />
           <button
             type="button"
             id="toggle-api-visibility"
             title="Show/Hide Key"
-            class="px-3 rounded-xl border border-white/15 bg-white/5 text-slate-300 cursor-pointer text-xs shrink-0"
+            style="padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05); color: #cbd5e1; cursor: pointer; font-size: 13px;"
           >
             Show
           </button>
         </div>
       </div>
 
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3">
-        <button id="btn-start-camera" class="w-full sm:w-auto flex-1 py-3.5 px-5 rounded-2xl font-semibold text-sm text-slate-950 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 hover:from-amber-100 hover:to-amber-200 shadow-[0_0_30px_rgba(251,191,36,0.35)] transition-all cursor-pointer flex items-center justify-center gap-2">
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <button id="btn-start-camera" class="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-2xl font-semibold text-sm text-slate-950 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 hover:from-amber-100 hover:to-amber-200 shadow-[0_0_30px_rgba(251,191,36,0.35)] transition-all cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
           <span>Start Camera & AI Coach</span>
         </button>
 
         <button id="btn-start-demo" class="w-full sm:w-auto py-3.5 px-5 rounded-2xl font-medium text-sm text-slate-200 glass-pill cursor-pointer flex items-center justify-center gap-2">
-          <svg class="w-4 h-4 text-teal-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-teal-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
           </svg>
           <span>Simulated Face Mode</span>
@@ -251,134 +599,62 @@
   </div>
 
   <!-- ========================================================= -->
-  <!-- MAIN GLASSMORPHIC HUD (MOBILE-RESPONSIVE & SCROLLABLE)    -->
+  <!-- MAIN GLASSMORPHIC HUD (TOP & BOTTOM OVERLAYS)             -->
   <!-- ========================================================= -->
-  <div id="main-hud" class="fixed inset-0 z-20 overflow-y-auto overflow-x-hidden pointer-events-none flex flex-col justify-between gap-4 p-2.5 sm:p-5 md:p-6 opacity-0 transition-opacity duration-700">
+  <div id="main-hud" class="fixed inset-0 z-20 pointer-events-none flex flex-col justify-between p-3 sm:p-5 md:p-6 opacity-0 transition-opacity duration-700">
 
-    <!-- TOP BAR: Brand / Controls / Drawers + Live Biometric Camera Card -->
-    <div class="flex flex-col md:flex-row items-stretch md:items-start justify-between gap-2.5 sm:gap-3 w-full">
+    <!-- TOP BAR: Brand / Controls / Session Journey + Live Biometric Camera Card -->
+    <div class="flex flex-wrap items-start justify-between gap-3">
 
-      <!-- Left: System Title, Utility Controls & Diagnostic/Journey Drawers -->
-      <div class="pointer-events-auto flex flex-col gap-2 w-full md:max-w-lg z-30">
-        <div class="glass-panel rounded-2xl px-3.5 py-2 flex items-center justify-between sm:justify-start gap-3 w-full sm:w-fit">
-          <div class="flex items-center gap-2.5">
-            <div class="relative flex items-center justify-center w-3 h-3 shrink-0">
-              <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_12px_#2dd4bf]"></span>
+      <!-- Left: System Title, Utility Controls & Biometric Session Journey -->
+      <div class="pointer-events-auto flex flex-col gap-2 max-w-xs sm:max-w-sm">
+        <div class="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3">
+          <div class="relative flex items-center justify-center w-3 h-3">
+            <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_12px_#2dd4bf]"></span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-semibold text-sm tracking-wide text-white">AURA AI</span>
+              <span id="resolution-badge" class="mono text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-amber-200/90 border border-white/10">4K UHD • 60FPS</span>
             </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="font-semibold text-xs sm:text-sm tracking-wide text-white">AURA AI</span>
-                <span id="resolution-badge" class="mono text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-amber-200/90 border border-white/10">4K UHD • 60FPS</span>
-              </div>
-              <div id="vision-mode-label" class="text-[10px] sm:text-[11px] text-slate-400">Initializing Neural Vision...</div>
-            </div>
+            <div id="vision-mode-label" class="text-[11px] text-slate-400">Initializing Neural Vision...</div>
           </div>
         </div>
 
         <!-- Quick Utility Controls -->
         <div class="flex flex-wrap items-center gap-1.5">
           <!-- Soundscape Toggle -->
-          <button id="btn-audio-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer" title="Toggle Generative Harmonic Soundscape">
-            <svg id="icon-audio-on" class="w-3.5 h-3.5 text-amber-300 hidden shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <button id="btn-audio-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer" title="Toggle Generative Harmonic Soundscape">
+            <svg id="icon-audio-on" class="w-3.5 h-3.5 text-amber-300 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
-            <svg id="icon-audio-off" class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <svg id="icon-audio-off" class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
             </svg>
             <span id="audio-label">Sound Off</span>
           </button>
 
           <!-- Mesh Overlay Toggle -->
-          <button id="btn-mesh-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer" title="Toggle Facial Biometric Mesh">
+          <button id="btn-mesh-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer" title="Toggle Facial Biometric Mesh">
             <span>Mesh: <strong id="mesh-state-text" class="font-medium text-teal-300">ON</strong></span>
           </button>
 
           <!-- Mode Switcher (Camera vs Simulated) -->
-          <button id="btn-switch-mode" class="glass-pill rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer">
+          <button id="btn-switch-mode" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer">
             <span id="switch-mode-text">Demo Mode</span>
           </button>
 
           <!-- Session Journey Log Toggle -->
-          <button id="btn-journey-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-medium text-amber-200 flex items-center gap-1.5 cursor-pointer">
-            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <button id="btn-journey-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-medium text-amber-200 flex items-center gap-1.5 cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             <span>Journey (<span id="journey-count">0</span>)</span>
           </button>
-
-          <!-- Diagnostic Telemetry Logs Toggle -->
-          <button id="btn-logs-toggle" class="glass-pill rounded-xl px-2.5 py-1.5 text-[11px] sm:text-xs font-medium text-sky-200 flex items-center gap-1.5 cursor-pointer" title="Inspect Real vs Fallback Telemetry & Live Event Logs">
-            <svg class="w-3.5 h-3.5 text-sky-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span>Logs</span>
-            <span id="logs-alert-badge" class="hidden mono text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/25 text-amber-200 border border-amber-400/40">0</span>
-          </button>
-        </div>
-
-        <!-- ========================================================= -->
-        <!-- DIAGNOSTIC TELEMETRY & EVENT LOGGER DRAWER                -->
-        <!-- ========================================================= -->
-        <div id="logs-drawer" class="hidden glass-panel rounded-2xl p-3 sm:p-3.5 w-full sm:w-[460px] animate-float-up border border-sky-400/25">
-          <!-- Header & Export Controls -->
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 mb-2.5 border-b border-white/10">
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
-              <span class="text-xs font-semibold text-white tracking-wide">System Telemetry & Truth Logs</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <button id="btn-copy-logs" class="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] mono text-slate-200 cursor-pointer transition-colors" title="Copy logs to clipboard">
-                Copy
-              </button>
-              <button id="btn-download-logs" class="px-2 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/30 text-[10px] mono text-sky-200 cursor-pointer transition-colors" title="Download full diagnostic report as TXT">
-                Export .TXT
-              </button>
-              <button id="btn-clear-logs" class="px-2 py-1 rounded-lg bg-white/5 hover:bg-rose-500/25 text-[10px] mono text-slate-400 hover:text-rose-200 cursor-pointer transition-colors">
-                Clear
-              </button>
-            </div>
-          </div>
-
-          <!-- Real-Time Subsystem Ground Truth Badges -->
-          <div class="grid grid-cols-3 gap-1.5 mb-2.5 text-[10px]">
-            <div class="rounded-xl bg-black/40 border border-white/10 p-2 min-w-0">
-              <div class="text-slate-400 uppercase tracking-wider text-[9px] mb-0.5">Vision Engine</div>
-              <div id="truth-vision-badge" class="mono font-semibold text-amber-300 truncate">IDLE / INIT</div>
-            </div>
-            <div class="rounded-xl bg-black/40 border border-white/10 p-2 min-w-0">
-              <div class="text-slate-400 uppercase tracking-wider text-[9px] mb-0.5">AI Coach</div>
-              <div id="truth-ai-badge" class="mono font-semibold text-slate-300 truncate">STANDBY</div>
-            </div>
-            <div class="rounded-xl bg-black/40 border border-white/10 p-2 min-w-0">
-              <div class="text-slate-400 uppercase tracking-wider text-[9px] mb-0.5">Vision FPS / Age</div>
-              <div id="truth-fps-badge" class="mono font-semibold text-teal-300 truncate">0.0 fps • --</div>
-            </div>
-          </div>
-
-          <!-- Filter Tabs -->
-          <div class="flex flex-wrap items-center gap-1 mb-2 text-[10px] mono">
-            <button data-log-filter="ALL" class="log-filter-btn px-2 py-1 rounded-lg bg-white/15 text-white font-semibold cursor-pointer">
-              All (<span id="count-log-all">0</span>)
-            </button>
-            <button data-log-filter="VISION" class="log-filter-btn px-2 py-1 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer">
-              Vision
-            </button>
-            <button data-log-filter="AI" class="log-filter-btn px-2 py-1 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer">
-              AI
-            </button>
-            <button data-log-filter="ALERT" class="log-filter-btn px-2 py-1 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer">
-              Fallbacks/Err
-            </button>
-          </div>
-
-          <!-- Scrollable Terminal Log Feed -->
-          <div id="logs-feed-container" class="bg-slate-950/85 border border-white/10 rounded-xl p-2.5 max-h-44 sm:max-h-52 overflow-y-auto space-y-1.5 mono text-[10px] leading-relaxed">
-            <!-- Populated dynamically by AuraLogger -->
-          </div>
         </div>
 
         <!-- Live Biometric Session Journey Drawer -->
-        <div id="journey-drawer" class="hidden glass-panel rounded-2xl p-3.5 w-full sm:w-80 animate-float-up">
+        <div id="journey-drawer" class="hidden glass-panel rounded-2xl p-3.5 w-72 sm:w-80 animate-float-up">
           <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-white/10">
             <span class="text-xs font-semibold text-amber-200">Biometric Session Journey</span>
             <span id="journey-net-badge" class="mono text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Net +0%</span>
@@ -389,7 +665,7 @@
         </div>
 
         <!-- Simulated Mode Controls (Visible only in Demo/Simulated Mode) -->
-        <div id="demo-controls-panel" class="hidden glass-panel rounded-2xl p-3.5 w-full sm:w-72 animate-float-up">
+        <div id="demo-controls-panel" class="hidden glass-panel rounded-2xl p-3.5 w-64 sm:w-72 animate-float-up">
           <div class="flex items-center justify-between text-xs mb-2">
             <span class="text-amber-200 font-medium">Simulated Expression</span>
             <span id="demo-slider-val" class="mono text-slate-300">38%</span>
@@ -404,32 +680,32 @@
       </div>
 
       <!-- Right: Live Biometric Scanner & Mood Elevation Progress Ring -->
-      <div class="pointer-events-auto glass-panel rounded-2xl sm:rounded-3xl p-2.5 sm:p-3.5 flex items-center gap-3 sm:gap-4 w-full md:w-auto md:ml-auto shrink-0">
+      <div class="pointer-events-auto glass-panel rounded-3xl p-3 sm:p-3.5 flex items-center gap-3 sm:gap-4 ml-auto">
 
         <!-- Webcam Feed + Biometric Landmark Canvas -->
-        <div class="relative w-20 h-20 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-slate-900/90 border border-white/15 shrink-0">
+        <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-slate-900/90 border border-white/15 shrink-0">
           <video id="webcam-video" autoplay playsinline webkit-playsinline muted class="w-full h-full object-cover"></video>
           <canvas id="mesh-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
 
           <!-- Fallback Avatar when in Demo Mode -->
-          <div id="demo-avatar-box" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-800/90 to-slate-950/95 p-1.5 text-center">
-            <div id="demo-face-emoji" class="text-2xl sm:text-3xl mb-0.5 transition-transform duration-300">😌</div>
-            <span class="mono text-[8px] sm:text-[9px] uppercase tracking-wider text-teal-300/90">Sim Sensor</span>
+          <div id="demo-avatar-box" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-800/90 to-slate-950/95 p-2 text-center">
+            <div id="demo-face-emoji" class="text-3xl mb-1 transition-transform duration-300">😌</div>
+            <span class="mono text-[9px] uppercase tracking-wider text-teal-300/90">Sim Sensor</span>
           </div>
 
           <!-- Corner Reticle Marks -->
           <div class="pointer-events-none absolute inset-1.5 border border-white/10 rounded-xl"></div>
-          <div id="face-detected-badge" class="absolute bottom-1 left-1 right-1 text-center py-0.5 rounded bg-black/60 backdrop-blur-sm text-[8px] sm:text-[9px] mono text-emerald-300 tracking-tight truncate">
+          <div id="face-detected-badge" class="absolute bottom-1.5 left-1.5 right-1.5 text-center py-0.5 rounded bg-black/60 backdrop-blur-sm text-[9px] mono text-emerald-300 tracking-tight">
             FACE LOCKED
           </div>
         </div>
 
         <!-- Mood Ring & Real-Time Metrics -->
-        <div class="flex flex-col justify-between flex-1 min-w-0 pr-0.5">
-          <div class="flex items-center gap-2.5 sm:gap-3">
+        <div class="flex flex-col justify-between pr-1">
+          <div class="flex items-center gap-3">
             <!-- Circular Progress Ring targeting 85%+ Radiant Threshold -->
-            <div class="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center shrink-0">
-              <svg class="w-14 h-14 sm:w-16 sm:h-16 -rotate-90" viewBox="0 0 64 64">
+            <div class="relative w-16 h-16 flex items-center justify-center">
+              <svg class="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
                 <circle cx="32" cy="32" r="26" stroke="rgba(255,255,255,0.1)" stroke-width="5" fill="none" />
                 <circle id="mood-progress-ring" cx="32" cy="32" r="26" stroke="url(#auraRingGrad)" stroke-width="5" stroke-linecap="round" fill="none" stroke-dasharray="163.36" stroke-dashoffset="110" style="transition: stroke-dashoffset 0.45s ease-out;" />
                 <defs>
@@ -441,14 +717,14 @@
                 </defs>
               </svg>
               <div class="absolute inset-0 flex flex-col items-center justify-center">
-                <span id="mood-score-text" class="mono text-xs sm:text-base font-bold text-white leading-none">42%</span>
-                <span class="text-[7px] sm:text-[8px] uppercase tracking-wider text-slate-400 mt-0.5">Mood</span>
+                <span id="mood-score-text" class="mono text-sm sm:text-base font-bold text-white leading-none">42%</span>
+                <span class="text-[8px] uppercase tracking-wider text-slate-400 mt-0.5">Mood</span>
               </div>
             </div>
 
-            <div class="min-w-0">
-              <div class="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-400 font-medium truncate">60fps Biometric State</div>
-              <div id="mood-state-label" class="text-xs sm:text-base font-semibold text-teal-200 leading-tight truncate">Neutral / Calm</div>
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-slate-400 font-medium">60fps Biometric State</div>
+              <div id="mood-state-label" class="text-sm sm:text-base font-semibold text-teal-200 leading-tight">Neutral / Calm</div>
               <div class="flex items-center gap-1.5 mt-1">
                 <span class="text-[10px] text-slate-400">Target: <strong class="text-amber-300">85%</strong></span>
                 <span id="mood-delta-badge" class="hidden mono text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">+0%</span>
@@ -457,7 +733,7 @@
           </div>
 
           <!-- Micro Expression Bars -->
-          <div class="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-white/10">
+          <div class="grid grid-cols-3 gap-2 mt-2.5 pt-2 border-t border-white/10">
             <div>
               <div class="flex justify-between text-[9px] text-slate-400 mb-0.5">
                 <span>Smile</span>
@@ -493,12 +769,12 @@
     <!-- ========================================================= -->
     <!-- BOTTOM CONVERSATIONAL GEMINI AI MOOD-ELEVATION CARD       -->
     <!-- ========================================================= -->
-    <div class="w-full max-w-2xl mx-auto pointer-events-auto mt-auto pb-1">
-      <div id="dialogue-card" class="glass-panel rounded-3xl p-3.5 sm:p-6 transition-all duration-500">
+    <div class="w-full max-w-2xl mx-auto pointer-events-auto">
+      <div id="dialogue-card" class="glass-panel rounded-3xl p-4 sm:p-6 transition-all duration-500">
 
         <!-- Step Header, Baseline Snapshot & Live Delta Indicator -->
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5 sm:mb-3">
-          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div class="flex items-center gap-2">
             <span id="step-pill" class="mono text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/10 text-amber-200 border border-white/10">
               Calibration
             </span>
@@ -517,14 +793,14 @@
         </div>
 
         <!-- Personalized AI Reflection Callout (Appears after user speaks/types) -->
-        <div id="ai-empathy-box" class="hidden mb-2.5 sm:mb-3 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-2xl bg-gradient-to-r from-amber-400/12 via-teal-400/10 to-transparent border border-amber-300/25 text-xs sm:text-sm text-amber-100/95 leading-relaxed">
+        <div id="ai-empathy-box" class="hidden mb-3 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400/12 via-teal-400/10 to-transparent border border-amber-300/25 text-xs sm:text-sm text-amber-100/95 leading-relaxed">
           <span class="font-semibold text-amber-300 mr-1">AURA:</span>
           <span id="ai-empathy-text"></span>
         </div>
 
         <!-- AI Loading Indicator -->
-        <div id="ai-thinking-indicator" class="hidden items-center gap-2.5 py-3.5 text-xs sm:text-sm text-amber-200">
-          <div class="flex items-center gap-1 shrink-0">
+        <div id="ai-thinking-indicator" class="hidden items-center gap-2.5 py-4 text-xs sm:text-sm text-amber-200">
+          <div class="flex items-center gap-1">
             <span class="ai-dot w-2 h-2 rounded-full bg-amber-300"></span>
             <span class="ai-dot w-2 h-2 rounded-full bg-teal-300"></span>
             <span class="ai-dot w-2 h-2 rounded-full bg-rose-300"></span>
@@ -534,28 +810,28 @@
 
         <!-- Adaptive Question Display -->
         <div id="question-content-wrapper">
-          <h2 id="question-text" class="text-base sm:text-xl md:text-2xl font-medium text-white leading-snug mb-1.5">
+          <h2 id="question-text" class="text-lg sm:text-xl md:text-2xl font-medium text-white leading-snug mb-1.5">
             Take a gentle breath and look at the light. Let’s sense your baseline mood...
           </h2>
 
-          <p id="question-subtext" class="text-xs sm:text-sm text-slate-300/80 mb-3">
+          <p id="question-subtext" class="text-xs sm:text-sm text-slate-300/80 mb-3.5">
             Relax your shoulders. AURA is calibrating to your natural facial expression right now.
           </p>
 
           <!-- Quick Reflection Chips -->
-          <div id="quick-replies-container" class="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
+          <div id="quick-replies-container" class="flex flex-wrap gap-2 mb-3.5">
             <!-- Populated dynamically per question -->
           </div>
         </div>
 
         <!-- Voice Input + Text Response Form -->
-        <form id="reflection-form" class="flex items-center gap-1.5 sm:gap-2 w-full">
+        <form id="reflection-form" class="flex items-center gap-2">
           <!-- Microphone Voice Input Button (Web Speech API) -->
           <button
             type="button"
             id="btn-voice-input"
             title="Speak your answer out loud"
-            class="p-2.5 sm:p-3 rounded-2xl glass-pill text-slate-200 hover:text-amber-200 cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
+            class="p-3 rounded-2xl glass-pill text-slate-200 hover:text-amber-200 cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
           >
             <svg id="mic-icon" class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
@@ -567,27 +843,27 @@
           <input
             id="reflection-input"
             type="text"
-            placeholder="Speak, type, or smile..."
+            placeholder="Speak or type your thought, or simply smile..."
             autocomplete="off"
-            class="flex-1 min-w-0 bg-white/[0.06] border border-white/12 focus:border-amber-300/60 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white placeholder-slate-400 outline-none transition-colors"
+            class="flex-1 bg-white/[0.06] border border-white/12 focus:border-amber-300/60 rounded-2xl px-4 py-3 text-xs sm:text-sm text-white placeholder-slate-400 outline-none transition-colors"
           />
 
           <button
             type="submit"
             id="btn-submit-reflection"
-            class="px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-semibold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-200 to-amber-300 hover:from-amber-100 hover:to-amber-200 shadow-[0_0_20px_rgba(251,191,36,0.25)] transition-all cursor-pointer shrink-0 flex items-center gap-1"
+            class="px-5 py-3 rounded-2xl font-semibold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-amber-200 to-amber-300 hover:from-amber-100 hover:to-amber-200 shadow-[0_0_20px_rgba(251,191,36,0.25)] transition-all cursor-pointer shrink-0 flex items-center gap-1.5"
           >
-            <span id="submit-btn-label" class="whitespace-nowrap">Lock & Begin</span>
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <span id="submit-btn-label">Lock Baseline & Begin</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </button>
         </form>
 
         <!-- Live Facial Elevation Feedback Bar -->
-        <div id="feedback-banner" class="hidden mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 text-xs">
+        <div id="feedback-banner" class="hidden mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs">
           <span id="feedback-message" class="text-amber-200 font-medium">✨ Beautiful shift detected!</span>
-          <span id="feedback-delta" class="mono font-semibold text-emerald-300 shrink-0">+12% Mood Lift</span>
+          <span id="feedback-delta" class="mono font-semibold text-emerald-300">+12% Mood Lift</span>
         </div>
 
       </div>
@@ -597,42 +873,42 @@
   <!-- ========================================================= -->
   <!-- TARGET ACHIEVED: MOOD ELEVATED SUMMARY MODAL              -->
   <!-- ========================================================= -->
-  <div id="summary-modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 bg-slate-950/75 backdrop-blur-xl">
-    <div class="glass-panel max-w-lg w-full my-auto rounded-3xl p-5 sm:p-8 text-center relative overflow-hidden animate-float-up">
+  <div id="summary-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-xl">
+    <div class="glass-panel max-w-lg w-full rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden animate-float-up">
       <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-300 via-amber-300 to-rose-400"></div>
 
-      <div class="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-2xl bg-gradient-to-br from-amber-300/25 to-rose-400/25 border border-amber-300/40 flex items-center justify-center text-2xl sm:text-3xl shadow-[0_0_30px_rgba(251,191,36,0.3)]">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-300/25 to-rose-400/25 border border-amber-300/40 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(251,191,36,0.3)]">
         ✨
       </div>
 
       <div class="mono text-[11px] uppercase tracking-widest text-amber-300 mb-1">Target Resonance Reached</div>
       <h2 class="text-2xl sm:text-3xl font-semibold text-white mb-2">Your Aura is Radiant</h2>
-      <p class="text-xs sm:text-sm text-slate-300 mb-5 sm:mb-6">
+      <p class="text-sm text-slate-300 mb-6">
         Your facial micro-expressions and reflections elevated your emotional resonance into golden harmony.
       </p>
 
       <!-- Before vs After Comparison -->
-      <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-5 sm:mb-6">
-        <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
-          <div class="text-[10px] sm:text-[11px] text-slate-400 mb-1">Starting Mood</div>
-          <div id="summary-start-score" class="mono text-lg sm:text-xl font-bold text-slate-200">38%</div>
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5">
+          <div class="text-[11px] text-slate-400 mb-1">Starting Mood</div>
+          <div id="summary-start-score" class="mono text-xl font-bold text-slate-200">38%</div>
         </div>
-        <div class="rounded-2xl bg-amber-400/10 border border-amber-300/30 p-3">
-          <div class="text-[10px] sm:text-[11px] text-amber-200 mb-1">Net Elevation</div>
-          <div id="summary-delta-score" class="mono text-lg sm:text-xl font-bold text-emerald-300">+49%</div>
+        <div class="rounded-2xl bg-amber-400/10 border border-amber-300/30 p-3.5">
+          <div class="text-[11px] text-amber-200 mb-1">Net Elevation</div>
+          <div id="summary-delta-score" class="mono text-xl font-bold text-emerald-300">+49%</div>
         </div>
-        <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
-          <div class="text-[10px] sm:text-[11px] text-slate-400 mb-1">Peak Resonance</div>
-          <div id="summary-peak-score" class="mono text-lg sm:text-xl font-bold text-amber-300">87%</div>
+        <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5">
+          <div class="text-[11px] text-slate-400 mb-1">Peak Resonance</div>
+          <div id="summary-peak-score" class="mono text-xl font-bold text-amber-300">87%</div>
         </div>
       </div>
 
       <!-- Journey Highlights -->
-      <div id="summary-highlights" class="text-left rounded-2xl bg-white/[0.04] border border-white/10 p-3.5 mb-5 sm:mb-6 space-y-2 max-h-36 overflow-y-auto text-xs text-slate-300">
+      <div id="summary-highlights" class="text-left rounded-2xl bg-white/[0.04] border border-white/10 p-4 mb-6 space-y-2 max-h-40 overflow-y-auto text-xs text-slate-300">
         <!-- Populated dynamically -->
       </div>
 
-      <div class="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
+      <div class="flex flex-col sm:flex-row gap-3">
         <button id="btn-continue-basking" class="flex-1 py-3 px-5 rounded-2xl font-medium text-sm text-slate-200 glass-pill cursor-pointer">
           Continue AI Session
         </button>
@@ -644,7 +920,7 @@
   </div>
 
   <!-- Toast Message Box -->
-  <div id="toast-box" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 glass-panel px-4 py-2 rounded-full text-xs font-medium text-amber-200 border border-amber-300/30 max-w-[90vw] text-center">
+  <div id="toast-box" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 glass-panel px-4 py-2.5 rounded-full text-xs font-medium text-amber-200 border border-amber-300/30">
     Notification
   </div>
 
@@ -652,220 +928,40 @@
   <!-- MAIN APPLICATION SCRIPT (4K WEBGL + MEDIAPIPE + GEMINI)   -->
   <!-- ========================================================= -->
   <script type="module">
-    /**
-     * ============================================================================
-     * 0. DIAGNOSTIC TELEMETRY & REAL-VS-FALLBACK EVENT LOGGER
-     * ============================================================================
-     */
-    const AuraLogger = {
-      entries: [],
-      maxEntries: 250,
-      filter: "ALL",
-      alertCount: 0,
-      visionTruth: "IDLE / INIT",
-      aiTruth: "STANDBY",
-      inferenceFps: 0,
-      lastInferenceTime: 0,
-      framesInWindow: 0,
-      fpsWindowStart: performance.now(),
-      lastTelemetryLogTime: 0,
-
-      formatTimestamp(date = new Date()) {
-        const hh = String(date.getHours()).padStart(2, "0");
-        const mm = String(date.getMinutes()).padStart(2, "0");
-        const ss = String(date.getSeconds()).padStart(2, "0");
-        const ms = String(date.getMilliseconds()).padStart(3, "0");
-        return `${hh}:${mm}:${ss}.${ms}`;
-      },
-
-      log(category, level, message, details = null) {
-        const entry = {
-          id: this.entries.length + 1,
-          ts: this.formatTimestamp(),
-          iso: new Date().toISOString(),
-          category,
-          level,
-          message,
-          details
-        };
-
-        this.entries.push(entry);
-        if (this.entries.length > this.maxEntries) {
-          this.entries.shift();
-        }
-
-        if (level === "FALLBACK" || level === "WARN" || level === "ERROR") {
-          this.alertCount += 1;
-          const badge = document.getElementById("logs-alert-badge");
-          if (badge) {
-            badge.textContent = this.alertCount;
-            badge.classList.remove("hidden");
-          }
-        }
-
-        const countAllEl = document.getElementById("count-log-all");
-        if (countAllEl) countAllEl.textContent = this.entries.length;
-
-        this.renderEntry(entry);
-      },
-
-      setVisionTruth(statusText, tone = "warn") {
-        this.visionTruth = statusText;
-        const el = document.getElementById("truth-vision-badge");
-        if (!el) return;
-        el.textContent = statusText;
-        const colors = {
-          real: "mono font-semibold text-emerald-300 truncate",
-          fallback: "mono font-semibold text-amber-300 truncate",
-          fake: "mono font-semibold text-sky-300 truncate",
-          error: "mono font-semibold text-rose-300 truncate",
-          warn: "mono font-semibold text-slate-300 truncate"
-        };
-        el.className = colors[tone] || colors.warn;
-      },
-
-      setAITruth(statusText, tone = "warn") {
-        this.aiTruth = statusText;
-        const el = document.getElementById("truth-ai-badge");
-        if (!el) return;
-        el.textContent = statusText;
-        const colors = {
-          real: "mono font-semibold text-emerald-300 truncate",
-          fallback: "mono font-semibold text-amber-300 truncate",
-          error: "mono font-semibold text-rose-300 truncate",
-          warn: "mono font-semibold text-slate-300 truncate"
-        };
-        el.className = colors[tone] || colors.warn;
-      },
-
-      recordInferenceTick() {
-        const now = performance.now();
-        this.lastInferenceTime = now;
-        this.framesInWindow += 1;
-        if (now - this.fpsWindowStart >= 1000) {
-          this.inferenceFps = (this.framesInWindow * 1000) / (now - this.fpsWindowStart);
-          this.framesInWindow = 0;
-          this.fpsWindowStart = now;
-        }
-      },
-
-      updateLiveTelemetryBanner() {
-        const fpsEl = document.getElementById("truth-fps-badge");
-        if (!fpsEl) return;
-        if (this.lastInferenceTime === 0) {
-          fpsEl.textContent = "0.0 fps • No frames";
-          return;
-        }
-        const ageSec = ((performance.now() - this.lastInferenceTime) / 1000).toFixed(1);
-        fpsEl.textContent = `${this.inferenceFps.toFixed(1)} fps • ${ageSec}s ago`;
-      },
-
-      matchesFilter(entry) {
-        if (this.filter === "ALL") return true;
-        if (this.filter === "ALERT") {
-          return entry.level === "FALLBACK" || entry.level === "WARN" || entry.level === "ERROR";
-        }
-        return entry.category === this.filter;
-      },
-
-      renderEntry(entry) {
-        const container = document.getElementById("logs-feed-container");
-        if (!container || !this.matchesFilter(entry)) return;
-
-        const levelStyles = {
-          REAL: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
-          FALLBACK: "bg-amber-500/20 text-amber-300 border-amber-400/30",
-          WARN: "bg-orange-500/20 text-orange-300 border-orange-400/30",
-          ERROR: "bg-rose-500/25 text-rose-300 border-rose-400/40",
-          INFO: "bg-sky-500/15 text-sky-300 border-sky-400/25"
-        };
-
-        const row = document.createElement("div");
-        row.className = "border-b border-white/[0.06] pb-1.5 last:border-none";
-
-        const detailStr =
-          entry.details !== null && entry.details !== undefined
-            ? `<div class="text-slate-400 text-[9px] mt-0.5 break-all">${
-                typeof entry.details === "string" ? entry.details : JSON.stringify(entry.details)
-              }</div>`
-            : "";
-
-        row.innerHTML = `
-          <div class="flex items-start gap-1.5">
-            <span class="text-slate-500 shrink-0">${entry.ts}</span>
-            <span class="px-1 rounded border text-[9px] shrink-0 ${levelStyles[entry.level] || levelStyles.INFO}">${entry.level}</span>
-            <span class="text-slate-400 shrink-0">[${entry.category}]</span>
-            <span class="text-slate-100 break-words">${entry.message}</span>
-          </div>
-          ${detailStr}
-        `;
-
-        container.appendChild(row);
-        container.scrollTop = container.scrollHeight;
-      },
-
-      rerenderAll() {
-        const container = document.getElementById("logs-feed-container");
-        if (!container) return;
-        container.innerHTML = "";
-        this.entries.forEach((e) => this.renderEntry(e));
-      },
-
-      exportAsText() {
-        const header = [
-          "=================================================================",
-          "AURA 4K BIOMETRIC MOOD ENGINE — DIAGNOSTIC TELEMETRY REPORT",
-          `Exported At: ${new Date().toISOString()}`,
-          `Vision Ground Truth: ${this.visionTruth}`,
-          `AI Coach Ground Truth: ${this.aiTruth}`,
-          `Measured Vision FPS: ${this.inferenceFps.toFixed(1)} fps`,
-          "=================================================================",
-          ""
-        ].join("\n");
-
-        const body = this.entries
-          .map((e) => {
-            const det = e.details ? ` | ${typeof e.details === "string" ? e.details : JSON.stringify(e.details)}` : "";
-            return `[${e.ts}] [${e.level}] [${e.category}] ${e.message}${det}`;
-          })
-          .join("\n");
-
-        return header + body;
-      },
-
-      clear() {
-        this.entries = [];
-        this.alertCount = 0;
-        const badge = document.getElementById("logs-alert-badge");
-        if (badge) {
-          badge.textContent = "0";
-          badge.classList.add("hidden");
-        }
-        const countAllEl = document.getElementById("count-log-all");
-        if (countAllEl) countAllEl.textContent = "0";
-        this.rerenderAll();
-        this.log("SYSTEM", "INFO", "Diagnostic log buffer cleared by user.");
-      }
-    };
-
-    const isMobileDevice =
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-      window.innerWidth < 768;
-
-    AuraLogger.log("SYSTEM", "INFO", `AURA 4K HUD booted (${isMobileDevice ? "Mobile/Touch" : "Desktop"} profile). Indicators ready.`);
-
     // Attempt dynamic import of MediaPipe Tasks Vision for real-time facial blendshapes
     let FaceLandmarker = null;
     let FilesetResolver = null;
     try {
-      AuraLogger.log("VISION", "INFO", "Loading @mediapipe/tasks-vision@0.10.14 ESM bundle from jsDelivr CDN...");
       const mp = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm");
       FaceLandmarker = mp.FaceLandmarker;
       FilesetResolver = mp.FilesetResolver;
-      AuraLogger.log("VISION", "REAL", "MediaPipe Tasks Vision ESM library loaded successfully.");
     } catch (err) {
-      AuraLogger.log("VISION", "FALLBACK", "MediaPipe CDN ESM import failed; will use Optical Pixel-Motion fallback when camera starts.", err.message || String(err));
-      AuraLogger.setVisionTruth("CDN FAILED", "error");
+      console.warn("MediaPipe CDN unavailable, will use graceful fallback if needed:", err);
+    }
+
+    // Keep the visible application area accurate on mobile browsers when browser
+    // chrome, orientation, or the on-screen keyboard changes the visual viewport.
+    function updateAuraViewport() {
+      const visualViewport = window.visualViewport;
+      const visibleHeight = visualViewport ? visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty(
+        "--aura-viewport-height",
+        `${Math.round(visibleHeight)}px`
+      );
+
+      const keyboardIsOpen = !!visualViewport &&
+        (window.innerHeight - visualViewport.height) > 140;
+      document.body.classList.toggle("keyboard-open", keyboardIsOpen);
+    }
+
+    updateAuraViewport();
+    window.addEventListener("resize", updateAuraViewport, { passive: true });
+    window.addEventListener("orientationchange", () => {
+      requestAnimationFrame(updateAuraViewport);
+    }, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", updateAuraViewport, { passive: true });
+      window.visualViewport.addEventListener("scroll", updateAuraViewport, { passive: true });
     }
 
     /**
@@ -873,8 +969,8 @@
      * 1. APPLICATION STATE & SPRING PHYSICS ENGINE
      * ============================================================================
      */
-    const TARGET_MOOD_THRESHOLD = 85;
-    const AUTO_LIFT_TRIGGER_DELTA = 12;
+    const TARGET_MOOD_THRESHOLD = 85; // 85% = Radiant / Elevated Target
+    const AUTO_LIFT_TRIGGER_DELTA = 12; // +12% facial smile lift auto-celebrates
 
     const state = {
       isRunning: false,
@@ -899,16 +995,16 @@
       baselineMood: null,
       preQuestionMood: 42,
       peakMood: 42,
-      stepIndex: 0,
+      stepIndex: 0, // 0 = Calibration, 1..N = AI Prompts
       completedTarget: false,
       reflectionsLog: [],
-      conversationHistory: [],
+      conversationHistory: [], // Stores { role, question, userReply, moodBefore, moodAfter }
       burstIntensity: 0,
       lastPromptTime: 0,
       autoLiftCooldown: false
     };
 
-    // Offline / Fallback Question Bank (if Gemini API network is unreachable or key missing)
+    // Offline / Fallback Question Bank (if Gemini API network is unreachable)
     const FALLBACK_QUESTION_BANK = {
       low: [
         {
@@ -972,26 +1068,10 @@
       const apiKey = document.getElementById("gemini-api-key").value.trim();
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
-      if (!apiKey) {
-        AuraLogger.log("AI", "FALLBACK", "No Gemini API key provided. Bypassing API and using FALLBACK_QUESTION_BANK.");
-        AuraLogger.setAITruth("FALLBACK (No Key)", "fallback");
-        document.getElementById("ai-engine-badge").textContent = "Adaptive Engine Active (Offline)";
-        return selectLocalFallbackQuestion(userReplyText, moodDelta);
-      }
-
       const moodScore = Math.round(state.currentMood);
       const smilePct = Math.round(state.rawSmile * 100);
       const serenityPct = Math.round(state.rawSerenity * 100);
       const energyPct = Math.round(state.rawEnergy * 100);
-
-      AuraLogger.log("AI", "INFO", "Sending coaching prompt to Gemini API (gemini-3-flash-preview)...", {
-        moodScore,
-        smilePct,
-        serenityPct,
-        energyPct,
-        moodDelta,
-        visionSource: AuraLogger.visionTruth
-      });
 
       const recentContext = state.conversationHistory
         .slice(-3)
@@ -1055,9 +1135,9 @@ Generate the next coaching step as JSON.`;
         }
       };
 
+      // Exponential backoff retry (1s, 2s, 4s)
       const delays = [1000, 2000, 4000];
       for (let attempt = 0; attempt <= delays.length; attempt++) {
-        const reqStart = performance.now();
         try {
           const response = await fetch(apiUrl, {
             method: "POST",
@@ -1065,25 +1145,16 @@ Generate the next coaching step as JSON.`;
             body: JSON.stringify(payload)
           });
 
-          const latencyMs = Math.round(performance.now() - reqStart);
-
           if (!response.ok) {
-            const errBody = await response.text().catch(() => "");
-            throw new Error(`HTTP ${response.status} (${latencyMs}ms): ${errBody.slice(0, 120)}`);
+            throw new Error(`HTTP ${response.status}`);
           }
 
           const result = await response.json();
           const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (!rawText) throw new Error("Empty Gemini response payload");
+          if (!rawText) throw new Error("Empty Gemini response");
 
           const parsed = JSON.parse(rawText);
           document.getElementById("ai-engine-badge").textContent = "Gemini AI Live";
-          AuraLogger.setAITruth("REAL (Gemini API)", "real");
-          AuraLogger.log("AI", "REAL", `Gemini API responded in ${latencyMs}ms with personalized coaching turn.`, {
-            tag: parsed.tag,
-            question: parsed.question
-          });
-
           return {
             tag: parsed.tag || "AI Reflection",
             empathy: parsed.empathyResponse || "",
@@ -1093,11 +1164,9 @@ Generate the next coaching step as JSON.`;
           };
         } catch (err) {
           if (attempt < delays.length) {
-            AuraLogger.log("AI", "WARN", `Gemini API attempt ${attempt + 1} failed (${err.message}). Retrying in ${delays[attempt]}ms...`);
             await new Promise((res) => setTimeout(res, delays[attempt]));
           } else {
-            AuraLogger.log("AI", "FALLBACK", `All Gemini API attempts failed. Switching to offline FALLBACK_QUESTION_BANK.`, err.message);
-            AuraLogger.setAITruth("FALLBACK (Offline)", "fallback");
+            // Graceful fallback to intelligent local adaptive engine
             document.getElementById("ai-engine-badge").textContent = "Adaptive Engine Active";
             return selectLocalFallbackQuestion(userReplyText, moodDelta);
           }
@@ -1146,7 +1215,6 @@ Generate the next coaching step as JSON.`;
 
       recognition.onstart = () => {
         state.isListeningVoice = true;
-        AuraLogger.log("SYSTEM", "REAL", "Web Speech API microphone listening started.");
         const btn = document.getElementById("btn-voice-input");
         btn.classList.add("mic-recording");
         document.getElementById("mic-label").textContent = "Listening...";
@@ -1161,7 +1229,6 @@ Generate the next coaching step as JSON.`;
         document.getElementById("reflection-input").value = transcript;
 
         if (event.results[event.results.length - 1].isFinal && transcript.trim().length > 0) {
-          AuraLogger.log("SYSTEM", "REAL", `Final speech transcript captured: "${transcript.trim()}"`);
           setTimeout(() => {
             if (!state.isGeneratingAI) {
               handleReflectionSubmit(transcript.trim());
@@ -1171,7 +1238,6 @@ Generate the next coaching step as JSON.`;
       };
 
       recognition.onerror = (e) => {
-        AuraLogger.log("SYSTEM", "WARN", `Web Speech API error: ${e.error}`);
         stopVoiceListening();
         if (e.error !== "no-speech" && e.error !== "aborted") {
           showToast("Voice input unavailable — you can type or click a prompt chip");
@@ -1188,12 +1254,11 @@ Generate the next coaching step as JSON.`;
       const btn = document.getElementById("btn-voice-input");
       btn.classList.remove("mic-recording");
       document.getElementById("mic-label").textContent = "Speak";
-      document.getElementById("reflection-input").placeholder = "Speak, type, or smile...";
+      document.getElementById("reflection-input").placeholder = "Speak or type your thought, or simply smile...";
     }
 
     document.getElementById("btn-voice-input").addEventListener("click", () => {
       if (!recognition) {
-        AuraLogger.log("SYSTEM", "FALLBACK", "Web Speech API not supported in this browser.");
         showToast("Speech recognition not supported in this browser — type or tap a chip");
         return;
       }
@@ -1203,7 +1268,7 @@ Generate the next coaching step as JSON.`;
         try {
           recognition.start();
         } catch (err) {
-          AuraLogger.log("SYSTEM", "ERROR", "Failed to start Web Speech API", err.message);
+          console.warn("Speech start error:", err);
         }
       }
     });
@@ -1238,6 +1303,7 @@ Generate the next coaching step as JSON.`;
         this.filter.connect(this.masterGain);
         this.masterGain.connect(this.ctx.destination);
 
+        // Warm Lydian / Major 9th harmonic pad frequencies (Hz)
         const baseFreqs = [130.81, 196.00, 246.94, 293.66, 329.63];
         baseFreqs.forEach((freq, idx) => {
           const osc = this.ctx.createOscillator();
@@ -1254,7 +1320,6 @@ Generate the next coaching step as JSON.`;
         });
 
         this.isInitialized = true;
-        AuraLogger.log("AUDIO", "REAL", `Web Audio API 5-oscillator harmonic synthesizer initialized (${this.ctx.sampleRate}Hz).`);
       }
 
       setEnabled(enabled) {
@@ -1267,7 +1332,6 @@ Generate the next coaching step as JSON.`;
         }
         const targetGain = enabled ? 0.25 : 0.0001;
         this.masterGain.gain.setTargetAtTime(targetGain, this.ctx.currentTime, 0.4);
-        AuraLogger.log("AUDIO", "INFO", `Generative soundscape ${enabled ? "enabled" : "muted"} (AudioContext state: ${this.ctx.state}).`);
       }
 
       updateMoodModulation(moodNormalized) {
@@ -1313,26 +1377,22 @@ Generate the next coaching step as JSON.`;
     const canvas = document.getElementById("webgl-canvas");
     const renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: !isMobileDevice,
+      antialias: true,
       powerPreference: "high-performance",
       alpha: false
     });
 
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, isMobileDevice ? 2.0 : 2.5);
+    const isCoarsePointerDevice = window.matchMedia("(pointer: coarse)").matches;
+    const isNarrowViewport = window.matchMedia("(max-width: 768px)").matches;
+    const isMobileRenderer = isCoarsePointerDevice || isNarrowViewport;
+    // Mobile GPUs often have limited render-target memory. A 1x pixel ratio
+    // keeps the full-screen scene smooth without changing the desktop quality.
+    const pixelRatioCap = isMobileRenderer ? 1 : 2.5;
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, pixelRatioCap);
     renderer.setPixelRatio(pixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
-
-    canvas.addEventListener("webglcontextlost", (e) => {
-      e.preventDefault();
-      AuraLogger.log("SYSTEM", "WARN", "WebGL context lost on GPU — awaiting automatic restoration.");
-    }, false);
-
-    canvas.addEventListener("webglcontextrestored", () => {
-      AuraLogger.log("SYSTEM", "REAL", "WebGL context restored successfully.");
-      handleResize();
-    }, false);
+    renderer.toneMappingExposure = 1.18;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x04060c);
@@ -1341,21 +1401,18 @@ Generate the next coaching step as JSON.`;
     const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 0.15, 5.4);
 
-    const renderTarget = new THREE.WebGLRenderTarget(
-      Math.max(1, Math.floor(window.innerWidth * pixelRatio)),
-      Math.max(1, Math.floor(window.innerHeight * pixelRatio)),
-      { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat }
-    );
-
-    const composer = new THREE.EffectComposer(renderer, renderTarget);
+    // Let EffectComposer allocate and resize its own targets using the renderer's
+    // pixel ratio. Passing a pre-scaled target here caused oversized mobile
+    // framebuffers on some Android GPUs.
+    const composer = new THREE.EffectComposer(renderer);
     const renderPass = new THREE.RenderPass(scene, camera);
     composer.addPass(renderPass);
 
     const bloomPass = new THREE.UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      isMobileDevice ? 0.55 : 0.78,
-      0.58,
-      0.32
+      isMobileRenderer ? 0.48 : 0.85,
+      isMobileRenderer ? 0.35 : 0.65,
+      0.22
     );
     composer.addPass(bloomPass);
 
@@ -1366,8 +1423,6 @@ Generate the next coaching step as JSON.`;
         uTime: { value: 0 }
       },
       vertexShader: `
-        precision highp float;
-        precision highp int;
         varying vec2 vUv;
         void main() {
           vUv = uv;
@@ -1375,8 +1430,6 @@ Generate the next coaching step as JSON.`;
         }
       `,
       fragmentShader: `
-        precision highp float;
-        precision highp int;
         uniform sampler2D tDiffuse;
         uniform float uAberration;
         uniform float uTime;
@@ -1395,7 +1448,7 @@ Generate the next coaching step as JSON.`;
           float g = texture2D(tDiffuse, vUv).g;
           float b = texture2D(tDiffuse, vUv - offset).b;
 
-          vec3 col = clamp(vec3(r, g, b), 0.0, 2.5);
+          vec3 col = vec3(r, g, b);
           float grain = (hash(vUv * 1200.0 + fract(uTime)) - 0.5) * 0.014;
           col += grain;
 
@@ -1422,9 +1475,6 @@ Generate the next coaching step as JSON.`;
     };
 
     const orbVertexShader = `
-      precision highp float;
-      precision highp int;
-
       uniform float uTime;
       uniform float uMood;
       uniform float uSmile;
@@ -1533,9 +1583,6 @@ Generate the next coaching step as JSON.`;
     `;
 
     const orbFragmentShader = `
-      precision highp float;
-      precision highp int;
-
       uniform float uTime;
       uniform float uMood;
       uniform float uSmile;
@@ -1555,7 +1602,7 @@ Generate the next coaching step as JSON.`;
       vec3 thinFilmIridescence(float cosTheta, float filmThickness) {
         vec3 phase = vec3(0.0, 0.33, 0.67);
         vec3 interference = 0.5 + 0.5 * cos(6.28318 * (cosTheta * filmThickness + phase));
-        return clamp(interference, 0.0, 1.0);
+        return interference;
       }
 
       void main() {
@@ -1563,7 +1610,7 @@ Generate the next coaching step as JSON.`;
         vec3 V = normalize(vViewDir);
         float NdotV = clamp(dot(N, V), 0.0, 1.0);
 
-        float fresnel = pow(clamp(1.0 - NdotV, 0.0001, 1.0), 3.2);
+        float fresnel = pow(1.0 - NdotV, 3.2);
 
         float lowToMid = smoothstep(0.0, 0.55, uMood);
         float midToHigh = smoothstep(0.45, 1.0, uMood);
@@ -1587,25 +1634,24 @@ Generate the next coaching step as JSON.`;
         vec3 H1 = normalize(keyLightDir + V);
         vec3 H2 = normalize(fillLightDir + V);
 
-        float specKey = clamp(pow(clamp(dot(N, H1), 0.0, 1.0), 72.0), 0.0, 1.5);
-        float specFill = clamp(pow(clamp(dot(N, H2), 0.0, 1.0), 36.0), 0.0, 1.2);
-        float rimGlow = clamp(pow(clamp(dot(N, rimLightDir) * 0.5 + 0.5, 0.0, 1.0), 2.5) * fresnel, 0.0, 1.5);
+        float specKey = pow(max(dot(N, H1), 0.0), 96.0);
+        float specFill = pow(max(dot(N, H2), 0.0), 42.0);
+        float rimGlow = pow(max(dot(N, rimLightDir) * 0.5 + 0.5, 0.0), 2.5) * fresnel;
 
         float coreGlow = smoothstep(0.2, 1.0, NdotV) * (0.25 + uMood * 0.65 + uBurst * 0.4);
         vec3 innerRadiance = mix(vec3(0.15, 0.35, 0.85), vec3(1.0, 0.82, 0.42), midToHigh) * coreGlow;
 
         vec3 finalColor = bodyColor * 0.72
                         + innerRadiance
-                        + vec3(1.0, 0.97, 0.92) * specKey * 1.15
-                        + baseB * specFill * 0.58
-                        + mix(baseB, vec3(1.0, 0.88, 0.6), midToHigh) * rimGlow * (1.0 + uBurst * 0.6);
+                        + vec3(1.0, 0.97, 0.92) * specKey * 1.35
+                        + baseB * specFill * 0.65
+                        + mix(baseB, vec3(1.0, 0.88, 0.6), midToHigh) * rimGlow * (1.1 + uBurst);
 
-        finalColor = clamp(finalColor, 0.0, 2.5);
         gl_FragColor = vec4(finalColor, 1.0);
       }
     `;
 
-    const orbGeometry = new THREE.IcosahedronGeometry(1.38, isMobileDevice ? 40 : 64);
+    const orbGeometry = new THREE.IcosahedronGeometry(1.38, 64);
     const orbMaterial = new THREE.ShaderMaterial({
       uniforms: orbUniforms,
       vertexShader: orbVertexShader,
@@ -1616,7 +1662,7 @@ Generate the next coaching step as JSON.`;
     auraOrb.position.set(0, 0.22, 0);
     scene.add(auraOrb);
 
-    const ringGeo = new THREE.TorusGeometry(2.05, 0.008, 16, isMobileDevice ? 140 : 220);
+    const ringGeo = new THREE.TorusGeometry(2.05, 0.008, 16, 220);
     const ringMat = new THREE.MeshBasicMaterial({
       color: 0x5eead4,
       transparent: true,
@@ -1628,7 +1674,7 @@ Generate the next coaching step as JSON.`;
     haloRing.rotation.y = Math.PI * 0.12;
     scene.add(haloRing);
 
-    const particleCount = isMobileDevice ? 1200 : 2000;
+    const particleCount = isMobileRenderer ? 650 : 2000;
     const pPositions = new Float32Array(particleCount * 3);
     const pScales = new Float32Array(particleCount);
     const pPhases = new Float32Array(particleCount);
@@ -1664,8 +1710,6 @@ Generate the next coaching step as JSON.`;
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       vertexShader: `
-        precision highp float;
-        precision highp int;
         attribute float aScale;
         attribute float aPhase;
         uniform float uTime;
@@ -1685,7 +1729,7 @@ Generate the next coaching step as JSON.`;
           pos.z += sin(angle) * radiusOffset;
 
           vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-          gl_PointSize = clamp((aScale * (14.0 + uBurst * 10.0) * uPixelRatio) / max(-mvPosition.z, 0.1), 1.0, 48.0);
+          gl_PointSize = (aScale * (14.0 + uBurst * 10.0) * uPixelRatio) / -mvPosition.z;
           gl_Position = projectionMatrix * mvPosition;
 
           vAlpha = (0.28 + 0.45 * sin(uTime * 1.8 + aPhase)) * (0.6 + uMood * 0.4);
@@ -1693,8 +1737,6 @@ Generate the next coaching step as JSON.`;
         }
       `,
       fragmentShader: `
-        precision highp float;
-        precision highp int;
         uniform float uMood;
         varying float vAlpha;
         varying float vMix;
@@ -1709,7 +1751,7 @@ Generate the next coaching step as JSON.`;
           vec3 warmCol = mix(vec3(1.0, 0.82, 0.35), vec3(1.0, 0.48, 0.65), vMix);
           vec3 col = mix(coolCol, warmCol, smoothstep(0.25, 0.9, uMood));
 
-          gl_FragColor = vec4(col, clamp(soft * vAlpha, 0.0, 1.0));
+          gl_FragColor = vec4(col, soft * vAlpha);
         }
       `
     });
@@ -1750,204 +1792,175 @@ Generate the next coaching step as JSON.`;
       isDraggingOrb = false;
     });
 
-    function updateCameraFraming() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const aspect = w / Math.max(h, 1);
-
-      camera.aspect = aspect;
-      if (aspect < 1.0) {
-        // Portrait mobile: pull camera back so full orb + halo ring fit between top & bottom HUD cards
-        const clampedAspect = Math.max(aspect, 0.45);
-        camera.position.z = Math.min(9.2, Math.max(7.6, 5.2 / clampedAspect));
-        camera.position.y = 0.05;
-        auraOrb.position.y = 0.28;
-      } else {
-        camera.position.z = 5.4;
-        camera.position.y = 0.15;
-        auraOrb.position.y = 0.22;
-      }
-      haloRing.position.copy(auraOrb.position);
-      camera.updateProjectionMatrix();
-    }
-
     function handleResize() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      updateCameraFraming();
-      renderer.setSize(w, h);
+      const vv = window.visualViewport;
+      const w = Math.max(1, Math.round(vv ? vv.width : window.innerWidth));
+      const h = Math.max(1, Math.round(vv ? vv.height : window.innerHeight));
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
       composer.setSize(w, h);
     }
-    updateCameraFraming();
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", handleResize, { passive: true });
+    window.addEventListener("orientationchange", () => {
+      requestAnimationFrame(handleResize);
+    }, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", handleResize, { passive: true });
+    }
+
+    canvas.addEventListener("webglcontextlost", (event) => {
+      event.preventDefault();
+      document.body.classList.add("webgl-context-lost");
+      showToast("Graphics paused by the device. Restoring the 3D scene...");
+    }, false);
+    canvas.addEventListener("webglcontextrestored", () => {
+      document.body.classList.remove("webgl-context-lost");
+      handleResize();
+      showToast("3D scene restored");
+    }, false);
 
     /**
      * ============================================================================
-     * 6. CONTINUOUS 60FPS FACIAL EXPRESSION VISION (MEDIAPIPE CPU/GPU + OPTICAL + DEMO)
+     * 6. CONTINUOUS FACIAL EXPRESSION VISION (MEDIAPIPE + DEMO SIMULATION)
      * ============================================================================
      */
     const videoEl = document.getElementById("webcam-video");
     const meshCanvas = document.getElementById("mesh-canvas");
     const meshCtx = meshCanvas.getContext("2d");
 
-    // Offscreen optical analyzer canvas for fallback when MediaPipe WASM/GPU is blocked on mobile
-    const opticalCanvas = document.createElement("canvas");
-    opticalCanvas.width = 64;
-    opticalCanvas.height = 48;
-    const opticalCtx = opticalCanvas.getContext("2d", { willReadFrequently: true });
-    let prevOpticalFrame = null;
-
     let faceLandmarker = null;
-    let activeVisionTier = "none"; // "mediapipe-gpu" | "mediapipe-cpu" | "optical" | "none"
     let lastVideoTime = -1;
-    let lastDetectTimestamp = 0;
-    let wasFaceLocked = false;
-    let runtimeGpuFailCount = 0;
+    let detectionTimer = null;
+    let detectionBusy = false;
+    let detectionLoopActive = false;
+    let detectionFailureCount = 0;
 
-    async function createLandmarkerWithDelegate(delegate) {
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
-      );
-      return await FaceLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath:
-            "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-          delegate
-        },
-        outputFaceBlendshapes: true,
-        runningMode: "VIDEO",
-        numFaces: 1
-      });
+    function stopFaceDetectionLoop() {
+      detectionLoopActive = false;
+      if (detectionTimer !== null) {
+        clearTimeout(detectionTimer);
+        detectionTimer = null;
+      }
     }
 
-    async function initMediaPipeLandmarker(forceCpuOnly = false) {
-      if (!FaceLandmarker || !FilesetResolver) {
-        AuraLogger.log("VISION", "FALLBACK", "MediaPipe classes missing; engaging Optical Pixel-Motion Analyzer.");
-        activeVisionTier = "optical";
-        return "optical";
-      }
+    function startFaceDetectionLoop() {
+      stopFaceDetectionLoop();
+      if (!faceLandmarker || state.mode !== "camera") return;
+      detectionLoopActive = true;
+      const intervalMs = isMobileRenderer ? 140 : 80; // ~7 fps mobile, ~12 fps desktop
+      const tick = () => {
+        if (!detectionLoopActive || state.mode !== "camera") return;
+        if (!detectionBusy && videoEl.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          detectionBusy = true;
+          try {
+            processWebcamFrame();
+            detectionFailureCount = 0;
+          } catch (error) {
+            detectionFailureCount++;
+            console.warn("Face detection frame failed:", error);
+            if (detectionFailureCount >= 5) {
+              document.getElementById("vision-mode-label").textContent = "Face detection paused — retry camera";
+              document.getElementById("face-detected-badge").textContent = "DETECTION ERROR";
+              stopFaceDetectionLoop();
+            }
+          } finally {
+            detectionBusy = false;
+          }
+        }
+        if (detectionLoopActive) detectionTimer = setTimeout(tick, intervalMs);
+      };
+      tick();
+    }
 
-      // On mobile (including Galaxy S25 Ultra / Adreno 830), try CPU first to avoid known WebGL delegate crash
-      const delegatesToTry = forceCpuOnly || isMobileDevice ? ["CPU", "GPU"] : ["GPU", "CPU"];
+    async function initMediaPipeLandmarker() {
+      if (!FaceLandmarker || !FilesetResolver) return false;
 
-      for (const delegate of delegatesToTry) {
-        const initStart = performance.now();
+      try {
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+        );
+        const modelAssetPath =
+          "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+        const commonOptions = {
+          outputFaceBlendshapes: true,
+          runningMode: "VIDEO",
+          numFaces: 1
+        };
+
+        // Preserve the original GPU-first path, with a CPU fallback for mobile
+        // browsers/devices that do not expose a compatible WebGL delegate.
         try {
-          AuraLogger.log("VISION", "INFO", `Initializing MediaPipe FaceLandmarker (${delegate} delegate)...`);
-          if (faceLandmarker && typeof faceLandmarker.close === "function") {
-            try { faceLandmarker.close(); } catch (_) {}
-          }
-          faceLandmarker = await createLandmarkerWithDelegate(delegate);
-          const initMs = Math.round(performance.now() - initStart);
-          activeVisionTier = delegate === "GPU" ? "mediapipe-gpu" : "mediapipe-cpu";
-          AuraLogger.log("VISION", "REAL", `FaceLandmarker (${delegate}) ready in ${initMs}ms. 52 blendshapes active.`);
-          return activeVisionTier;
-        } catch (e) {
-          AuraLogger.log("VISION", "WARN", `MediaPipe ${delegate} delegate unavailable (${e.message || String(e)}). Trying next tier...`);
+          faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+            ...commonOptions,
+            baseOptions: { modelAssetPath, delegate: "GPU" }
+          });
+          return true;
+        } catch (gpuError) {
+          console.warn("MediaPipe GPU delegate unavailable; trying CPU:", gpuError);
         }
+
+        try {
+          faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+            ...commonOptions,
+            baseOptions: { modelAssetPath, delegate: "CPU" }
+          });
+          return true;
+        } catch (cpuError) {
+          console.warn("MediaPipe CPU fallback also failed:", cpuError);
+          faceLandmarker = null;
+          return false;
+        }
+      } catch (e) {
+        console.warn("MediaPipe model init failed:", e);
+        faceLandmarker = null;
+        return false;
       }
-
-      AuraLogger.log("VISION", "FALLBACK", "All MediaPipe delegates failed; engaging live Optical Micro-Expression Analyzer.");
-      activeVisionTier = "optical";
-      return "optical";
-    }
-
-    function waitForVideoReady(video, timeoutMs = 4000) {
-      return new Promise((resolve) => {
-        if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-          resolve(true);
-          return;
-        }
-        let settled = false;
-        const done = (ok) => {
-          if (settled) return;
-          settled = true;
-          video.removeEventListener("loadedmetadata", onReady);
-          video.removeEventListener("loadeddata", onReady);
-          video.removeEventListener("canplay", onReady);
-          clearTimeout(timer);
-          resolve(ok);
-        };
-        const onReady = () => {
-          if (video.videoWidth > 0 && video.videoHeight > 0) {
-            done(true);
-          }
-        };
-        const timer = setTimeout(() => done(video.videoWidth > 0), timeoutMs);
-        video.addEventListener("loadedmetadata", onReady);
-        video.addEventListener("loadeddata", onReady);
-        video.addEventListener("canplay", onReady);
-      });
     }
 
     async function startCameraVision() {
       const statusLabel = document.getElementById("vision-mode-label");
       const faceBadge = document.getElementById("face-detected-badge");
       statusLabel.textContent = "Requesting camera access...";
-      AuraLogger.log("VISION", "INFO", "Requesting front camera stream (getUserMedia)...");
 
       try {
-        videoEl.setAttribute("playsinline", "");
-        videoEl.setAttribute("webkit-playsinline", "");
-        videoEl.muted = true;
-
-        let stream;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              width: { ideal: isMobileDevice ? 480 : 640 },
-              height: { ideal: isMobileDevice ? 360 : 480 },
-              facingMode: "user"
-            },
-            audio: false
-          });
-        } catch (constraintErr) {
-          AuraLogger.log("VISION", "WARN", `Ideal camera constraints rejected (${constraintErr.name}); retrying generic user camera...`);
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user" },
-            audio: false
-          });
-        }
-
-        const videoTrack = stream.getVideoTracks()[0];
-        const trackSettings = videoTrack ? videoTrack.getSettings() : {};
-        AuraLogger.log("VISION", "REAL", `Camera stream active: "${videoTrack?.label || "Front Camera"}"`, {
-          width: trackSettings.width,
-          height: trackSettings.height,
-          frameRate: trackSettings.frameRate
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: isMobileRenderer ? 480 : 640, max: 1280 },
+            height: { ideal: isMobileRenderer ? 360 : 480, max: 720 },
+            frameRate: { ideal: isMobileRenderer ? 24 : 30, max: 30 },
+            facingMode: "user"
+          },
+          audio: false
         });
 
         videoEl.srcObject = stream;
         await videoEl.play();
-        const hasDimensions = await waitForVideoReady(videoEl, 4000);
-        AuraLogger.log("VISION", hasDimensions ? "REAL" : "WARN", `Video metadata ready (${videoEl.videoWidth}x${videoEl.videoHeight}, readyState=${videoEl.readyState}).`);
 
         state.mode = "camera";
-        wasFaceLocked = false;
-        lastVideoTime = -1;
-        runtimeGpuFailCount = 0;
-        prevOpticalFrame = null;
-
         document.getElementById("demo-avatar-box").classList.add("hidden");
         document.getElementById("demo-controls-panel").classList.add("hidden");
         document.getElementById("switch-mode-text").textContent = "Demo Mode";
 
         statusLabel.textContent = "Loading 60fps Neural Landmark Model...";
-        const tier = await initMediaPipeLandmarker(false);
+        const loaded = await initMediaPipeLandmarker();
 
-        if (tier === "mediapipe-gpu" || tier === "mediapipe-cpu") {
-          const modeTag = tier === "mediapipe-gpu" ? "GPU" : "CPU";
-          statusLabel.textContent = `Biometric Vision Active (${modeTag})`;
-          faceBadge.textContent = "SCANNING FACE";
-          AuraLogger.setVisionTruth(`REAL (MediaPipe ${modeTag})`, "real");
+        if (loaded) {
+          statusLabel.textContent = isMobileRenderer
+            ? "Mobile facial analysis active · adaptive sampling"
+            : "Facial analysis active · adaptive sampling";
+          faceBadge.textContent = "SEARCHING FOR FACE";
+          startFaceDetectionLoop();
         } else {
-          statusLabel.textContent = "Optical Biometric Sensor Active";
-          faceBadge.textContent = "OPTICAL SCAN";
-          AuraLogger.setVisionTruth("OPTICAL FALLBACK", "fallback");
+          // Never present a fake biometric lock when the model did not load.
+          statusLabel.textContent = "Face model unavailable — check connection and reload";
+          faceBadge.textContent = "MODEL NOT LOADED";
+          state.faceDetected = false;
+          showToast("Facial model could not load. Check network access and reload the page.");
         }
-        return true;
+        return loaded;
       } catch (err) {
-        AuraLogger.log("VISION", "FALLBACK", `Camera access denied or unavailable (${err.name}: ${err.message}). Falling back to Demo Mode.`);
+        console.warn("Camera permission denied or unavailable:", err);
         showToast("Camera unavailable — switched to Interactive Demo Mode");
         activateDemoMode();
         return false;
@@ -1955,15 +1968,13 @@ Generate the next coaching step as JSON.`;
     }
 
     function activateDemoMode() {
+      stopFaceDetectionLoop();
       state.mode = "demo";
       state.faceDetected = true;
-      wasFaceLocked = false;
-      AuraLogger.setVisionTruth("FAKE (Demo Slider)", "fake");
 
       if (videoEl.srcObject) {
         videoEl.srcObject.getTracks().forEach((t) => t.stop());
         videoEl.srcObject = null;
-        AuraLogger.log("VISION", "INFO", "Stopped physical webcam tracks.");
       }
 
       document.getElementById("demo-avatar-box").classList.remove("hidden");
@@ -1973,7 +1984,6 @@ Generate the next coaching step as JSON.`;
       document.getElementById("switch-mode-text").textContent = "Use Webcam";
 
       const sliderVal = parseInt(document.getElementById("demo-mood-slider").value, 10);
-      AuraLogger.log("VISION", "FALLBACK", `Activated Simulated Face Mode (synthetic slider value: ${sliderVal}%).`);
       applySimulatedExpression(sliderVal);
     }
 
@@ -1992,161 +2002,63 @@ Generate the next coaching step as JSON.`;
       else emojiEl.textContent = "😄";
     }
 
-    function runOpticalPixelAnalysis() {
-      try {
-        opticalCtx.drawImage(videoEl, 0, 0, opticalCanvas.width, opticalCanvas.height);
-        const frame = opticalCtx.getImageData(0, 0, opticalCanvas.width, opticalCanvas.height).data;
-        AuraLogger.recordInferenceTick();
-
-        if (!prevOpticalFrame) {
-          prevOpticalFrame = new Uint8ClampedArray(frame);
-          return;
-        }
-
-        let centerMotion = 0;
-        let centerLuma = 0;
-        let sampleCount = 0;
-
-        for (let y = 10; y < 38; y++) {
-          for (let x = 16; x < 48; x++) {
-            const idx = (y * opticalCanvas.width + x) * 4;
-            const luma = 0.299 * frame[idx] + 0.587 * frame[idx + 1] + 0.114 * frame[idx + 2];
-            const prevLuma = 0.299 * prevOpticalFrame[idx] + 0.587 * prevOpticalFrame[idx + 1] + 0.114 * prevOpticalFrame[idx + 2];
-            centerMotion += Math.abs(luma - prevLuma);
-            centerLuma += luma;
-            sampleCount++;
-          }
-        }
-
-        prevOpticalFrame.set(frame);
-
-        const avgMotion = centerMotion / Math.max(sampleCount, 1);
-        const avgLuma = centerLuma / Math.max(sampleCount, 1);
-        const presence = avgLuma > 18;
-
-        state.faceDetected = presence;
-        const badge = document.getElementById("face-detected-badge");
-        badge.textContent = presence ? "OPTICAL LOCK" : "LOW LIGHT";
-
-        if (presence) {
-          const expressiveness = Math.min(1, avgMotion / 14.0);
-          state.rawEnergy = state.rawEnergy * 0.88 + (0.35 + expressiveness * 0.6) * 0.12;
-          state.rawSmile = state.rawSmile * 0.9 + (0.28 + expressiveness * 0.65) * 0.1;
-          state.rawSerenity = state.rawSerenity * 0.9 + (0.65 - expressiveness * 0.15) * 0.1;
-          const computed = 42 + state.rawSmile * 42 + state.rawEnergy * 12;
-          state.targetMood = Math.max(15, Math.min(96, computed));
-        }
-      } catch (e) {
-        // Ignore transient frame read issues
-      }
-    }
-
     function processWebcamFrame() {
-      if (state.mode !== "camera" || videoEl.readyState < 2 || videoEl.videoWidth === 0) return;
+      if (state.mode !== "camera" || !faceLandmarker || videoEl.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
 
       if (meshCanvas.width !== videoEl.videoWidth || meshCanvas.height !== videoEl.videoHeight) {
         meshCanvas.width = videoEl.videoWidth || 320;
         meshCanvas.height = videoEl.videoHeight || 240;
       }
 
-      if (activeVisionTier === "optical" || !faceLandmarker) {
-        runOpticalPixelAnalysis();
-        return;
-      }
-
-      const nowMs = performance.now();
-      if (videoEl.currentTime === lastVideoTime || nowMs <= lastDetectTimestamp) return;
-      lastVideoTime = videoEl.currentTime;
-      lastDetectTimestamp = nowMs;
-
-      let results;
-      try {
-        results = faceLandmarker.detectForVideo(videoEl, nowMs);
-      } catch (inferErr) {
-        runtimeGpuFailCount += 1;
-        AuraLogger.log("VISION", "WARN", `Runtime detectForVideo error on ${activeVisionTier}: ${inferErr.message || String(inferErr)}`);
-        if (activeVisionTier === "mediapipe-gpu" && runtimeGpuFailCount >= 1) {
-          activeVisionTier = "switching";
-          initMediaPipeLandmarker(true).then((newTier) => {
-            if (newTier === "mediapipe-cpu") {
-              document.getElementById("vision-mode-label").textContent = "Biometric Vision Active (CPU)";
-              AuraLogger.setVisionTruth("REAL (MediaPipe CPU)", "real");
-            } else {
-              document.getElementById("vision-mode-label").textContent = "Optical Biometric Sensor Active";
-              AuraLogger.setVisionTruth("OPTICAL FALLBACK", "fallback");
-            }
-          });
-        } else if (runtimeGpuFailCount >= 3) {
-          activeVisionTier = "optical";
-          AuraLogger.setVisionTruth("OPTICAL FALLBACK", "fallback");
-        }
-        return;
-      }
-
       meshCtx.clearRect(0, 0, meshCanvas.width, meshCanvas.height);
-      AuraLogger.recordInferenceTick();
 
-      if (results && results.faceBlendshapes && results.faceBlendshapes.length > 0) {
-        state.faceDetected = true;
-        if (!wasFaceLocked) {
-          wasFaceLocked = true;
-          AuraLogger.log("VISION", "REAL", `Face locked (${activeVisionTier})! Live 52-blendshape extraction active.`);
+      if (faceLandmarker && videoEl.currentTime !== lastVideoTime) {
+        lastVideoTime = videoEl.currentTime;
+        const results = faceLandmarker.detectForVideo(videoEl, performance.now());
+
+        if (results.faceBlendshapes && results.faceBlendshapes.length > 0) {
+          state.faceDetected = true;
+          const badge = document.getElementById("face-detected-badge");
+          badge.textContent = "FACE LOCKED";
+          badge.className =
+            "absolute bottom-1.5 left-1.5 right-1.5 text-center py-0.5 rounded bg-black/60 backdrop-blur-sm text-[9px] mono text-emerald-300 tracking-tight";
+
+          const categories = results.faceBlendshapes[0].categories;
+          const map = {};
+          for (const c of categories) {
+            map[c.categoryName] = c.score;
+          }
+
+          const smile = Math.min(1, ((map["mouthSmileLeft"] || 0) + (map["mouthSmileRight"] || 0)) * 0.72);
+          const cheekRaise = ((map["cheekSquintLeft"] || 0) + (map["cheekSquintRight"] || 0)) * 0.5;
+          const browFurrow = ((map["browDownLeft"] || 0) + (map["browDownRight"] || 0)) * 0.5;
+          const browLift =
+            (map["browInnerUp"] || 0) * 0.4 +
+            ((map["browOuterUpLeft"] || 0) + (map["browOuterUpRight"] || 0)) * 0.3;
+          const frown = ((map["mouthFrownLeft"] || 0) + (map["mouthFrownRight"] || 0)) * 0.5;
+          const eyeWide = ((map["eyeWideLeft"] || 0) + (map["eyeWideRight"] || 0)) * 0.4;
+
+          const serenity = Math.max(0.1, Math.min(1, 1.0 - browFurrow * 1.15 - frown * 0.85));
+          const energy = Math.max(0.15, Math.min(1, 0.35 + smile * 0.42 + browLift * 0.3 + cheekRaise * 0.28 + eyeWide * 0.2));
+
+          state.rawSmile = smile;
+          state.rawSerenity = serenity;
+          state.rawEnergy = energy;
+
+          const rawScore = 34 + smile * 46 + serenity * 14 + cheekRaise * 12 - browFurrow * 18 - frown * 15;
+          state.targetMood = Math.max(8, Math.min(99, rawScore));
+
+          if (state.showMesh && results.faceLandmarks && results.faceLandmarks[0]) {
+            drawBiometricOverlay(results.faceLandmarks[0], meshCanvas.width, meshCanvas.height);
+          }
+        } else {
+          state.faceDetected = false;
+          meshCtx.clearRect(0, 0, meshCanvas.width, meshCanvas.height);
+          const badge = document.getElementById("face-detected-badge");
+          badge.textContent = "ALIGN FACE";
+          badge.className =
+            "absolute bottom-1.5 left-1.5 right-1.5 text-center py-0.5 rounded bg-black/60 backdrop-blur-sm text-[9px] mono text-amber-300 tracking-tight";
         }
-
-        const badge = document.getElementById("face-detected-badge");
-        badge.textContent = "FACE LOCKED";
-        badge.className =
-          "absolute bottom-1 left-1 right-1 text-center py-0.5 rounded bg-black/60 backdrop-blur-sm text-[8px] sm:text-[9px] mono text-emerald-300 tracking-tight truncate";
-
-        const categories = results.faceBlendshapes[0].categories;
-        const map = {};
-        for (const c of categories) {
-          map[c.categoryName] = c.score;
-        }
-
-        const smile = Math.min(1, ((map["mouthSmileLeft"] || 0) + (map["mouthSmileRight"] || 0)) * 0.72);
-        const cheekRaise = ((map["cheekSquintLeft"] || 0) + (map["cheekSquintRight"] || 0)) * 0.5;
-        const browFurrow = ((map["browDownLeft"] || 0) + (map["browDownRight"] || 0)) * 0.5;
-        const browLift =
-          (map["browInnerUp"] || 0) * 0.4 +
-          ((map["browOuterUpLeft"] || 0) + (map["browOuterUpRight"] || 0)) * 0.3;
-        const frown = ((map["mouthFrownLeft"] || 0) + (map["mouthFrownRight"] || 0)) * 0.5;
-        const eyeWide = ((map["eyeWideLeft"] || 0) + (map["eyeWideRight"] || 0)) * 0.4;
-
-        const serenity = Math.max(0.1, Math.min(1, 1.0 - browFurrow * 1.15 - frown * 0.85));
-        const energy = Math.max(0.15, Math.min(1, 0.35 + smile * 0.42 + browLift * 0.3 + cheekRaise * 0.28 + eyeWide * 0.2));
-
-        state.rawSmile = smile;
-        state.rawSerenity = serenity;
-        state.rawEnergy = energy;
-
-        const rawScore = 34 + smile * 46 + serenity * 14 + cheekRaise * 12 - browFurrow * 18 - frown * 15;
-        state.targetMood = Math.max(8, Math.min(99, rawScore));
-
-        if (nowMs - AuraLogger.lastTelemetryLogTime > 2500) {
-          AuraLogger.lastTelemetryLogTime = nowMs;
-          AuraLogger.log("VISION", "REAL", `Live blendshape sample (${AuraLogger.inferenceFps.toFixed(1)} fps)`, {
-            smileL: +(map["mouthSmileLeft"] || 0).toFixed(3),
-            smileR: +(map["mouthSmileRight"] || 0).toFixed(3),
-            browDownL: +(map["browDownLeft"] || 0).toFixed(3),
-            cheekSquintL: +(map["cheekSquintLeft"] || 0).toFixed(3),
-            targetMood: `${Math.round(state.targetMood)}%`
-          });
-        }
-
-        if (state.showMesh && results.faceLandmarks && results.faceLandmarks[0]) {
-          drawBiometricOverlay(results.faceLandmarks[0], meshCanvas.width, meshCanvas.height);
-        }
-      } else {
-        if (wasFaceLocked) {
-          wasFaceLocked = false;
-          AuraLogger.log("VISION", "WARN", "Face lost from camera frame (ALIGN FACE). Holding last mood target.");
-        }
-        state.faceDetected = false;
-        const badge = document.getElementById("face-detected-badge");
-        badge.textContent = "ALIGN FACE";
-        badge.className =
-          "absolute bottom-1 left-1 right-1 text-center py-0.5 rounded bg-black/60 backdrop-blur-sm text-[8px] sm:text-[9px] mono text-amber-300 tracking-tight truncate";
       }
     }
 
@@ -2237,7 +2149,7 @@ Generate the next coaching step as JSON.`;
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className =
-          "glass-pill px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs text-slate-200 hover:text-amber-200 cursor-pointer text-left";
+          "glass-pill px-3 py-1.5 rounded-full text-xs text-slate-200 hover:text-amber-200 cursor-pointer";
         btn.textContent = chipText;
         btn.addEventListener("click", () => {
           if (state.isGeneratingAI) return;
@@ -2246,7 +2158,6 @@ Generate the next coaching step as JSON.`;
             const slider = document.getElementById("demo-mood-slider");
             const boosted = Math.min(98, parseInt(slider.value, 10) + 16);
             slider.value = boosted;
-            AuraLogger.log("VISION", "FALLBACK", `Demo Mode chip clicked: boosted simulated slider by +16% -> ${boosted}%.`);
             applySimulatedExpression(boosted);
           }
           handleReflectionSubmit(chipText);
@@ -2313,12 +2224,12 @@ Generate the next coaching step as JSON.`;
 
       const inputVal = (customText ?? document.getElementById("reflection-input").value).trim();
 
+      // Step 0: Complete Baseline Calibration -> Launch First Gemini AI Prompt
       if (state.stepIndex === 0) {
         state.baselineMood = Math.round(state.currentMood);
         state.peakMood = state.baselineMood;
         document.getElementById("baseline-readout").innerHTML = `Start: <strong class="text-slate-200 mono">${state.baselineMood}%</strong>`;
         state.stepIndex = 1;
-        AuraLogger.log("SYSTEM", "INFO", `Baseline mood locked at ${state.baselineMood}% (Vision source: ${AuraLogger.visionTruth}).`);
 
         setAIThinkingState(true);
         const firstPrompt = await fetchGeminiCoachingTurn("", 0);
@@ -2327,16 +2238,10 @@ Generate the next coaching step as JSON.`;
         return;
       }
 
+      // Measure mood delta before vs after reflecting on the question
       const nowMood = Math.round(state.currentMood);
       const delta = nowMood - state.preQuestionMood;
       const displayAnswer = inputVal || (isAutoFacialLift ? "✨ Genuine Smile Lift" : "(Reflected visually)");
-
-      AuraLogger.log("SYSTEM", isAutoFacialLift ? "REAL" : "INFO", `Step ${state.stepIndex} completed (${isAutoFacialLift ? "Auto-Lift Triggered" : "User Submitted"}).`, {
-        moodBefore: state.preQuestionMood,
-        moodAfter: nowMood,
-        delta,
-        answer: displayAnswer
-      });
 
       state.reflectionsLog.push({
         step: state.stepIndex,
@@ -2365,15 +2270,16 @@ Generate the next coaching step as JSON.`;
         );
       }
 
+      // Check if user reached the Radiant Target Threshold (85%+)
       if (nowMood >= TARGET_MOOD_THRESHOLD && !state.completedTarget) {
         state.completedTarget = true;
-        AuraLogger.log("SYSTEM", "REAL", `Target resonance threshold (${TARGET_MOOD_THRESHOLD}%) reached! Peak mood: ${state.peakMood}%.`);
         setTimeout(() => {
           openSummaryModal();
         }, 900);
         return;
       }
 
+      // Request next personalized Gemini AI coaching turn based on words + facial telemetry
       state.stepIndex += 1;
       setAIThinkingState(true);
       const nextPrompt = await fetchGeminiCoachingTurn(displayAnswer, delta);
@@ -2422,7 +2328,6 @@ Generate the next coaching step as JSON.`;
       state.conversationHistory = [];
       askedFallbackQuestions.clear();
       updateJourneyDrawer();
-      AuraLogger.log("SYSTEM", "INFO", "Session reset to Calibration step.");
 
       document.getElementById("summary-modal").classList.add("hidden");
       document.getElementById("baseline-readout").innerHTML = `Start: <strong class="text-slate-200 mono">--%</strong>`;
@@ -2434,7 +2339,7 @@ Generate the next coaching step as JSON.`;
       document.getElementById("question-subtext").textContent =
         "Relax your shoulders. AURA is calibrating to your natural facial expression right now.";
       document.getElementById("quick-replies-container").innerHTML = "";
-      document.getElementById("submit-btn-label").textContent = "Lock & Begin";
+      document.getElementById("submit-btn-label").textContent = "Lock Baseline & Begin";
       document.getElementById("feedback-banner").classList.add("hidden");
     }
 
@@ -2472,22 +2377,23 @@ Generate the next coaching step as JSON.`;
 
       if (score < 36) {
         stateLabel.textContent = "Tense / Reflective";
-        stateLabel.className = "text-xs sm:text-base font-semibold text-indigo-300 leading-tight truncate";
+        stateLabel.className = "text-sm sm:text-base font-semibold text-indigo-300 leading-tight";
         statusDot.className = "w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-[0_0_12px_#818cf8]";
       } else if (score < 60) {
         stateLabel.textContent = "Calm / Grounded";
-        stateLabel.className = "text-xs sm:text-base font-semibold text-teal-200 leading-tight truncate";
+        stateLabel.className = "text-sm sm:text-base font-semibold text-teal-200 leading-tight";
         statusDot.className = "w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_12px_#2dd4bf]";
       } else if (score < 85) {
         stateLabel.textContent = "Warming / Uplifted";
-        stateLabel.className = "text-xs sm:text-base font-semibold text-amber-200 leading-tight truncate";
+        stateLabel.className = "text-sm sm:text-base font-semibold text-amber-200 leading-tight";
         statusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-300 shadow-[0_0_12px_#fcd34d]";
       } else {
         stateLabel.textContent = "Radiant / Joyful ✨";
-        stateLabel.className = "text-xs sm:text-base font-semibold text-amber-300 leading-tight truncate";
+        stateLabel.className = "text-sm sm:text-base font-semibold text-amber-300 leading-tight";
         statusDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_16px_#fbbf24]";
       }
 
+      // Live delta vs session baseline
       const deltaBadge = document.getElementById("mood-delta-badge");
       if (state.baselineMood !== null) {
         const diff = score - state.baselineMood;
@@ -2503,6 +2409,7 @@ Generate the next coaching step as JSON.`;
         }
       }
 
+      // Live delta on current AI question step
       if (state.stepIndex >= 1 && !state.isGeneratingAI) {
         const stepDelta = score - state.preQuestionMood;
         const stepPill = document.getElementById("step-delta-pill");
@@ -2516,6 +2423,7 @@ Generate the next coaching step as JSON.`;
             "mono text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-200 border border-teal-400/30";
         }
 
+        // Closed-loop auto-advancement when user's facial expression lifts by >= +12% or crosses 85%
         const elapsedOnStep = performance.now() - state.lastPromptTime;
         if (
           state.isRunning &&
@@ -2529,6 +2437,7 @@ Generate the next coaching step as JSON.`;
         }
       }
 
+      // Micro-expression bars
       const smilePct = Math.round(state.rawSmile * 100);
       const serenityPct = Math.round(state.rawSerenity * 100);
       const energyPct = Math.round(state.rawEnergy * 100);
@@ -2541,8 +2450,6 @@ Generate the next coaching step as JSON.`;
 
       document.getElementById("metric-energy-val").textContent = `${energyPct}%`;
       document.getElementById("metric-energy-bar").style.width = `${energyPct}%`;
-
-      AuraLogger.updateLiveTelemetryBanner();
     }
 
     /**
@@ -2565,12 +2472,7 @@ Generate the next coaching step as JSON.`;
       document.getElementById("icon-audio-off").classList.add("hidden");
       document.getElementById("audio-label").textContent = "Sound On";
 
-      document.getElementById("submit-btn-label").textContent = "Lock & Begin";
-
-      // Immediately synchronize HUD indicators on launch so they never stick at static HTML defaults
-      updateHUDMetrics();
-
-      AuraLogger.log("SYSTEM", "INFO", `Launching experience (Requested mode: ${useCamera ? "Real Webcam + MediaPipe" : "Simulated Demo Mode"}).`);
+      document.getElementById("submit-btn-label").textContent = "Lock Baseline & Begin";
 
       if (useCamera) {
         startCameraVision();
@@ -2586,18 +2488,15 @@ Generate the next coaching step as JSON.`;
 
     try {
       geminiApiKeyInput.value = localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY) || "";
-      if (geminiApiKeyInput.value.trim()) {
-        AuraLogger.log("AI", "INFO", "Restored saved Gemini API key from localStorage.");
-      }
     } catch (err) {
-      AuraLogger.log("SYSTEM", "WARN", "Could not read saved Gemini API key from localStorage.");
+      console.warn("Could not read the saved Gemini API key from local storage:", err);
     }
 
     geminiApiKeyInput.addEventListener("input", () => {
       try {
         localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, geminiApiKeyInput.value.trim());
       } catch (err) {
-        // Ignore storage errors
+        console.warn("Could not save the Gemini API key to local storage:", err);
       }
     });
 
@@ -2635,76 +2534,28 @@ Generate the next coaching step as JSON.`;
     });
 
     document.getElementById("btn-journey-toggle").addEventListener("click", () => {
-      document.getElementById("logs-drawer").classList.add("hidden");
       document.getElementById("journey-drawer").classList.toggle("hidden");
     });
 
-    // Diagnostic Logs Drawer Interactions
-    document.getElementById("btn-logs-toggle").addEventListener("click", () => {
-      document.getElementById("journey-drawer").classList.add("hidden");
-      const drawer = document.getElementById("logs-drawer");
-      drawer.classList.toggle("hidden");
-      if (!drawer.classList.contains("hidden")) {
-        AuraLogger.rerenderAll();
-      }
-    });
-
-    document.querySelectorAll(".log-filter-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".log-filter-btn").forEach((b) => {
-          b.className = "log-filter-btn px-2 py-1 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 cursor-pointer";
-        });
-        btn.className = "log-filter-btn px-2 py-1 rounded-lg bg-white/15 text-white font-semibold cursor-pointer";
-        AuraLogger.filter = btn.getAttribute("data-log-filter");
-        AuraLogger.rerenderAll();
-      });
-    });
-
-    document.getElementById("btn-copy-logs").addEventListener("click", () => {
-      const report = AuraLogger.exportAsText();
-      const tempArea = document.createElement("textarea");
-      tempArea.value = report;
-      document.body.appendChild(tempArea);
-      tempArea.select();
-      try {
-        document.execCommand("copy");
-        showToast("Diagnostic logs copied to clipboard");
-      } catch (err) {
-        showToast("Could not copy logs");
-      }
-      document.body.removeChild(tempArea);
-    });
-
-    document.getElementById("btn-download-logs").addEventListener("click", () => {
-      const report = AuraLogger.exportAsText();
-      const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `aura-telemetry-logs-${new Date().toISOString().replace(/[:.]/g, "-")}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast("Downloaded diagnostic .TXT log file");
-    });
-
-    document.getElementById("btn-clear-logs").addEventListener("click", () => {
-      AuraLogger.clear();
-    });
-
     document.getElementById("demo-mood-slider").addEventListener("input", (e) => {
-      const val = parseInt(e.target.value, 10);
-      applySimulatedExpression(val);
+      applySimulatedExpression(parseInt(e.target.value, 10));
     });
 
     document.querySelectorAll(".demo-preset-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const val = parseInt(btn.getAttribute("data-preset"), 10);
         document.getElementById("demo-mood-slider").value = val;
-        AuraLogger.log("VISION", "FALLBACK", `Demo preset clicked: set synthetic mood to ${val}%.`);
         applySimulatedExpression(val);
       });
+    });
+
+    const reflectionInputElement = document.getElementById("reflection-input");
+    reflectionInputElement.addEventListener("focus", () => {
+      // The small delay lets iOS/Android finish opening the keyboard before
+      // scrolling the active field into the visible part of the HUD.
+      window.setTimeout(() => {
+        reflectionInputElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 180);
     });
 
     document.getElementById("reflection-form").addEventListener("submit", (e) => {
@@ -2731,6 +2582,7 @@ Generate the next coaching step as JSON.`;
      * ============================================================================
      */
     const clock = new THREE.Clock();
+    let useDirectRenderFallback = false;
 
     function animate() {
       requestAnimationFrame(animate);
@@ -2738,8 +2590,7 @@ Generate the next coaching step as JSON.`;
       const dt = Math.min(clock.getDelta(), 0.05);
       const elapsed = clock.getElapsedTime();
 
-      // 1. Continuous 60fps Webcam Facial Blendshape Analysis
-      processWebcamFrame();
+      // 1. Facial inference runs in its own adaptive timer, not on the render thread.
 
       // 2. Critically-Damped Spring Physics for Silky Mood Transitions
       const stiffness = 14.0;
@@ -2765,7 +2616,7 @@ Generate the next coaching step as JSON.`;
 
       chromaticPass.uniforms.uTime.value = elapsed;
       chromaticPass.uniforms.uAberration.value = 0.0014 + state.burstIntensity * 0.0035;
-      bloomPass.strength = (isMobileDevice ? 0.55 : 0.78) + moodNorm * 0.3 + state.burstIntensity * 0.5;
+      bloomPass.strength = 0.78 + moodNorm * 0.35 + state.burstIntensity * 0.65;
 
       const coolRing = new THREE.Color(0x6366f1);
       const midRing = new THREE.Color(0x2dd4bf);
@@ -2788,20 +2639,42 @@ Generate the next coaching step as JSON.`;
       particleField.rotation.y = elapsed * 0.035 + pointerX * 0.08;
       particleField.rotation.x = -pointerY * 0.06;
 
-      // 4. Update Generative Audio & Glassmorphic HUD continuously
+      // 4. Update Generative Audio & Glassmorphic HUD
       audioEngine.updateMoodModulation(moodNorm);
-      updateHUDMetrics();
+      if (state.isRunning) {
+        updateHUDMetrics();
+      }
 
-      // 5. Render 4K Post-Processed Frame
-      composer.render();
+      // 5. Render. If a mobile post-processing pass fails, retain the 3D scene
+      // with the base renderer instead of leaving a completely black canvas.
+      try {
+        if (useDirectRenderFallback) renderer.render(scene, camera);
+        else composer.render();
+      } catch (renderError) {
+        console.warn("Post-processing failed; using direct WebGL render:", renderError);
+        useDirectRenderFallback = true;
+        try { renderer.render(scene, camera); } catch (directRenderError) {
+          console.error("WebGL render failed:", directRenderError);
+        }
+      }
     }
 
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stopFaceDetectionLoop();
+      else if (state.mode === "camera" && faceLandmarker) startFaceDetectionLoop();
+    });
+
+    window.addEventListener("pagehide", () => {
+      stopFaceDetectionLoop();
+      if (videoEl.srcObject) videoEl.srcObject.getTracks().forEach(track => track.stop());
+    });
+
     window.addEventListener("load", () => {
+      handleResize();
       const dpr = window.devicePixelRatio || 1;
       const effectiveW = Math.round(window.innerWidth * dpr);
       const effectiveH = Math.round(window.innerHeight * dpr);
-      document.getElementById("resolution-badge").textContent = `${effectiveW}×${effectiveH} • UHD`;
-      AuraLogger.log("SYSTEM", "INFO", `WebGL Renderer ready (${effectiveW}x${effectiveH} effective pixels, DPR ${dpr}).`);
+      document.getElementById("resolution-badge").textContent = `${effectiveW}×${effectiveH} • ${isMobileRenderer ? "MOBILE GPU" : "UHD"}`;
       animate();
     });
   </script>
